@@ -687,59 +687,188 @@ TabPlayerBtn.MouseButton1Click:Connect(function()
 end)
 
 -- ============================================================
--- OLIVER V3 - EXTRA UTILITIES
--- Existing functions above are intentionally untouched.
+-- OLIVER V3 - EXTRA FEATURES
+-- Added without removing or replacing existing functions.
 -- ============================================================
 
-local OliverExtras = {}
+local OliverExtraFolder = Instance.new("Frame")
+OliverExtraFolder.Name = "OLIVER_V3_Extras"
+OliverExtraFolder.Size = UDim2.new(0.9, 0, 0, 190)
+OliverExtraFolder.BackgroundTransparency = 1
+OliverExtraFolder.Parent = PageMain
 
-function OliverExtras.GetFPS()
-    return math.floor(1 / math.max(RunService.RenderStepped:Wait(), 1/240))
-end
+local ExtraList = Instance.new("UIListLayout")
+ExtraList.Padding = UDim.new(0, 8)
+ExtraList.HorizontalAlignment = Enum.HorizontalAlignment.Center
+ExtraList.Parent = OliverExtraFolder
 
-function OliverExtras.GetPing()
-    local ok, value = pcall(function()
-        return LocalPlayer:GetNetworkPing() * 1000
-    end)
-    return ok and math.floor(value + 0.5) or 0
-end
+local StatusLabel = Instance.new("TextLabel")
+StatusLabel.Size = UDim2.new(0.9, 0, 0, 28)
+StatusLabel.Text = "FPS: --   |   Ping: -- ms"
+StatusLabel.TextColor3 = Color3.fromRGB(0, 220, 255)
+StatusLabel.Font = Enum.Font.SourceSansBold
+StatusLabel.TextSize = 14
+StatusLabel.BackgroundColor3 = Color3.fromRGB(35, 35, 48)
+StatusLabel.BackgroundTransparency = 0.1
+StatusLabel.Parent = OliverExtraFolder
 
-function OliverExtras.SetUITransparency(guiObject, transparency)
-    if not guiObject then return end
-    transparency = math.clamp(tonumber(transparency) or 0, 0, 1)
+local StatusCorner = Instance.new("UICorner")
+StatusCorner.CornerRadius = UDim.new(0, 6)
+StatusCorner.Parent = StatusLabel
 
-    if guiObject:IsA("Frame") then
-        guiObject.BackgroundTransparency = transparency
-    elseif guiObject:IsA("TextButton") or guiObject:IsA("TextLabel") then
-        guiObject.BackgroundTransparency = transparency
+local infiniteJump = false
+local infiniteJumpConnection
+
+local function setInfiniteJump(state)
+    infiniteJump = state
+
+    if infiniteJumpConnection then
+        infiniteJumpConnection:Disconnect()
+        infiniteJumpConnection = nil
     end
-end
 
-function OliverExtras.ResetCharacter()
-    local character = LocalPlayer.Character
-    local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-    if humanoid then
-        humanoid.Health = 0
-    end
-end
-
-function OliverExtras.Rejoin()
-    local TeleportService = game:GetService("TeleportService")
-    pcall(function()
-        TeleportService:Teleport(game.PlaceId, LocalPlayer)
-    end)
-end
-
--- Safe Anti-AFK helper. It only prevents the client from being marked idle.
-function OliverExtras.AntiAFK()
-    local VirtualUser = game:GetService("VirtualUser")
-    LocalPlayer.Idled:Connect(function()
-        pcall(function()
-            VirtualUser:CaptureController()
-            VirtualUser:ClickButton2(Vector2.new(0, 0))
+    if state then
+        infiniteJumpConnection = UserInputService.JumpRequest:Connect(function()
+            local char = LocalPlayer.Character
+            local hum = char and char:FindFirstChildOfClass("Humanoid")
+            if hum then
+                hum:ChangeState(Enum.HumanoidStateType.Jumping)
+            end
         end)
-    end)
+    end
 end
 
-_G.OLIVER_V3_EXTRAS = OliverExtras
+local originalWalkSpeed = 16
+
+local function restoreOliverSettings()
+    pcall(function() NOFLY() end)
+
+    isNoclip = false
+    isESP = false
+    setInfiniteJump(false)
+
+    local char = LocalPlayer.Character
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    if hum then
+        hum.WalkSpeed = originalWalkSpeed
+        hum.JumpPower = 50
+        hum.AutoRotate = true
+        hum.PlatformStand = false
+    end
+
+    if char then
+        local head = char:FindFirstChild("Head")
+        local tag = head and head:FindFirstChild("CustomNameTag")
+        if tag then tag:Destroy() end
+    end
+
+    -- Restore collisions for the local character.
+    if char then
+        for _, part in ipairs(char:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = true
+            end
+        end
+    end
+end
+
+local function createExtraButton(text, callback)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0.9, 0, 0, 32)
+    btn.Text = text
+    btn.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Font = Enum.Font.SourceSans
+    btn.TextSize = 14
+    btn.Parent = OliverExtraFolder
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 6)
+    corner.Parent = btn
+
+    btn.MouseButton1Click:Connect(callback)
+    return btn
+end
+
+local infiniteJumpBtn = createExtraButton("Infinite Jump: OFF", function()
+    setInfiniteJump(not infiniteJump)
+    infiniteJumpBtn.Text = "Infinite Jump: " .. (infiniteJump and "ON" or "OFF")
+    infiniteJumpBtn.BackgroundColor3 =
+        infiniteJump and Color3.fromRGB(0, 170, 100) or Color3.fromRGB(45, 45, 60)
+end)
+
+local antiAFKEnabled = false
+local antiAFKConnection
+
+local function setAntiAFK(state)
+    antiAFKEnabled = state
+
+    if antiAFKConnection then
+        antiAFKConnection:Disconnect()
+        antiAFKConnection = nil
+    end
+
+    if state then
+        local VirtualUser = game:GetService("VirtualUser")
+        antiAFKConnection = LocalPlayer.Idled:Connect(function()
+            pcall(function()
+                VirtualUser:CaptureController()
+                VirtualUser:ClickButton2(Vector2.new(0, 0))
+            end)
+        end)
+    end
+end
+
+local antiAFKBtn = createExtraButton("Anti-AFK: OFF", function()
+    setAntiAFK(not antiAFKEnabled)
+    antiAFKBtn.Text = "Anti-AFK: " .. (antiAFKEnabled and "ON" or "OFF")
+    antiAFKBtn.BackgroundColor3 =
+        antiAFKEnabled and Color3.fromRGB(0, 170, 100) or Color3.fromRGB(45, 45, 60)
+end)
+
+createExtraButton("Reset Character", function()
+    local char = LocalPlayer.Character
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    if hum then hum.Health = 0 end
+end)
+
+createExtraButton("Rejoin Server", function()
+    pcall(function()
+        game:GetService("TeleportService"):Teleport(game.PlaceId, LocalPlayer)
+    end)
+end)
+
+createExtraButton("RESTORE ALL", function()
+    restoreOliverSettings()
+    infiniteJumpBtn.Text = "Infinite Jump: OFF"
+    infiniteJumpBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
+    antiAFKBtn.Text = "Anti-AFK: OFF"
+    antiAFKBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
+end)
+
+-- FPS / Ping monitor
+local fpsFrames = 0
+local fpsElapsed = 0
+
+RunService.RenderStepped:Connect(function(dt)
+    fpsFrames += 1
+    fpsElapsed += dt
+
+    if fpsElapsed >= 0.5 then
+        local fps = math.floor(fpsFrames / fpsElapsed + 0.5)
+        local ping = 0
+
+        pcall(function()
+            ping = math.floor(LocalPlayer:GetNetworkPing() * 1000 + 0.5)
+        end)
+
+        StatusLabel.Text = "FPS: " .. fps .. "   |   Ping: " .. ping .. " ms"
+        fpsFrames = 0
+        fpsElapsed = 0
+    end
+end)
+
+-- Make the scrolling area include the new controls.
+PageMain.CanvasSize = UDim2.new(0, 0, 0, 560)
+
 
