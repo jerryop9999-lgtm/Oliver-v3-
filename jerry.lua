@@ -1,6 +1,7 @@
 -- ==========================================
 -- DELTA EXECUTOR CUSTOM GUI SCRIPT
 -- LOGO ID: 128290087536397
+-- UPDATED: ESP BOX & LINE + PLAYER AVATARS
 -- ==========================================
 
 local Players = game:GetService("Players")
@@ -9,11 +10,11 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local CoreGui = game:GetService("CoreGui")
+local Camera = workspace.CurrentCamera
 
--- Logo Asset ID ថ្មីរបស់អ្នក
 local CUSTOM_LOGO_ID = "rbxassetid://128290087536397"
 
--- 1. បង្កើត ScreenGui (Safe Parent សម្រាប់ Executor)
+-- 1. ScreenGui Setup
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "DeltaCustomHub"
 ScreenGui.ResetOnSpawn = false
@@ -27,7 +28,7 @@ else
     ScreenGui.Parent = CoreGui
 end
 
--- Function សម្រាប់ធ្វើឱ្យ UI អូសបាន Smooth (Smooth Dragging)
+-- Smooth Drag Function
 local function makeSmoothDraggable(frame, dragHandle)
     dragHandle = dragHandle or frame
     local dragging, dragInput, dragStart, startPos
@@ -60,7 +61,7 @@ local function makeSmoothDraggable(frame, dragHandle)
     end)
 end
 
--- 2. ប៊ូតុង បើក/បិទ UI (Toggle Button មាន Logo ID ថ្មី)
+-- 2. Toggle UI Button
 local ToggleBtn = Instance.new("ImageButton")
 ToggleBtn.Name = "OpenCloseLogo"
 ToggleBtn.Size = UDim2.new(0, 50, 0, 50)
@@ -75,7 +76,7 @@ BtnUICorner.Parent = ToggleBtn
 
 makeSmoothDraggable(ToggleBtn)
 
--- 3. Main Frame (ផ្ទាំង GUI ធំ)
+-- 3. Main Frame
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Size = UDim2.new(0, 420, 0, 300)
@@ -91,7 +92,7 @@ MainCorner.Parent = MainFrame
 
 makeSmoothDraggable(MainFrame)
 
--- 4. Top Header (Logo ថ្មី & Title)
+-- 4. Top Header
 local TopBar = Instance.new("Frame")
 TopBar.Size = UDim2.new(1, 0, 0, 40)
 TopBar.BackgroundColor3 = Color3.fromRGB(30, 30, 42)
@@ -115,12 +116,11 @@ TitleLabel.TextSize = 16
 TitleLabel.BackgroundTransparency = 1
 TitleLabel.Parent = TopBar
 
--- ដំណើរការ បើក/បិទ UI
 ToggleBtn.MouseButton1Click:Connect(function()
     MainFrame.Visible = not MainFrame.Visible
 end)
 
--- 5. Navigation Bar (Tabs: Main / Player)
+-- 5. Tabs
 local TabBar = Instance.new("Frame")
 TabBar.Size = UDim2.new(0, 100, 1, -40)
 TabBar.Position = UDim2.new(0, 0, 0, 40)
@@ -160,7 +160,7 @@ PagesFolder.Parent = MainFrame
 local PageMain = Instance.new("ScrollingFrame")
 PageMain.Size = UDim2.new(1, 0, 1, 0)
 PageMain.BackgroundTransparency = 1
-PageMain.CanvasSize = UDim2.new(0, 0, 0, 380)
+PageMain.CanvasSize = UDim2.new(0, 0, 0, 320)
 PageMain.ScrollBarThickness = 4
 PageMain.Parent = PagesFolder
 
@@ -169,7 +169,6 @@ MainList.Padding = UDim.new(0, 8)
 MainList.HorizontalAlignment = Enum.HorizontalAlignment.Center
 MainList.Parent = PageMain
 
--- Variables សម្រាប់ Hacks
 local isFlying = false
 local isNoclip = false
 local isESP = false
@@ -198,7 +197,7 @@ local function createToggleBtn(text, parent, callback)
     return btn
 end
 
--- 1. Fly
+-- Fly
 createToggleBtn("Fly", PageMain, function(state)
     isFlying = state
     local char = LocalPlayer.Character
@@ -215,14 +214,14 @@ createToggleBtn("Fly", PageMain, function(state)
         task.spawn(function()
             while isFlying do
                 RunService.RenderStepped:Wait()
-                bv.Velocity = workspace.CurrentCamera.CFrame.LookVector * 50
+                bv.Velocity = Camera.CFrame.LookVector * 50
             end
             bv:Destroy()
         end)
     end
 end)
 
--- 2. Noclip All Parts
+-- Noclip
 createToggleBtn("Noclip All Part", PageMain, function(state)
     isNoclip = state
 end)
@@ -237,27 +236,74 @@ RunService.Stepped:Connect(function()
     end
 end)
 
--- 3. Box Line (ESP)
+-- ==========================================
+-- REAL 2D BOX & TRACER LINE ESP SYSTEM
+-- ==========================================
 createToggleBtn("Box Line (ESP)", PageMain, function(state)
     isESP = state
-    for _, p in pairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer and p.Character then
-            if state then
-                local hl = Instance.new("Highlight")
-                hl.Name = "ESPHighlight"
-                hl.FillColor = Color3.fromRGB(255, 0, 0)
-                hl.OutlineColor = Color3.fromRGB(255, 255, 255)
-                hl.Parent = p.Character
-            else
-                if p.Character:FindFirstChild("ESPHighlight") then
-                    p.Character.ESPHighlight:Destroy()
-                end
-            end
-        end
-    end
 end)
 
--- 4. Speed & Jump Inputs
+local function createESPForPlayer(plr)
+    local box = Drawing.new("Square")
+    box.Thickness = 1.5
+    box.Color = Color3.fromRGB(255, 50, 50)
+    box.Filled = false
+    box.Visible = false
+
+    local line = Drawing.new("Line")
+    line.Thickness = 1.5
+    line.Color = Color3.fromRGB(255, 255, 255)
+    line.Visible = false
+
+    local conn
+    conn = RunService.RenderStepped:Connect(function()
+        if isESP and plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") and plr.Character:FindFirstChild("Head") then
+            local hrp = plr.Character.HumanoidRootPart
+            local head = plr.Character.Head
+            
+            local hrpPos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
+            
+            if onScreen then
+                local headPos = Camera:WorldToViewportPoint(head.Position + Vector3.new(0, 0.5, 0))
+                local legPos = Camera:WorldToViewportPoint(hrp.Position - Vector3.new(0, 3, 0))
+                
+                local height = math.abs(headPos.Y - legPos.Y)
+                local width = height * 0.65
+                
+                box.Size = Vector2.new(width, height)
+                box.Position = Vector2.new(hrpPos.X - width / 2, hrpPos.Y - height / 2)
+                box.Visible = true
+
+                line.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
+                line.To = Vector2.new(hrpPos.X, hrpPos.Y)
+                line.Visible = true
+            else
+                box.Visible = false
+                line.Visible = false
+            end
+        else
+            box.Visible = false
+            line.Visible = false
+        end
+    end)
+
+    plr.AncestryChanged:Connect(function(_, parent)
+        if not parent then
+            box:Remove()
+            line:Remove()
+            if conn then conn:Disconnect() end
+        end
+    end)
+end
+
+for _, p in pairs(Players:GetPlayers()) do
+    if p ~= LocalPlayer then createESPForPlayer(p) end
+end
+Players.PlayerAdded:Connect(function(p)
+    if p ~= LocalPlayer then createESPForPlayer(p) end
+end)
+
+-- Speed Input Only (Removed Jump)
 local function createInput(placeholder, callback)
     local box = Instance.new("TextBox")
     box.Size = UDim2.new(0.9, 0, 0, 32)
@@ -285,14 +331,7 @@ createInput("Speed _______", function(val)
     end
 end)
 
-createInput("Jump _______", function(val)
-    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-        LocalPlayer.Character.Humanoid.UseJumpPower = true
-        LocalPlayer.Character.Humanoid.JumpPower = val
-    end
-end)
-
--- 5. Custom Name Tag
+-- Custom Name Tag
 createInput("Name Tag ______", function(text)
     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head") then
         local head = LocalPlayer.Character.Head
@@ -317,7 +356,7 @@ createInput("Name Tag ______", function(text)
 end)
 
 -- ==========================================
--- PAGE 2: PLAYER PAGE
+-- PAGE 2: PLAYER PAGE (WITH AVATAR IMAGES)
 -- ==========================================
 local PagePlayer = Instance.new("Frame")
 PagePlayer.Size = UDim2.new(1, 0, 1, 0)
@@ -386,7 +425,7 @@ local function updatePlayerList(searchText)
     for _, targetPlayer in pairs(Players:GetPlayers()) do
         if targetPlayer ~= LocalPlayer and (searchText == "" or targetPlayer.Name:lower():find(searchText)) then
             local card = Instance.new("Frame")
-            card.Size = UDim2.new(1, -8, 0, 35)
+            card.Size = UDim2.new(1, -8, 0, 38)
             card.BackgroundColor3 = Color3.fromRGB(35, 35, 48)
             card.Parent = PlayerListScroll
             
@@ -394,20 +433,35 @@ local function updatePlayerList(searchText)
             cCorner.CornerRadius = UDim.new(0, 6)
             cCorner.Parent = card
             
+            -- រូបភាព Avatar Headshot របស់ Player នីមួយៗ
+            local pAvatar = Instance.new("ImageLabel")
+            pAvatar.Size = UDim2.new(0, 28, 0, 28)
+            pAvatar.Position = UDim2.new(0, 5, 0, 5)
+            pAvatar.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
+            pAvatar.Image = "rbxthumb://type=AvatarHeadShot&id=" .. targetPlayer.UserId .. "&w=150&h=150"
+            pAvatar.Parent = card
+            
+            local pAvatarCorner = Instance.new("UICorner")
+            pAvatarCorner.CornerRadius = UDim.new(0, 6)
+            pAvatarCorner.Parent = pAvatar
+            
+            -- ឈ្មោះ Player
             local pName = Instance.new("TextLabel")
-            pName.Size = UDim2.new(0.65, 0, 1, 0)
-            pName.Position = UDim2.new(0, 10, 0, 0)
+            pName.Size = UDim2.new(0.5, 0, 1, 0)
+            pName.Position = UDim2.new(0, 40, 0, 0)
             pName.Text = targetPlayer.Name
             pName.TextColor3 = Color3.fromRGB(255, 255, 255)
             pName.TextXAlignment = Enum.TextXAlignment.Left
             pName.Font = Enum.Font.SourceSans
-            pName.TextSize = 14
+            pName.TextSize = 13
+            pName.TextTruncate = Enum.TextTruncate.AtEnd
             pName.BackgroundTransparency = 1
             pName.Parent = card
             
+            -- ប៊ូតុង Goto
             local gotoBtn = Instance.new("TextButton")
-            gotoBtn.Size = UDim2.new(0.3, -5, 0.8, 0)
-            gotoBtn.Position = UDim2.new(0.7, 0, 0.1, 0)
+            gotoBtn.Size = UDim2.new(0.28, 0, 0.75, 0)
+            gotoBtn.Position = UDim2.new(0.7, 0, 0.125, 0)
             gotoBtn.Text = "Goto"
             gotoBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
             gotoBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
