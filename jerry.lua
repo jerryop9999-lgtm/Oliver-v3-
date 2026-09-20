@@ -1,7 +1,6 @@
 -- ==========================================
--- DELTA EXECUTOR CUSTOM GUI SCRIPT
--- LOGO ID: 128290087536397
--- FLY SYSTEM: INFINITE YIELD (IY) STYLE
+-- SCRIPT NAME: OLIVER V3
+-- FLY SYSTEM: AUTHENTIC INFINITE YIELD ENGINE
 -- ==========================================
 
 local Players = game:GetService("Players")
@@ -11,6 +10,7 @@ local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local CoreGui = game:GetService("CoreGui")
 local Camera = workspace.CurrentCamera
+local Mouse = LocalPlayer:GetMouse()
 
 local CUSTOM_LOGO_ID = "rbxassetid://128290087536397"
 
@@ -106,10 +106,10 @@ HeaderLogo.BackgroundTransparency = 1
 HeaderLogo.Parent = TopBar
 
 local TitleLabel = Instance.new("TextLabel")
-TitleLabel.Size = UDim2.new(0, 150, 1, 0)
+TitleLabel.Size = UDim2.new(0, 200, 1, 0)
 TitleLabel.Position = UDim2.new(0, 45, 0, 0)
-TitleLabel.Text = "Delta Premium Hub"
-TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleLabel.Text = "OLIVER V3 HUB"
+TitleLabel.TextColor3 = Color3.fromRGB(0, 220, 255)
 TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
 TitleLabel.Font = Enum.Font.SourceSansBold
 TitleLabel.TextSize = 16
@@ -197,77 +197,106 @@ local function createToggleBtn(text, parent, callback)
 end
 
 -- ==========================================
--- REAL INFINITE YIELD (IY) FLY SYSTEM
+-- AUTHENTIC INFINITE YIELD (IY) FLY ENGINE
 -- ==========================================
-local isFlying = false
-local flySpeed = 50
-local flyGyro, flyVel, flyConn
+local FLYING = false
+local iyflyspeed = 1
+local flyKeyDown, flyKeyUp
 
-local function toggleIYFly(state)
-    isFlying = state
-    local char = LocalPlayer.Character
-    if not char then return end
-    local hrp = char:FindFirstChild("HumanoidRootPart")
-    local hum = char:FindFirstChildOfClass("Humanoid")
+local function sFLY()
+    repeat task.wait() until LocalPlayer and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
     
-    if not hrp or not hum then return end
+    if flyKeyDown or flyKeyUp then flyKeyDown:Disconnect() flyKeyUp:Disconnect() end
 
-    if isFlying then
-        flyGyro = Instance.new("BodyGyro")
-        flyGyro.Name = "IY_FlyGyro"
-        flyGyro.P = 9e4
-        flyGyro.maxTorque = Vector3.new(9e9, 9e9, 9e9)
-        flyGyro.cframe = hrp.CFrame
-        flyGyro.Parent = hrp
+    local T = LocalPlayer.Character:WaitForChild("HumanoidRootPart")
+    local CONTROL = {F = 0, B = 0, L = 0, R = 0, Q = 0, E = 0}
+    local lCONTROL = {F = 0, B = 0, L = 0, R = 0, Q = 0, E = 0}
+    local SPEED = 0
 
-        flyVel = Instance.new("BodyVelocity")
-        flyVel.Name = "IY_FlyVel"
-        flyVel.maxForce = Vector3.new(9e9, 9e9, 9e9)
-        flyVel.velocity = Vector3.new(0, 0, 0)
-        flyVel.Parent = hrp
+    local function FLY()
+        FLYING = true
+        local BG = Instance.new("BodyGyro")
+        local BV = Instance.new("BodyVelocity")
+        BG.P = 9e4
+        BG.Parent = T
+        BV.Parent = T
+        BG.maxTorque = Vector3.new(9e9, 9e9, 9e9)
+        BG.cframe = T.CFrame
+        BV.velocity = Vector3.new(0, 0, 0)
+        BV.maxForce = Vector3.new(9e9, 9e9, 9e9)
 
-        hum.PlatformStand = true
-
-        flyConn = RunService.RenderStepped:Connect(function()
-            if not isFlying or not char or not char.Parent or not hrp or not hum then
-                if flyConn then flyConn:Disconnect() end
-                if flyGyro then flyGyro:Destroy() end
-                if flyVel then flyVel:Destroy() end
-                if hum then hum.PlatformStand = false end
-                return
-            end
-
-            flyGyro.cframe = Camera.CFrame
-
-            local moveDir = hum.MoveDirection
-            if moveDir.Magnitude > 0 then
-                local camCF = Camera.CFrame
-                local flyDir = (camCF.LookVector * -moveDir.Z) + (camCF.RightVector * moveDir.X)
-                if flyDir.Magnitude > 0 then
-                    flyVel.velocity = flyDir.Unit * flySpeed
-                else
-                    flyVel.velocity = Vector3.new(0, 0, 0)
+        task.spawn(function()
+            repeat task.wait()
+                if LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+                    LocalPlayer.Character:FindFirstChildOfClass("Humanoid").PlatformStand = true
                 end
-            else
-                flyVel.velocity = Vector3.new(0, 0, 0)
+
+                if CONTROL.L + CONTROL.R ~= 0 or CONTROL.F + CONTROL.B ~= 0 or CONTROL.Q + CONTROL.E ~= 0 then
+                    SPEED = 50 * iyflyspeed
+                elseif not (CONTROL.L + CONTROL.R ~= 0 or CONTROL.F + CONTROL.B ~= 0 or CONTROL.Q + CONTROL.E ~= 0) and SPEED ~= 0 then
+                    SPEED = 0
+                end
+
+                if (CONTROL.L + CONTROL.R) ~= 0 or (CONTROL.F + CONTROL.B) ~= 0 or (CONTROL.Q + CONTROL.E) ~= 0 then
+                    BV.velocity = ((Camera.CFrame.LookVector * (CONTROL.F + CONTROL.B)) + ((Camera.CFrame * CFrame.new(CONTROL.L + CONTROL.R, (CONTROL.F + CONTROL.B + CONTROL.Q + CONTROL.E) * 0.2, 0).p) - Camera.CFrame.p)) * SPEED
+                    lCONTROL = {F = CONTROL.F, B = CONTROL.B, L = CONTROL.L, R = CONTROL.R, Q = CONTROL.Q, E = CONTROL.E}
+                elseif (CONTROL.L + CONTROL.R) == 0 and (CONTROL.F + CONTROL.B) == 0 and (CONTROL.Q + CONTROL.E) == 0 and SPEED ~= 0 then
+                    BV.velocity = ((Camera.CFrame.LookVector * (lCONTROL.F + lCONTROL.B)) + ((Camera.CFrame * CFrame.new(lCONTROL.L + lCONTROL.R, (lCONTROL.F + lCONTROL.B + lCONTROL.Q + lCONTROL.E) * 0.2, 0).p) - Camera.CFrame.p)) * SPEED
+                else
+                    BV.velocity = Vector3.new(0, 0, 0)
+                end
+                BG.cframe = Camera.CFrame
+            until not FLYING
+
+            CONTROL = {F = 0, B = 0, L = 0, R = 0, Q = 0, E = 0}
+            lCONTROL = {F = 0, B = 0, L = 0, R = 0, Q = 0, E = 0}
+            SPEED = 0
+            BG:Destroy()
+            BV:Destroy()
+            if LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+                LocalPlayer.Character:FindFirstChildOfClass("Humanoid").PlatformStand = false
             end
         end)
-    else
-        if flyConn then flyConn:Disconnect() end
-        if flyGyro then flyGyro:Destroy() end
-        if flyVel then flyVel:Destroy() end
-        if hum then hum.PlatformStand = false end
+    end
+
+    flyKeyDown = Mouse.KeyDown:Connect(function(KEY)
+        if KEY:lower() == 'w' then CONTROL.F = 1
+        elseif KEY:lower() == 's' then CONTROL.B = -1
+        elseif KEY:lower() == 'a' then CONTROL.L = -1
+        elseif KEY:lower() == 'd' then CONTROL.R = 1
+        elseif KEY:lower() == 'e' then CONTROL.Q = 2
+        elseif KEY:lower() == 'q' then CONTROL.E = -2
+        end
+    end)
+
+    flyKeyUp = Mouse.KeyUp:Connect(function(KEY)
+        if KEY:lower() == 'w' then CONTROL.F = 0
+        elseif KEY:lower() == 's' then CONTROL.B = 0
+        elseif KEY:lower() == 'a' then CONTROL.L = 0
+        elseif KEY:lower() == 'd' then CONTROL.R = 0
+        elseif KEY:lower() == 'e' then CONTROL.Q = 0
+        elseif KEY:lower() == 'q' then CONTROL.E = 0
+        end
+    end)
+
+    FLY()
+end
+
+local function NOFLY()
+    FLYING = false
+    if flyKeyDown then flyKeyDown:Disconnect() end
+    if flyKeyUp then flyKeyUp:Disconnect() end
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+        LocalPlayer.Character:FindFirstChildOfClass("Humanoid").PlatformStand = false
     end
 end
 
-LocalPlayer.CharacterAdded:Connect(function()
-    if isFlying then
-        toggleIYFly(false)
+createToggleBtn("Fly (IY Engine)", PageMain, function(state)
+    if state then
+        sFLY()
+    else
+        NOFLY()
     end
-end)
-
-createToggleBtn("Fly (IY Style)", PageMain, function(state)
-    toggleIYFly(state)
 end)
 
 -- Noclip All Parts
@@ -372,7 +401,11 @@ local function createInput(placeholder, callback)
     end)
 end
 
-createInput("Speed _______", function(val)
+createInput("Fly Speed (Default 1) ______", function(val)
+    iyflyspeed = val
+end)
+
+createInput("WalkSpeed ______", function(val)
     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
         LocalPlayer.Character.Humanoid.WalkSpeed = val
     end
