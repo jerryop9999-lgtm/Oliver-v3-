@@ -1,5 +1,5 @@
 -- ==========================================
--- SCRIPT NAME: OLIVER V3 (WITH SUPER RING V5)
+-- SCRIPT NAME: OLIVER V3 HUB (WITH SUPER RING PART V5)
 -- FLY SYSTEM: AUTHENTIC INFINITE YIELD ENGINE
 -- ==========================================
 
@@ -161,7 +161,7 @@ PagesFolder.Parent = MainFrame
 local PageMain = Instance.new("ScrollingFrame")
 PageMain.Size = UDim2.new(1, 0, 1, 0)
 PageMain.BackgroundTransparency = 1
-PageMain.CanvasSize = UDim2.new(0, 0, 0, 400)
+PageMain.CanvasSize = UDim2.new(0, 0, 0, 480)
 PageMain.ScrollBarThickness = 4
 PageMain.Parent = PagesFolder
 
@@ -198,7 +198,7 @@ local function createToggleBtn(text, parent, callback)
 end
 
 -- ==========================================
--- SUPER RING PART V5 SYSTEM
+-- 1. SUPER RING PART V5 SYSTEM
 -- ==========================================
 local isSuperRing = false
 local ringRadius = 12
@@ -207,7 +207,6 @@ local ringFlingPower = 999999
 local ringAngle = 0
 local ringConnection = nil
 
--- Network Simulation Radius Boost
 local sethidden = sethiddenproperty or set_hidden_property or set_hidden_prop
 task.spawn(function()
     while task.wait(0.1) do
@@ -282,12 +281,13 @@ local function toggleSuperRing(state)
     end
 end
 
+-- បង្កើតប៊ូតុង Super Ring Part V5 នៅលើគេបង្អស់នៃ Main Page
 createToggleBtn("Super Ring Part V5", PageMain, function(state)
     toggleSuperRing(state)
 end)
 
 -- ==========================================
--- FLY SYSTEM - IY-STYLE
+-- 2. FLY SYSTEM - IY-STYLE
 -- ==========================================
 local FLYING = false
 local flySpeed = 50
@@ -564,7 +564,7 @@ Players.PlayerAdded:Connect(function(p)
     if p ~= LocalPlayer then createESPForPlayer(p) end
 end)
 
--- Speed Input Box
+-- Inputs (Fly Speed, Ring Radius, WalkSpeed, Name Tag)
 local function createInput(placeholder, callback)
     local box = Instance.new("TextBox")
     box.Size = UDim2.new(0.9, 0, 0, 32)
@@ -586,12 +586,12 @@ local function createInput(placeholder, callback)
     end)
 end
 
-createInput("Fly Speed (Default 50) ______", function(val)
-    flySpeed = val
-end)
-
 createInput("Ring Radius (Default 12) ______", function(val)
     ringRadius = val
+end)
+
+createInput("Fly Speed (Default 50) ______", function(val)
+    flySpeed = val
 end)
 
 createInput("WalkSpeed ______", function(val)
