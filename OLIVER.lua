@@ -1,5 +1,5 @@
 -- ==========================================
--- SCRIPT NAME: OLIVER V3
+-- SCRIPT NAME: OLIVER V3 (WITH SUPER RING V5)
 -- FLY SYSTEM: AUTHENTIC INFINITE YIELD ENGINE
 -- ==========================================
 
@@ -21,6 +21,7 @@ ScreenGui.ResetOnSpawn = false
 
 if gethui then
     ScreenGui.Parent = gethui()
+    ScreenGui.DisplayOrder = 10000
 elseif syn and syn.protect_gui then
     syn.protect_gui(ScreenGui)
     ScreenGui.Parent = CoreGui
@@ -160,7 +161,7 @@ PagesFolder.Parent = MainFrame
 local PageMain = Instance.new("ScrollingFrame")
 PageMain.Size = UDim2.new(1, 0, 1, 0)
 PageMain.BackgroundTransparency = 1
-PageMain.CanvasSize = UDim2.new(0, 0, 0, 320)
+PageMain.CanvasSize = UDim2.new(0, 0, 0, 400)
 PageMain.ScrollBarThickness = 4
 PageMain.Parent = PagesFolder
 
@@ -197,9 +198,96 @@ local function createToggleBtn(text, parent, callback)
 end
 
 -- ==========================================
+-- SUPER RING PART V5 SYSTEM
+-- ==========================================
+local isSuperRing = false
+local ringRadius = 12
+local ringSpeed = 15
+local ringFlingPower = 999999
+local ringAngle = 0
+local ringConnection = nil
+
+-- Network Simulation Radius Boost
+local sethidden = sethiddenproperty or set_hidden_property or set_hidden_prop
+task.spawn(function()
+    while task.wait(0.1) do
+        pcall(function()
+            if sethidden and isSuperRing then
+                sethidden(LocalPlayer, "MaximumSimulationRadius", math.huge)
+                sethidden(LocalPlayer, "SimulationRadius", math.huge)
+            end
+        end)
+    end
+end)
+
+local function getUnanchoredParts()
+    local parts = {}
+    for _, v in ipairs(workspace:GetDescendants()) do
+        if v:IsA("BasePart") and not v.Anchored then
+            local isCharacterPart = false
+            for _, player in ipairs(Players:GetPlayers()) do
+                if player.Character and v:IsDescendantOf(player.Character) then
+                    isCharacterPart = true
+                    break
+                end
+            end
+            if not isCharacterPart then
+                table.insert(parts, v)
+            end
+        end
+    end
+    return parts
+end
+
+local function toggleSuperRing(state)
+    isSuperRing = state
+    if isSuperRing then
+        if ringConnection then ringConnection:Disconnect() end
+        ringConnection = RunService.Heartbeat:Connect(function(dt)
+            local char = LocalPlayer.Character
+            if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+            local root = char.HumanoidRootPart
+
+            for _, myPart in ipairs(char:GetChildren()) do
+                if myPart:IsA("BasePart") then
+                    myPart.CanCollide = false
+                end
+            end
+
+            ringAngle = ringAngle + (dt * ringSpeed)
+            local parts = getUnanchoredParts()
+            local totalParts = #parts
+
+            if totalParts > 0 then
+                for i, part in ipairs(parts) do
+                    local currentAngle = ringAngle + ((i / totalParts) * math.pi * 2)
+                    local x = math.cos(currentAngle) * ringRadius
+                    local z = math.sin(currentAngle) * ringRadius
+                    local targetPos = root.Position + Vector3.new(x, -1, z)
+
+                    part.CanCollide = true
+                    part.CFrame = CFrame.new(targetPos, root.Position)
+                    
+                    local outwardVector = (targetPos - root.Position).Unit * ringFlingPower
+                    part.AssemblyLinearVelocity = Vector3.new(outwardVector.X, ringFlingPower, outwardVector.Z)
+                    part.AssemblyAngularVelocity = Vector3.new(99999, 99999, 99999)
+                end
+            end
+        end)
+    else
+        if ringConnection then
+            ringConnection:Disconnect()
+            ringConnection = nil
+        end
+    end
+end
+
+createToggleBtn("Super Ring Part V5", PageMain, function(state)
+    toggleSuperRing(state)
+end)
+
+-- ==========================================
 -- FLY SYSTEM - IY-STYLE
--- Keyboard: W/A/S/D = move, E = up, Q = down
--- Mobile: on-screen direction controls
 -- ==========================================
 local FLYING = false
 local flySpeed = 50
@@ -498,8 +586,12 @@ local function createInput(placeholder, callback)
     end)
 end
 
-createInput("Fly Speed (Default 1) ______", function(val)
-    iyflyspeed = val
+createInput("Fly Speed (Default 50) ______", function(val)
+    flySpeed = val
+end)
+
+createInput("Ring Radius (Default 12) ______", function(val)
+    ringRadius = val
 end)
 
 createInput("WalkSpeed ______", function(val)
