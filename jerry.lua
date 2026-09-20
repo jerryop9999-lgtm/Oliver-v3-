@@ -1,7 +1,7 @@
 -- ==========================================
 -- DELTA EXECUTOR CUSTOM GUI SCRIPT
 -- LOGO ID: 128290087536397
--- UPDATED: ESP BOX & LINE + PLAYER AVATARS
+-- FLY SYSTEM: INFINITE YIELD (IY) STYLE
 -- ==========================================
 
 local Players = game:GetService("Players")
@@ -16,7 +16,7 @@ local CUSTOM_LOGO_ID = "rbxassetid://128290087536397"
 
 -- 1. ScreenGui Setup
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "DeltaCustomHub"
+ScreenGui.Name = "OLIVER V3"
 ScreenGui.ResetOnSpawn = false
 
 if gethui then
@@ -169,7 +169,6 @@ MainList.Padding = UDim.new(0, 8)
 MainList.HorizontalAlignment = Enum.HorizontalAlignment.Center
 MainList.Parent = PageMain
 
-local isFlying = false
 local isNoclip = false
 local isESP = false
 
@@ -197,31 +196,81 @@ local function createToggleBtn(text, parent, callback)
     return btn
 end
 
--- Fly
-createToggleBtn("Fly", PageMain, function(state)
+-- ==========================================
+-- REAL INFINITE YIELD (IY) FLY SYSTEM
+-- ==========================================
+local isFlying = false
+local flySpeed = 50
+local flyGyro, flyVel, flyConn
+
+local function toggleIYFly(state)
     isFlying = state
     local char = LocalPlayer.Character
-    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
-    local hrp = char.HumanoidRootPart
+    if not char then return end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    local hum = char:FindFirstChildOfClass("Humanoid")
     
+    if not hrp or not hum then return end
+
     if isFlying then
-        local bv = Instance.new("BodyVelocity")
-        bv.Name = "FlyVelocity"
-        bv.MaxForce = Vector3.new(1e9, 1e9, 1e9)
-        bv.Velocity = Vector3.new(0, 0, 0)
-        bv.Parent = hrp
-        
-        task.spawn(function()
-            while isFlying do
-                RunService.RenderStepped:Wait()
-                bv.Velocity = Camera.CFrame.LookVector * 50
+        flyGyro = Instance.new("BodyGyro")
+        flyGyro.Name = "IY_FlyGyro"
+        flyGyro.P = 9e4
+        flyGyro.maxTorque = Vector3.new(9e9, 9e9, 9e9)
+        flyGyro.cframe = hrp.CFrame
+        flyGyro.Parent = hrp
+
+        flyVel = Instance.new("BodyVelocity")
+        flyVel.Name = "IY_FlyVel"
+        flyVel.maxForce = Vector3.new(9e9, 9e9, 9e9)
+        flyVel.velocity = Vector3.new(0, 0, 0)
+        flyVel.Parent = hrp
+
+        hum.PlatformStand = true
+
+        flyConn = RunService.RenderStepped:Connect(function()
+            if not isFlying or not char or not char.Parent or not hrp or not hum then
+                if flyConn then flyConn:Disconnect() end
+                if flyGyro then flyGyro:Destroy() end
+                if flyVel then flyVel:Destroy() end
+                if hum then hum.PlatformStand = false end
+                return
             end
-            bv:Destroy()
+
+            flyGyro.cframe = Camera.CFrame
+
+            local moveDir = hum.MoveDirection
+            if moveDir.Magnitude > 0 then
+                local camCF = Camera.CFrame
+                local flyDir = (camCF.LookVector * -moveDir.Z) + (camCF.RightVector * moveDir.X)
+                if flyDir.Magnitude > 0 then
+                    flyVel.velocity = flyDir.Unit * flySpeed
+                else
+                    flyVel.velocity = Vector3.new(0, 0, 0)
+                end
+            else
+                flyVel.velocity = Vector3.new(0, 0, 0)
+            end
         end)
+    else
+        if flyConn then flyConn:Disconnect() end
+        if flyGyro then flyGyro:Destroy() end
+        if flyVel then flyVel:Destroy() end
+        if hum then hum.PlatformStand = false end
+    end
+end
+
+LocalPlayer.CharacterAdded:Connect(function()
+    if isFlying then
+        toggleIYFly(false)
     end
 end)
 
--- Noclip
+createToggleBtn("Fly (IY Style)", PageMain, function(state)
+    toggleIYFly(state)
+end)
+
+-- Noclip All Parts
 createToggleBtn("Noclip All Part", PageMain, function(state)
     isNoclip = state
 end)
@@ -236,9 +285,7 @@ RunService.Stepped:Connect(function()
     end
 end)
 
--- ==========================================
--- REAL 2D BOX & TRACER LINE ESP SYSTEM
--- ==========================================
+-- 2D Box & Tracer Line ESP System
 createToggleBtn("Box Line (ESP)", PageMain, function(state)
     isESP = state
 end)
@@ -303,7 +350,7 @@ Players.PlayerAdded:Connect(function(p)
     if p ~= LocalPlayer then createESPForPlayer(p) end
 end)
 
--- Speed Input Only (Removed Jump)
+-- Speed Input Box
 local function createInput(placeholder, callback)
     local box = Instance.new("TextBox")
     box.Size = UDim2.new(0.9, 0, 0, 32)
@@ -356,7 +403,7 @@ createInput("Name Tag ______", function(text)
 end)
 
 -- ==========================================
--- PAGE 2: PLAYER PAGE (WITH AVATAR IMAGES)
+-- PAGE 2: PLAYER PAGE
 -- ==========================================
 local PagePlayer = Instance.new("Frame")
 PagePlayer.Size = UDim2.new(1, 0, 1, 0)
@@ -364,7 +411,7 @@ PagePlayer.BackgroundTransparency = 1
 PagePlayer.Visible = false
 PagePlayer.Parent = PagesFolder
 
--- Local Player Info Header
+-- Local Player Avatar Header
 local AvatarImage = Instance.new("ImageLabel")
 AvatarImage.Size = UDim2.new(0, 45, 0, 45)
 AvatarImage.Position = UDim2.new(0, 10, 0, 10)
@@ -403,7 +450,7 @@ local SearchCorner = Instance.new("UICorner")
 SearchCorner.CornerRadius = UDim.new(0, 6)
 SearchCorner.Parent = SearchBox
 
--- Player List Scroll Container
+-- Player Scroll List
 local PlayerListScroll = Instance.new("ScrollingFrame")
 PlayerListScroll.Size = UDim2.new(0.95, 0, 1, -105)
 PlayerListScroll.Position = UDim2.new(0.025, 0, 0, 100)
@@ -433,7 +480,7 @@ local function updatePlayerList(searchText)
             cCorner.CornerRadius = UDim.new(0, 6)
             cCorner.Parent = card
             
-            -- រូបភាព Avatar Headshot របស់ Player នីមួយៗ
+            -- Avatar Headshot Icon
             local pAvatar = Instance.new("ImageLabel")
             pAvatar.Size = UDim2.new(0, 28, 0, 28)
             pAvatar.Position = UDim2.new(0, 5, 0, 5)
@@ -445,7 +492,7 @@ local function updatePlayerList(searchText)
             pAvatarCorner.CornerRadius = UDim.new(0, 6)
             pAvatarCorner.Parent = pAvatar
             
-            -- ឈ្មោះ Player
+            -- Player Name
             local pName = Instance.new("TextLabel")
             pName.Size = UDim2.new(0.5, 0, 1, 0)
             pName.Position = UDim2.new(0, 40, 0, 0)
@@ -458,7 +505,7 @@ local function updatePlayerList(searchText)
             pName.BackgroundTransparency = 1
             pName.Parent = card
             
-            -- ប៊ូតុង Goto
+            -- Goto Button
             local gotoBtn = Instance.new("TextButton")
             gotoBtn.Size = UDim2.new(0.28, 0, 0.75, 0)
             gotoBtn.Position = UDim2.new(0.7, 0, 0.125, 0)
@@ -489,9 +536,7 @@ end)
 Players.PlayerAdded:Connect(function() updatePlayerList(SearchBox.Text) end)
 Players.PlayerRemoving:Connect(function() updatePlayerList(SearchBox.Text) end)
 
--- ==========================================
--- TAB SWITCHING SYSTEM
--- ==========================================
+-- Tab Navigation System
 TabMainBtn.MouseButton1Click:Connect(function()
     PageMain.Visible = true
     PagePlayer.Visible = false
