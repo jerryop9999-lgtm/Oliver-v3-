@@ -586,6 +586,59 @@ end)
 -- ==========================================
 -- PAGE 2: PLAYER PAGE
 -- ==========================================
+
+-- ============================================================
+-- OLIVER V3 - ANIMATIONS PAGE (COMING SOON)
+-- ============================================================
+local PageAnimations = Instance.new("ScrollingFrame")
+PageAnimations.Name = "Animations"
+PageAnimations.Size = UDim2.new(1, 0, 1, 0)
+PageAnimations.BackgroundTransparency = 1
+PageAnimations.BorderSizePixel = 0
+PageAnimations.ScrollBarThickness = 4
+PageAnimations.Visible = false
+PageAnimations.CanvasSize = UDim2.new(0, 0, 0, 0)
+PageAnimations.Parent = MainFrame
+
+local AnimationsLogo = Instance.new("ImageLabel")
+AnimationsLogo.Name = "PageLogo"
+AnimationsLogo.Size = UDim2.new(0, 42, 0, 42)
+AnimationsLogo.Position = UDim2.new(0, 18, 0, 18)
+AnimationsLogo.BackgroundTransparency = 1
+AnimationsLogo.Image = "rbxassetid://131681030058686"
+AnimationsLogo.Parent = PageAnimations
+
+local AnimationsTitle = Instance.new("TextLabel")
+AnimationsTitle.Size = UDim2.new(1, -80, 0, 42)
+AnimationsTitle.Position = UDim2.new(0, 70, 0, 18)
+AnimationsTitle.BackgroundTransparency = 1
+AnimationsTitle.Text = "Animations"
+AnimationsTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+AnimationsTitle.Font = Enum.Font.SourceSansBold
+AnimationsTitle.TextSize = 22
+AnimationsTitle.TextXAlignment = Enum.TextXAlignment.Left
+AnimationsTitle.Parent = PageAnimations
+
+local ComingSoon = Instance.new("TextLabel")
+ComingSoon.Name = "ComingSoon"
+ComingSoon.Size = UDim2.new(0.9, 0, 0, 80)
+ComingSoon.Position = UDim2.new(0.05, 0, 0.5, -40)
+ComingSoon.BackgroundTransparency = 1
+ComingSoon.Text = "COMING SOON"
+ComingSoon.Font = Enum.Font.GothamBlack
+ComingSoon.TextSize = 34
+ComingSoon.TextStrokeTransparency = 0.55
+ComingSoon.Parent = PageAnimations
+
+local rgbHue = 0
+RunService.RenderStepped:Connect(function(dt)
+    if ComingSoon.Parent then
+        rgbHue = (rgbHue + dt * 0.35) % 1
+        ComingSoon.TextColor3 = Color3.fromHSV(rgbHue, 1, 1)
+    end
+end)
+
+
 local PagePlayer = Instance.new("Frame")
 PagePlayer.Size = UDim2.new(1, 0, 1, 0)
 PagePlayer.BackgroundTransparency = 1
@@ -761,7 +814,6 @@ end)
 -- OLIVER V3 - UPDATED EXTRAS
 -- Infinite Jump: removed
 -- Name Tag: removed
--- Anti-AFK: toggle
 -- WalkSpeed: toggle + value
 -- Fly: mobile joystick supported
 -- FPS/Ping: shown in header
@@ -800,52 +852,7 @@ local function createExtraButton(text, callback)
     return btn
 end
 
-local antiAFKEnabled = false
-local antiAFKConnection
-local antiAFKHeartbeat
 local VirtualUser = game:GetService("VirtualUser")
-
-local function setAntiAFK(state)
-    antiAFKEnabled = state
-
-    if antiAFKConnection then
-        antiAFKConnection:Disconnect()
-        antiAFKConnection = nil
-    end
-
-    if antiAFKHeartbeat then
-        antiAFKHeartbeat:Disconnect()
-        antiAFKHeartbeat = nil
-    end
-
-    if state then
-        antiAFKConnection = LocalPlayer.Idled:Connect(function()
-            pcall(function()
-                VirtualUser:CaptureController()
-                VirtualUser:ClickButton2(Vector2.new(0, 0))
-            end)
-        end)
-
-        -- Periodic idle-reset attempt while enabled.
-        local elapsed = 0
-        antiAFKHeartbeat = RunService.Heartbeat:Connect(function(dt)
-            elapsed += dt
-            if elapsed >= 30 then
-                elapsed = 0
-                pcall(function()
-                    VirtualUser:CaptureController()
-                    VirtualUser:ClickButton2(Vector2.new(0, 0))
-                end)
-            end
-        end)
-    end
-end
-
-local antiAFKBtn = createExtraButton("Anti-AFK: OFF", function(btn)
-    setAntiAFK(not antiAFKEnabled)
-    btn.Text = "Anti-AFK: " .. (antiAFKEnabled and "ON" or "OFF")
-    btn.BackgroundColor3 = antiAFKEnabled and Color3.fromRGB(0, 170, 100) or Color3.fromRGB(45, 45, 60)
-end)
 
 createExtraButton("Reset Character", function()
     local char = LocalPlayer.Character
@@ -864,14 +871,10 @@ createExtraButton("RESTORE ALL", function()
 
     isNoclip = false
     isESP = false
-    setAntiAFK(false)
 
     walkSpeedEnabled = false
     applyWalkSpeed()
 
-    if antiAFKBtn then
-        antiAFKBtn.Text = "Anti-AFK: OFF"
-        antiAFKBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
     end
 end)
 
@@ -922,3 +925,5 @@ local function setOliverOrder()
 end
 setOliverOrder()
 
+
+-- Animations page is created above; connect it to the existing sidebar in your tab switcher.
