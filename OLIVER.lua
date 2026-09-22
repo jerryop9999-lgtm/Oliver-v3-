@@ -173,8 +173,8 @@ TabAnimationsBtn.Parent = TabBar
 local function setPageButtonLogo(tabButton, assetId)
     local tabLogo = Instance.new("ImageLabel")
     tabLogo.Name = "Logo"
-    tabLogo.Size = UDim2.new(0, 26, 0, 26)
-    tabLogo.Position = UDim2.new(0.5, -13, 0.5, -13)
+    tabLogo.Size = UDim2.new(0, 30, 0, 30)
+    tabLogo.Position = UDim2.new(0.5, -15, 0.5, -15)
     tabLogo.BackgroundTransparency = 1
     tabLogo.Image = assetId
     tabLogo.Parent = tabButton
@@ -196,9 +196,11 @@ PagesFolder.Parent = MainFrame
 local function addPageLogo(page, title)
     local logo = Instance.new("ImageLabel")
     logo.Name = "PageLogo"
-    logo.Size = UDim2.new(0, 42, 0, 42)
-    logo.Position = UDim2.new(0, 10, 0, 8)
+    logo.Size = UDim2.new(0, 58, 0, 58)
+    logo.AnchorPoint = Vector2.new(0.5, 0)
+    logo.Position = UDim2.new(0.5, 0, 0, 8)
     logo.BackgroundTransparency = 1
+    logo.ScaleType = Enum.ScaleType.Fit
 
     if title == "Main" then
         logo.Image = "rbxassetid://111648653308842"
