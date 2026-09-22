@@ -211,7 +211,100 @@ MainList.HorizontalAlignment = Enum.HorizontalAlignment.Center
 MainList.SortOrder = Enum.SortOrder.LayoutOrder
 MainList.Parent = PageMain
 
-local MainPagePadding = Instance.new("UIPadding")
+local 
+--// OLIVER_SPIN_MAIN_UI
+local SpinSection = Instance.new("Frame")
+SpinSection.Name = "OLIVER_SPIN_MAIN_UI"
+SpinSection.Size = UDim2.new(1, 0, 0, 92)
+SpinSection.BackgroundColor3 = Color3.fromRGB(18, 27, 40)
+SpinSection.BackgroundTransparency = 0.05
+SpinSection.BorderSizePixel = 0
+SpinSection.LayoutOrder = 20
+SpinSection.Parent = MainPage
+
+local SpinCorner = Instance.new("UICorner")
+SpinCorner.CornerRadius = UDim.new(0, 10)
+SpinCorner.Parent = SpinSection
+
+local SpinTitle = Instance.new("TextLabel")
+SpinTitle.BackgroundTransparency = 1
+SpinTitle.Size = UDim2.new(0.55, 0, 0, 25)
+SpinTitle.Position = UDim2.new(0, 12, 0, 8)
+SpinTitle.Font = Enum.Font.GothamBold
+SpinTitle.Text = "SPIN"
+SpinTitle.TextSize = 13
+SpinTitle.TextColor3 = Color3.fromRGB(75, 210, 255)
+SpinTitle.TextXAlignment = Enum.TextXAlignment.Left
+SpinTitle.Parent = SpinSection
+
+local SpinDesc = Instance.new("TextLabel")
+SpinDesc.BackgroundTransparency = 1
+SpinDesc.Size = UDim2.new(0.55, 0, 0, 20)
+SpinDesc.Position = UDim2.new(0, 12, 0, 34)
+SpinDesc.Font = Enum.Font.Gotham
+SpinDesc.Text = "Rotate character • ON / OFF"
+SpinDesc.TextSize = 9
+SpinDesc.TextColor3 = Color3.fromRGB(135, 165, 190)
+SpinDesc.TextXAlignment = Enum.TextXAlignment.Left
+SpinDesc.Parent = SpinSection
+
+local SpinButton = Instance.new("TextButton")
+SpinButton.Size = UDim2.new(0, 92, 0, 32)
+SpinButton.Position = UDim2.new(1, -104, 0, 9)
+SpinButton.BackgroundColor3 = Color3.fromRGB(35, 50, 68)
+SpinButton.BorderSizePixel = 0
+SpinButton.Font = Enum.Font.GothamBold
+SpinButton.Text = "SPIN : OFF"
+SpinButton.TextSize = 10
+SpinButton.TextColor3 = Color3.fromRGB(220, 230, 240)
+SpinButton.Parent = SpinSection
+
+local SpinButtonCorner = Instance.new("UICorner")
+SpinButtonCorner.CornerRadius = UDim.new(0, 8)
+SpinButtonCorner.Parent = SpinButton
+
+local SpinSpeedBox = Instance.new("TextBox")
+SpinSpeedBox.Size = UDim2.new(0, 92, 0, 32)
+SpinSpeedBox.Position = UDim2.new(1, -104, 0, 49)
+SpinSpeedBox.BackgroundColor3 = Color3.fromRGB(12, 22, 34)
+SpinSpeedBox.BorderSizePixel = 0
+SpinSpeedBox.Font = Enum.Font.Gotham
+SpinSpeedBox.PlaceholderText = "Spin speed..."
+SpinSpeedBox.Text = "10"
+SpinSpeedBox.TextSize = 10
+SpinSpeedBox.TextColor3 = Color3.fromRGB(235, 240, 245)
+SpinSpeedBox.PlaceholderColor3 = Color3.fromRGB(110, 135, 155)
+SpinSpeedBox.ClearTextOnFocus = false
+SpinSpeedBox.Parent = SpinSection
+
+local SpinSpeedCorner = Instance.new("UICorner")
+SpinSpeedCorner.CornerRadius = UDim.new(0, 8)
+SpinSpeedCorner.Parent = SpinSpeedBox
+
+SpinButton.Activated:Connect(function()
+    spinEnabled = not spinEnabled
+    if spinEnabled then
+        startSpin()
+        SpinButton.Text = "SPIN : ON"
+        SpinButton.BackgroundColor3 = Color3.fromRGB(0, 125, 185)
+    else
+        stopSpin()
+        SpinButton.Text = "SPIN : OFF"
+        SpinButton.BackgroundColor3 = Color3.fromRGB(35, 50, 68)
+    end
+end)
+
+SpinSpeedBox.FocusLost:Connect(function()
+    local value = tonumber(SpinSpeedBox.Text)
+    if value then
+        spinSpeed = math.clamp(value, 1, 360)
+        SpinSpeedBox.Text = tostring(spinSpeed)
+    else
+        SpinSpeedBox.Text = tostring(spinSpeed or 10)
+    end
+end)
+
+MainPagePadding = Instance.new("UIPadding")
 MainPagePadding.PaddingTop = UDim.new(0, 50)
 MainPagePadding.PaddingBottom = UDim.new(0, 12)
 MainPagePadding.Parent = PageMain
