@@ -262,7 +262,7 @@ SpinRow.Name = "Spin"
 SpinRow.Size = UDim2.new(0.9, 0, 0, 74)
 SpinRow.BackgroundColor3 = Color3.fromRGB(35, 35, 48)
 SpinRow.BorderSizePixel = 0
-SpinRow.LayoutOrder = 10
+SpinRow.LayoutOrder = -8
 SpinRow.Parent = PageMain
 
 local SpinRowCorner = Instance.new("UICorner")
@@ -286,7 +286,7 @@ SpinButton.Position = UDim2.new(1, -98, 0, 7)
 SpinButton.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
 SpinButton.BorderSizePixel = 0
 SpinButton.Font = Enum.Font.SourceSansBold
-SpinButton.Text = "OFF"
+SpinButton.Text = "Spin: OFF"
 SpinButton.TextSize = 13
 SpinButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 SpinButton.Parent = SpinRow
@@ -316,7 +316,7 @@ SpinSpeedLabel.BackgroundTransparency = 1
 SpinSpeedLabel.Position = UDim2.new(0, 12, 0, 40)
 SpinSpeedLabel.Size = UDim2.new(0.5, 0, 0, 25)
 SpinSpeedLabel.Font = Enum.Font.SourceSans
-SpinSpeedLabel.Text = "Spin speed"
+SpinSpeedLabel.Text = "Spin Speed"
 SpinSpeedLabel.TextSize = 12
 SpinSpeedLabel.TextColor3 = Color3.fromRGB(175, 175, 190)
 SpinSpeedLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -327,7 +327,7 @@ SpinButton.MouseButton1Click:Connect(function()
 
     if spinEnabled then
         startSpin()
-        SpinButton.Text = "ON"
+        SpinButton.Text = "Spin: ON"
         SpinButton.BackgroundColor3 = Color3.fromRGB(0, 170, 100)
     else
         stopSpin()
