@@ -208,11 +208,15 @@ local function getSpinRoot()
     return char:FindFirstChild("HumanoidRootPart")
 end
 
+local spinAngle = 0
+
 local function applySpin(root, dt)
     if not root or not root.Parent then return end
 
-    -- Keep the spin rate independent of walking. Humanoid movement can change
-    -- the root orientation, so only apply the requested Spin Speed here.
+    -- Accumulate one continuous angle. This prevents walking/Humanoid
+    -- orientation updates from resetting or slowing the spin.
+    spinAngle = (spinAngle + math.rad(spinSpeed) * dt) % (math.pi * 2)
+
     local position = root.Position
     local look = root.CFrame.LookVector
     local flatLook = Vector3.new(look.X, 0, look.Z)
@@ -223,15 +227,16 @@ local function applySpin(root, dt)
         flatLook = flatLook.Unit
     end
 
-    local currentFacing = CFrame.lookAt(position, position + flatLook, Vector3.yAxis)
-    local rotated = currentFacing * CFrame.Angles(0, math.rad(spinSpeed) * dt, 0)
+    local baseFacing = CFrame.lookAt(Vector3.zero, flatLook, Vector3.yAxis)
+    local rotationOnly = baseFacing * CFrame.Angles(0, spinAngle, 0)
 
-    root.CFrame = CFrame.new(position) * (rotated - rotated.Position)
+    root.CFrame = CFrame.new(position) * rotationOnly
     root.AssemblyAngularVelocity = Vector3.zero
 end
 
 local function stopSpin()
     spinEnabled = false
+    spinAngle = 0
 
     if spinConnection then
         spinConnection:Disconnect()
@@ -261,6 +266,7 @@ local function startSpin()
     end
 
     spinEnabled = true
+    spinAngle = 0
 
     spinConnection = RunService.RenderStepped:Connect(function(dt)
         if not spinEnabled then return end
@@ -384,7 +390,7 @@ SpinSpeedBox.FocusLost:Connect(function()
     local value = tonumber(SpinSpeedBox.Text)
 
     if value then
-        spinSpeed = math.clamp(value, 10, 1000)
+        spinSpeed = math.max(value, 10)
         SpinSpeedBox.Text = tostring(spinSpeed)
     else
         SpinSpeedBox.Text = tostring(spinSpeed)
