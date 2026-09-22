@@ -201,42 +201,52 @@ local spinEnabled = false
 local spinSpeed = 10
 local spinConnection
 local spinCharacterConnection
+local spinAngle = 0
+local spinBaseRotation
+local spinSavedAutoRotate
 
-local function getSpinRoot()
+local function getSpinCharacter()
     local char = LocalPlayer.Character
-    if not char then return nil end
-    return char:FindFirstChild("HumanoidRootPart")
+    if not char then return nil, nil, nil end
+
+    local root = char:FindFirstChild("HumanoidRootPart")
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    return char, root, hum
 end
 
-local spinAngle = 0
-
 local function applySpin(root, dt)
-    if not root or not root.Parent then return end
+    if not root or not root.Parent or not spinBaseRotation then return end
 
-    -- Accumulate one continuous angle. This prevents walking/Humanoid
-    -- orientation updates from resetting or slowing the spin.
+    -- The angle is accumulated from RenderStepped time, so walking cannot
+    -- reset it or make it slower.
     spinAngle = (spinAngle + math.rad(spinSpeed) * dt) % (math.pi * 2)
 
-    local position = root.Position
-    local look = root.CFrame.LookVector
-    local flatLook = Vector3.new(look.X, 0, look.Z)
+    -- Keep the current position/movement, but use the rotation captured when
+    -- Spin was enabled. Humanoid movement therefore cannot fight the spin.
+    root.CFrame = CFrame.new(root.Position) * spinBaseRotation * CFrame.Angles(0, spinAngle, 0)
 
-    if flatLook.Magnitude < 0.001 then
-        flatLook = Vector3.new(0, 0, -1)
-    else
-        flatLook = flatLook.Unit
+    -- Do not let physics add a second rotation on top of the requested speed.
+    root.AssemblyAngularVelocity = Vector3.zero
+end
+
+local function restoreSpinCharacter()
+    local _, root, hum = getSpinCharacter()
+
+    if hum and spinSavedAutoRotate ~= nil then
+        hum.AutoRotate = spinSavedAutoRotate
     end
 
-    local baseFacing = CFrame.lookAt(Vector3.zero, flatLook, Vector3.yAxis)
-    local rotationOnly = baseFacing * CFrame.Angles(0, spinAngle, 0)
+    if root then
+        root.AssemblyAngularVelocity = Vector3.zero
+    end
 
-    root.CFrame = CFrame.new(position) * rotationOnly
-    root.AssemblyAngularVelocity = Vector3.zero
+    spinSavedAutoRotate = nil
+    spinBaseRotation = nil
+    spinAngle = 0
 end
 
 local function stopSpin()
     spinEnabled = false
-    spinAngle = 0
 
     if spinConnection then
         spinConnection:Disconnect()
@@ -248,10 +258,7 @@ local function stopSpin()
         spinCharacterConnection = nil
     end
 
-    local root = getSpinRoot()
-    if root then
-        root.AssemblyAngularVelocity = Vector3.zero
-    end
+    restoreSpinCharacter()
 end
 
 local function startSpin()
@@ -265,24 +272,43 @@ local function startSpin()
         spinCharacterConnection = nil
     end
 
+    local _, root, hum = getSpinCharacter()
+    if not root or not hum then return end
+
     spinEnabled = true
     spinAngle = 0
+
+    -- Save the player's current facing once. Walking will continue normally,
+    -- but AutoRotate cannot overwrite the Spin rotation every frame.
+    spinBaseRotation = root.CFrame - root.Position
+    spinSavedAutoRotate = hum.AutoRotate
+    hum.AutoRotate = false
 
     spinConnection = RunService.RenderStepped:Connect(function(dt)
         if not spinEnabled then return end
 
-        local root = getSpinRoot()
-        if root then
-            applySpin(root, dt)
-        end
+        local _, currentRoot, currentHum = getSpinCharacter()
+        if not currentRoot or not currentHum then return end
+
+        applySpin(currentRoot, dt)
     end)
 
-    -- Keep Spin active after respawn without requiring the button to be pressed again.
+    -- Re-apply Spin to a new character after respawn.
     spinCharacterConnection = LocalPlayer.CharacterAdded:Connect(function(char)
         if not spinEnabled then return end
-        char:WaitForChild("HumanoidRootPart", 5)
+
+        local newRoot = char:WaitForChild("HumanoidRootPart", 5)
+        local newHum = char:WaitForChild("Humanoid", 5)
+
+        if newRoot and newHum and spinEnabled then
+            spinAngle = 0
+            spinBaseRotation = newRoot.CFrame - newRoot.Position
+            spinSavedAutoRotate = newHum.AutoRotate
+            newHum.AutoRotate = false
+        end
     end)
 end
+
 
 local PageMain = Instance.new("ScrollingFrame")
 PageMain.Size = UDim2.new(1, 0, 1, 0)
@@ -390,9 +416,8 @@ SpinSpeedBox.FocusLost:Connect(function()
     local value = tonumber(SpinSpeedBox.Text)
 
     if value then
-        -- Spin Speed input range: 10 to 10000000000000000000.
-        local maxSpinInput = 10000000000000000000
-        spinSpeed = math.clamp(value, 10, maxSpinInput)
+        -- Normal Spin Speed input range.
+        spinSpeed = math.max(value, 1)
         SpinSpeedBox.Text = tostring(spinSpeed)
     else
         SpinSpeedBox.Text = tostring(spinSpeed)
