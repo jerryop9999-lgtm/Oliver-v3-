@@ -12,7 +12,7 @@ local CoreGui = game:GetService("CoreGui")
 local Camera = workspace.CurrentCamera
 local Mouse = LocalPlayer:GetMouse()
 
-local CUSTOM_LOGO_ID = "rbxassetid://111648653308842"
+local CUSTOM_LOGO_ID = "rbxassetid://128290087536397"
 
 -- 1. ScreenGui Setup
 local ScreenGui = Instance.new("ScreenGui")
@@ -142,7 +142,7 @@ TabBar.Parent = MainFrame
 local TabMainBtn = Instance.new("TextButton")
 TabMainBtn.Size = UDim2.new(1, -10, 0, 35)
 TabMainBtn.Position = UDim2.new(0, 5, 0, 10)
-TabMainBtn.Text = "Main"
+TabMainBtn.Text = ""
 TabMainBtn.BackgroundColor3 = Color3.fromRGB(0, 140, 255)
 TabMainBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 TabMainBtn.Font = Enum.Font.SourceSansBold
@@ -152,7 +152,7 @@ TabMainBtn.Parent = TabBar
 local TabPlayerBtn = Instance.new("TextButton")
 TabPlayerBtn.Size = UDim2.new(1, -10, 0, 35)
 TabPlayerBtn.Position = UDim2.new(0, 5, 0, 50)
-TabPlayerBtn.Text = "Player"
+TabPlayerBtn.Text = ""
 TabPlayerBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
 TabPlayerBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
 TabPlayerBtn.Font = Enum.Font.SourceSansBold
@@ -163,29 +163,26 @@ TabPlayerBtn.Parent = TabBar
 local TabAnimationsBtn = Instance.new("TextButton")
 TabAnimationsBtn.Size = UDim2.new(1, -10, 0, 35)
 TabAnimationsBtn.Position = UDim2.new(0, 5, 0, 90)
-TabAnimationsBtn.Text = "Animations"
+TabAnimationsBtn.Text = ""
 TabAnimationsBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
 TabAnimationsBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
 TabAnimationsBtn.Font = Enum.Font.SourceSansBold
 TabAnimationsBtn.TextSize = 14
 TabAnimationsBtn.Parent = TabBar
 
-local function setupLogoTab(tabButton, assetId)
-    tabButton.Text = ""
-    tabButton.TextXAlignment = Enum.TextXAlignment.Center
-
+local function setPageButtonLogo(tabButton, assetId)
     local tabLogo = Instance.new("ImageLabel")
     tabLogo.Name = "Logo"
-    tabLogo.Size = UDim2.new(0, 28, 0, 28)
-    tabLogo.Position = UDim2.new(0.5, -14, 0.5, -14)
+    tabLogo.Size = UDim2.new(0, 26, 0, 26)
+    tabLogo.Position = UDim2.new(0.5, -13, 0.5, -13)
     tabLogo.BackgroundTransparency = 1
     tabLogo.Image = assetId
     tabLogo.Parent = tabButton
 end
 
-setupLogoTab(TabMainBtn, "rbxassetid://111648653308842")
-setupLogoTab(TabPlayerBtn, "rbxassetid://99191727508887")
-setupLogoTab(TabAnimationsBtn, "rbxassetid://105863394969753")
+setPageButtonLogo(TabMainBtn, "rbxassetid://111648653308842")
+setPageButtonLogo(TabPlayerBtn, "rbxassetid://99191727508887")
+setPageButtonLogo(TabAnimationsBtn, "rbxassetid://105863394969753")
 
 -- 6. Content Pages Container
 local PagesFolder = Instance.new("Frame")
