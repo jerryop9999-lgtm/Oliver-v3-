@@ -468,6 +468,27 @@ local function sFLY()
         local cam = workspace.CurrentCamera
         if not cam then return end
 
+        -- Vehicle steering:
+        -- When seated, steer only the vehicle's horizontal heading toward
+        -- the camera. Do not use the camera pitch or roll, which prevents
+        -- the vehicle from flipping/spinning.
+        if wasSeated and seatPart and seatPart.Parent then
+            local vehicleRoot = seatPart.AssemblyRootPart or seatPart
+            if vehicleRoot and vehicleRoot.Parent then
+                local look = cam.CFrame.LookVector
+                local flatLook = Vector3.new(look.X, 0, look.Z)
+
+                if flatLook.Magnitude > 0.001 then
+                    flatLook = flatLook.Unit
+
+                    -- Preserve the vehicle's current position and vertical
+                    -- orientation; change only its yaw.
+                    local pos = vehicleRoot.Position
+                    vehicleRoot.CFrame = CFrame.lookAt(pos, pos + flatLook, Vector3.yAxis)
+                end
+            end
+        end
+
         -- Camera-relative flight:
         -- Mobile joystick forward/back follows the camera pitch too,
         -- so looking up makes the player fly up and looking down makes
@@ -525,6 +546,13 @@ local function sFLY()
 
         if wasSeated and root and root.Parent then
             root.AssemblyAngularVelocity = Vector3.zero
+        end
+
+        if wasSeated and seatPart and seatPart.Parent then
+            local vehicleRoot = seatPart.AssemblyRootPart or seatPart
+            if vehicleRoot and vehicleRoot.Parent then
+                vehicleRoot.AssemblyAngularVelocity = Vector3.zero
+            end
         end
     end)
 end
