@@ -33,7 +33,7 @@ local TeleportService = game:GetService("TeleportService")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
-local LOGO_MAIN = "rbxassetid://128290087536397"
+local LOGO_MAIN = "rbxassetid://111648653308842"
 local LOGO_PLAYER = "rbxassetid://99191727508887"
 local LOGO_ANIM = "rbxassetid://105863394969753"
 
@@ -195,27 +195,17 @@ SideLayout.Parent = Sidebar
 padding(Sidebar, 10, 10, 12, 12)
 
 local function makeTab(name, assetId, order)
-    local b = Instance.new("TextButton")
+    local b = Instance.new("ImageButton")
     b.Name = name .. "Tab"
     b.Size = UDim2.new(1, 0, 0, 50)
     b.LayoutOrder = order
-    b.Text = ""
     b.BackgroundColor3 = Color3.fromRGB(10, 35, 62)
     b.BorderSizePixel = 0
+    b.Image = assetId
+    b.ScaleType = Enum.ScaleType.Fit
     b.Parent = Sidebar
     corner(b, 10)
-
-    local icon = Instance.new("ImageLabel")
-    icon.Name = "Logo"
-    icon.Size = UDim2.new(0, 32, 0, 32)
-    icon.Position = UDim2.new(0, 9, 0.5, -16)
-    icon.BackgroundTransparency = 1
-    icon.Image = assetId
-    icon.Parent = b
-
-    local label = makeLabel(b, name, UDim2.new(1, -52, 1, 0), UDim2.new(0, 50, 0, 0), 15, Color3.fromRGB(225,235,250))
-    label.Font = Enum.Font.GothamBold
-
+    stroke(b, Color3.fromRGB(25, 75, 120), 1, 0.25)
     return b
 end
 
@@ -260,411 +250,336 @@ local AnimPage = newPage("AnimationsPage")
 -- Feature state
 -- ============================================================
 
-local flyEnabled = false
+
+local FLYING = false
 local flySpeed = 50
-local flyConnection
-local flyBV
-local flyBG
+local flyKeyDown, flyKeyUp, flyRender
+local flyControlsGui
 
-local noclipEnabled = false
-local noclipConnection
-local savedCollision = {}
+local function clearFly()
+    FLYING = false
 
-local walkSpeedEnabled = false
-local walkSpeedValue = 50
-local walkConnection
-local savedWalkSpeed = 16
+    if flyKeyDown then flyKeyDown:Disconnect(); flyKeyDown = nil end
+    if flyKeyUp then flyKeyUp:Disconnect(); flyKeyUp = nil end
+    if flyRender then flyRender:Disconnect(); flyRender = nil end
 
-local espEnabled = false
-local espObjects = {}
-local espConnections = {}
-
-local function characterParts()
-    local char = LocalPlayer.Character
-    if not char then return nil end
-    local root = char:FindFirstChild("HumanoidRootPart")
-    local hum = char:FindFirstChildOfClass("Humanoid")
-    return char, root, hum
-end
-
-local function setWalkSpeed()
-    local _, _, hum = characterParts()
-    if not hum then return end
-
-    if walkSpeedEnabled then
-        hum.WalkSpeed = walkSpeedValue
-    else
-        hum.WalkSpeed = savedWalkSpeed
-    end
-end
-
-local function setToggleStyle(button, enabled)
-    button.BackgroundColor3 = enabled
-        and Color3.fromRGB(0, 130, 255)
-        or Color3.fromRGB(16, 38, 66)
-end
-
-local function makeSectionTitle(parent, title, subtitle, order)
-    local f = Instance.new("Frame")
-    f.Size = UDim2.new(1, 0, 0, 58)
-    f.LayoutOrder = order
-    f.BackgroundTransparency = 1
-    f.Parent = parent
-
-    makeLabel(f, title, UDim2.new(1, 0, 0, 30), UDim2.new(0, 0, 0, 0), 23, Color3.fromRGB(245,250,255)).Font = Enum.Font.GothamBold
-    makeLabel(f, subtitle, UDim2.new(1, 0, 0, 20), UDim2.new(0, 0, 0, 32), 11, Color3.fromRGB(120,155,190))
-    return f
-end
-
-local function makeInput(parent, placeholder, defaultText, order)
-    local box = Instance.new("TextBox")
-    box.Size = UDim2.new(1, 0, 0, 38)
-    box.LayoutOrder = order
-    box.BackgroundColor3 = Color3.fromRGB(12, 31, 55)
-    box.TextColor3 = Color3.fromRGB(240,245,255)
-    box.PlaceholderColor3 = Color3.fromRGB(110,140,175)
-    box.PlaceholderText = placeholder
-    box.Text = defaultText or ""
-    box.ClearTextOnFocus = false
-    box.Font = Enum.Font.Gotham
-    box.TextSize = 13
-    box.BorderSizePixel = 0
-    box.Parent = parent
-    corner(box, 10)
-    stroke(box, Color3.fromRGB(25, 75, 120), 1, 0.25)
-    padding(box, 14, 14, 0, 0)
-    return box
-end
-
-local function makeToggle(parent, title, desc, order, callback)
-    local b = Instance.new("TextButton")
-    b.Size = UDim2.new(1, 0, 0, 62)
-    b.LayoutOrder = order
-    b.Text = ""
-    b.BackgroundColor3 = Color3.fromRGB(12, 31, 55)
-    b.BorderSizePixel = 0
-    b.Parent = parent
-    corner(b, 12)
-    stroke(b, Color3.fromRGB(25, 75, 120), 1, 0.25)
-
-    local t = makeLabel(b, title, UDim2.new(1, -75, 0, 25), UDim2.new(0, 16, 0, 9), 15, Color3.fromRGB(240,245,255))
-    t.Font = Enum.Font.GothamBold
-    makeLabel(b, desc, UDim2.new(1, -75, 0, 20), UDim2.new(0, 16, 0, 34), 10, Color3.fromRGB(120,155,190))
-
-    local state = false
-    local pill = Instance.new("Frame")
-    pill.Size = UDim2.new(0, 48, 0, 26)
-    pill.Position = UDim2.new(1, -62, 0.5, -13)
-    pill.BackgroundColor3 = Color3.fromRGB(45, 60, 80)
-    pill.BorderSizePixel = 0
-    pill.Parent = b
-    corner(pill, 20)
-
-    local dot = Instance.new("Frame")
-    dot.Size = UDim2.new(0, 20, 0, 20)
-    dot.Position = UDim2.new(0, 3, 0.5, -10)
-    dot.BackgroundColor3 = Color3.fromRGB(220,230,240)
-    dot.BorderSizePixel = 0
-    dot.Parent = pill
-    corner(dot, 20)
-
-    local function render()
-        pill.BackgroundColor3 = state and Color3.fromRGB(0, 150, 255) or Color3.fromRGB(45, 60, 80)
-        dot.Position = state and UDim2.new(1, -23, 0.5, -10) or UDim2.new(0, 3, 0.5, -10)
-    end
-
-    b.MouseButton1Click:Connect(function()
-        state = not state
-        render()
-        callback(state)
-    end)
-
-    return b, function(value)
-        state = value
-        render()
-    end
-end
-
--- ============================================================
--- MAIN PAGE
--- ============================================================
-
-makeSectionTitle(MainPage, "Main", "OLIVER V3 • Functions", 1)
-
-local FlySpeed = makeInput(MainPage, "Fly speed...", "50", 2)
-FlySpeed.FocusLost:Connect(function()
-    local n = tonumber(FlySpeed.Text)
-    if n then flySpeed = math.clamp(n, 1, 500) end
-    FlySpeed.Text = tostring(flySpeed)
-end)
-
-local WalkSpeed = makeInput(MainPage, "WalkSpeed value...", "50", 3)
-WalkSpeed.FocusLost:Connect(function()
-    local n = tonumber(WalkSpeed.Text)
-    if n then walkSpeedValue = math.clamp(n, 1, 500) end
-    WalkSpeed.Text = tostring(walkSpeedValue)
-    if walkSpeedEnabled then setWalkSpeed() end
-end)
-
--- Camera-direction Fly.
--- Works with keyboard and mobile joystick. Cleans itself up on disable/respawn.
-local function stopFly()
-    flyEnabled = false
-
-    if flyConnection then
-        flyConnection:Disconnect()
-        flyConnection = nil
-    end
-
-    if flyBV then
-        flyBV:Destroy()
-        flyBV = nil
-    end
-
-    if flyBG then
-        flyBG:Destroy()
-        flyBG = nil
-    end
-
-    local _, _, hum = characterParts()
-    if hum then
-        hum.AutoRotate = true
-        hum.PlatformStand = false
-    end
-end
-
-local function startFly()
-    stopFly()
-    flyEnabled = true
-
-    flyConnection = RunService.RenderStepped:Connect(function()
-        local char, root, hum = characterParts()
-        local camera = workspace.CurrentCamera
-        if not (char and root and hum and camera) then return end
-
-        if not flyBV or flyBV.Parent ~= root then
-            if flyBV then flyBV:Destroy() end
-            flyBV = Instance.new("BodyVelocity")
-            flyBV.Name = "OLIVER_FlyVelocity"
-            flyBV.MaxForce = Vector3.new(1e6, 1e6, 1e6)
-            flyBV.P = 15000
-            flyBV.Parent = root
-        end
-
-        if not flyBG or flyBG.Parent ~= root then
-            if flyBG then flyBG:Destroy() end
-            flyBG = Instance.new("BodyGyro")
-            flyBG.Name = "OLIVER_FlyGyro"
-            flyBG.MaxTorque = Vector3.new(1e6, 1e6, 1e6)
-            flyBG.P = 15000
-            flyBG.D = 500
-            flyBG.Parent = root
-        end
-
-        local move = hum.MoveDirection
-        local velocity = Vector3.zero
-
-        if move.Magnitude > 0.01 then
-            -- MoveDirection is already camera-relative for the Roblox mobile
-            -- thumbstick, so this keeps mobile movement smooth and predictable.
-            velocity = move.Unit * flySpeed
-
-            -- When the camera is tilted up/down, forward movement follows it.
-            local camLook = camera.CFrame.LookVector
-            local flatMove = Vector3.new(move.X, 0, move.Z)
-
-            if flatMove.Magnitude > 0.01 then
-                local forward = Vector3.new(camLook.X, 0, camLook.Z)
-                if forward.Magnitude > 0.01 then
-                    forward = forward.Unit
-                    local right = Vector3.new(camera.CFrame.RightVector.X, 0, camera.CFrame.RightVector.Z)
-                    if right.Magnitude > 0.01 then
-                        right = right.Unit
-                        local x = move:Dot(right)
-                        local z = move:Dot(forward)
-                        local direction = right * x + forward * z
-
-                        if direction.Magnitude > 1 then
-                            direction = direction.Unit
-                        end
-
-                        -- Apply camera pitch mainly to forward/backward motion.
-                        local pitch = math.clamp(camLook.Y, -0.85, 0.85)
-                        local forwardAmount = math.clamp(z, -1, 1)
-                        direction = Vector3.new(
-                            direction.X,
-                            pitch * forwardAmount,
-                            direction.Z
-                        )
-
-                        if direction.Magnitude > 1 then
-                            direction = direction.Unit
-                        end
-
-                        velocity = direction * flySpeed
-                    end
-                end
-            end
-        end
-
-        flyBV.Velocity = velocity
-        flyBG.CFrame = CFrame.lookAt(
-            root.Position,
-            root.Position + Vector3.new(camera.CFrame.LookVector.X, 0, camera.CFrame.LookVector.Z)
-        )
-
-        hum.AutoRotate = false
-    end)
-end
-
-local FlyToggle = makeToggle(MainPage, "Fly (IY Style)", "Camera direction + mobile joystick", 4, function(on)
-    if on then startFly() else stopFly() end
-end)
-
-local function stopNoclip()
-    noclipEnabled = false
-
-    if noclipConnection then
-        noclipConnection:Disconnect()
-        noclipConnection = nil
+    if flyControlsGui then
+        flyControlsGui:Destroy()
+        flyControlsGui = nil
     end
 
     local char = LocalPlayer.Character
     if char then
-        for _, part in ipairs(char:GetDescendants()) do
-            if part:IsA("BasePart") and savedCollision[part] ~= nil then
-                part.CanCollide = savedCollision[part]
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        local root = char:FindFirstChild("HumanoidRootPart")
+        if hum then
+            hum.PlatformStand = false
+            hum.AutoRotate = true
+        end
+        if root then
+            for _, obj in ipairs(root:GetChildren()) do
+                if obj.Name == "OliverFlyVelocity" or obj.Name == "OliverFlyGyro" then
+                    obj:Destroy()
+                end
             end
         end
     end
-
-    table.clear(savedCollision)
 end
 
-local function startNoclip()
-    stopNoclip()
-    noclipEnabled = true
+local function makeFlyMobileButton(parent, text, pos)
+    local b = Instance.new("TextButton")
+    b.Size = UDim2.new(0, 58, 0, 42)
+    b.Position = pos
+    b.Text = text
+    b.TextSize = 18
+    b.Font = Enum.Font.SourceSansBold
+    b.TextColor3 = Color3.new(1,1,1)
+    b.BackgroundColor3 = Color3.fromRGB(35,35,45)
+    b.BackgroundTransparency = 0.15
+    b.Parent = parent
 
-    noclipConnection = RunService.Stepped:Connect(function()
-        local char = LocalPlayer.Character
-        if not char then return end
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, 8)
+    c.Parent = b
+    return b
+end
 
-        for _, part in ipairs(char:GetDescendants()) do
-            if part:IsA("BasePart") then
-                if savedCollision[part] == nil then
-                    savedCollision[part] = part.CanCollide
-                end
-                part.CanCollide = false
+local function showFlyMobileControls(control)
+    if flyControlsGui then flyControlsGui:Destroy() end
+
+    flyControlsGui = Instance.new("Frame")
+    flyControlsGui.Name = "FlyMobileControls"
+    flyControlsGui.Size = UDim2.new(0, 210, 0, 150)
+    flyControlsGui.Position = UDim2.new(1, -225, 1, -165)
+    flyControlsGui.BackgroundTransparency = 1
+    flyControlsGui.ZIndex = 100
+    flyControlsGui.Parent = Gui
+
+    local function holdButton(textValue, pos, key)
+        local b = makeFlyMobileButton(flyControlsGui, textValue, pos)
+
+        b.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.Touch
+            or input.UserInputType == Enum.UserInputType.MouseButton1 then
+                control[key] = 1
+            end
+        end)
+
+        b.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.Touch
+            or input.UserInputType == Enum.UserInputType.MouseButton1 then
+                control[key] = 0
+            end
+        end)
+    end
+
+    holdButton("▲", UDim2.new(0, 72, 0, 0), "Up")
+    holdButton("▼", UDim2.new(0, 72, 0, 50), "Down")
+    holdButton("◀", UDim2.new(0, 8, 0, 50), "Left")
+    holdButton("▶", UDim2.new(0, 136, 0, 50), "Right")
+    holdButton("↑", UDim2.new(0, 72, 0, 100), "Forward")
+end
+
+local function sFLY()
+    clearFly()
+
+    local char = LocalPlayer.Character
+    if not char then return end
+
+    local root = char:FindFirstChild("HumanoidRootPart")
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if not root or not hum then return end
+
+    local control = {
+        F = 0, B = 0, L = 0, R = 0, Q = 0, E = 0,
+        Up = 0, Down = 0, Left = 0, Right = 0, Forward = 0
+    }
+
+    local gyro = Instance.new("BodyGyro")
+    gyro.Name = "OliverFlyGyro"
+    gyro.P = 9e4
+    gyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+    gyro.CFrame = workspace.CurrentCamera.CFrame
+    gyro.Parent = root
+
+    local velocity = Instance.new("BodyVelocity")
+    velocity.Name = "OliverFlyVelocity"
+    velocity.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+    velocity.Velocity = Vector3.zero
+    velocity.Parent = root
+
+    FLYING = true
+    hum.PlatformStand = false
+    hum.AutoRotate = false
+
+    flyKeyDown = UIS.InputBegan:Connect(function(input, processed)
+        if processed then return end
+
+        local k = input.KeyCode
+        if k == Enum.KeyCode.W then control.F = 1
+        elseif k == Enum.KeyCode.S then control.B = -1
+        elseif k == Enum.KeyCode.A then control.L = -1
+        elseif k == Enum.KeyCode.D then control.R = 1
+        elseif k == Enum.KeyCode.E then control.Q = 1
+        elseif k == Enum.KeyCode.Q then control.E = -1
+        end
+    end)
+
+    flyKeyUp = UIS.InputEnded:Connect(function(input)
+        local k = input.KeyCode
+        if k == Enum.KeyCode.W then control.F = 0
+        elseif k == Enum.KeyCode.S then control.B = 0
+        elseif k == Enum.KeyCode.A then control.L = 0
+        elseif k == Enum.KeyCode.D then control.R = 0
+        elseif k == Enum.KeyCode.E then control.Q = 0
+        elseif k == Enum.KeyCode.Q then control.E = 0
+        end
+    end)
+
+    showFlyMobileControls(control)
+
+    flyRender = RunService.RenderStepped:Connect(function()
+        if not FLYING or not root.Parent then
+            clearFly()
+            return
+        end
+
+        local cam = workspace.CurrentCamera
+        if not cam then return end
+
+        local direction = Vector3.zero
+        local joystickDirection = hum.MoveDirection
+
+        local flatLook = Vector3.new(cam.CFrame.LookVector.X, 0, cam.CFrame.LookVector.Z)
+        local flatRight = Vector3.new(cam.CFrame.RightVector.X, 0, cam.CFrame.RightVector.Z)
+
+        if flatLook.Magnitude > 0.001 then flatLook = flatLook.Unit end
+        if flatRight.Magnitude > 0.001 then flatRight = flatRight.Unit end
+
+        if joystickDirection.Magnitude > 0.05 then
+            local forwardAmount = joystickDirection:Dot(flatLook)
+            local sideAmount = joystickDirection:Dot(flatRight)
+
+            direction += cam.CFrame.LookVector * forwardAmount
+            direction += flatRight * sideAmount
+        else
+            local forward = control.F + control.B + control.Forward
+            local side = control.L + control.R + control.Left + control.Right
+
+            if forward ~= 0 then
+                direction += cam.CFrame.LookVector * forward
+            end
+            if side ~= 0 then
+                direction += flatRight * side
             end
         end
+
+        local vertical = control.Q + control.E + control.Up - control.Down
+        if vertical ~= 0 then
+            direction += Vector3.yAxis * vertical
+        end
+
+        if direction.Magnitude > 0 then
+            velocity.Velocity = direction.Unit * flySpeed
+        else
+            velocity.Velocity = Vector3.zero
+        end
+
+        gyro.CFrame = cam.CFrame
     end)
 end
 
-local NoclipToggle = makeToggle(MainPage, "Noclip All Part", "Walk through character parts", 5, function(on)
+local function NOFLY()
+    clearFly()
+end
+
+local FlyToggle = makeToggle(MainPage, "Fly (IY Style)", "Camera direction + mobile joystick", 5, function(on)
     if on then
-        startNoclip()
+        sFLY()
     else
-        stopNoclip()
+        NOFLY()
     end
 end)
 
+local NoclipToggle = makeToggle(MainPage, "Noclip All Part", "Walk through character parts", 5, function(on)
+    noclipEnabled = on
+
+    if noclipConnection then noclipConnection:Disconnect(); noclipConnection = nil end
+
+    if on then
+        noclipConnection = RunService.Stepped:Connect(function()
+            local char = LocalPlayer.Character
+            if char then
+                for _, part in ipairs(char:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        part.CanCollide = false
+                    end
+                end
+            end
+        end)
+    end
+end)
+
+local ESPToggle = makeToggle(MainPage, "Box Line (ESP)", "Box + tracer line for players", 7, function(on)
+    espEnabled = on
+    if not on then
+        clearESP()
+    else
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer and not espObjects[p.UserId] then
+                createESPForPlayer(p)
+            end
+        end
+    end
+end)
+
+
+local function createESPForPlayer(plr)
+    if not Drawing or not Drawing.new then return end
+
+    local box = Drawing.new("Square")
+    box.Thickness = 1.5
+    box.Color = Color3.fromRGB(255, 50, 50)
+    box.Filled = false
+    box.Visible = false
+
+    local line = Drawing.new("Line")
+    line.Thickness = 1.5
+    line.Color = Color3.fromRGB(255, 255, 255)
+    line.Visible = false
+
+    local conn
+    conn = RunService.RenderStepped:Connect(function()
+        local camera = workspace.CurrentCamera
+        local character = plr.Character
+        local hrp = character and character:FindFirstChild("HumanoidRootPart")
+        local head = character and character:FindFirstChild("Head")
+
+        if espEnabled and plr ~= LocalPlayer and hrp and head and camera then
+            local hrpPos, onScreen = camera:WorldToViewportPoint(hrp.Position)
+
+            if onScreen then
+                local headPos = camera:WorldToViewportPoint(head.Position + Vector3.new(0, 0.5, 0))
+                local legPos = camera:WorldToViewportPoint(hrp.Position - Vector3.new(0, 3, 0))
+
+                local height = math.abs(headPos.Y - legPos.Y)
+                local width = height * 0.65
+
+                box.Size = Vector2.new(width, height)
+                box.Position = Vector2.new(hrpPos.X - width / 2, hrpPos.Y - height / 2)
+                box.Visible = true
+
+                line.From = Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y)
+                line.To = Vector2.new(hrpPos.X, hrpPos.Y)
+                line.Visible = true
+            else
+                box.Visible = false
+                line.Visible = false
+            end
+        else
+            box.Visible = false
+            line.Visible = false
+        end
+    end)
+
+    plr.AncestryChanged:Connect(function(_, parent)
+        if not parent then
+            pcall(function() box:Remove() end)
+            pcall(function() line:Remove() end)
+            if conn then conn:Disconnect() end
+        end
+    end)
+
+    espObjects[plr.UserId] = {box = box, line = line, conn = conn}
+end
+
 local function clearESP()
     for _, obj in pairs(espObjects) do
-        pcall(function() obj:Destroy() end)
+        pcall(function()
+            if obj.conn then obj.conn:Disconnect() end
+            if obj.box then obj.box:Remove() end
+            if obj.line then obj.line:Remove() end
+        end)
     end
     espObjects = {}
 end
 
-local function addESP(player)
-    if not espEnabled or player == LocalPlayer then return end
-
-    local old = espObjects[player.UserId]
-    if old then old:Destroy() end
-
-    local h = Instance.new("Highlight")
-    h.Name = "OLIVER_ESP_" .. player.UserId
-    h.Adornee = player.Character
-    h.FillTransparency = 1
-    h.OutlineColor = Color3.fromRGB(0, 180, 255)
-    h.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-    h.Parent = Gui
-    espObjects[player.UserId] = h
-end
-
-local ESPToggle = makeToggle(MainPage, "Box Line (ESP)", "Box + tracer line for players", 6, function(on)
-    espEnabled = on
-    clearESP()
-
-    if on then
-        for _, p in ipairs(Players:GetPlayers()) do
-            addESP(p)
-        end
-    end
-end)
-
-local function bindESPPlayer(player)
-    if player == LocalPlayer then return end
-
-    if espConnections[player] then
-        for _, c in ipairs(espConnections[player]) do
-            pcall(function() c:Disconnect() end)
-        end
-    end
-
-    espConnections[player] = {
-        player.CharacterAdded:Connect(function()
-            task.wait(0.15)
-            if espEnabled then addESP(player) end
-        end)
-    }
-end
-
 for _, p in ipairs(Players:GetPlayers()) do
-    bindESPPlayer(p)
+    if p ~= LocalPlayer then createESPForPlayer(p) end
 end
 
 Players.PlayerAdded:Connect(function(p)
-    bindESPPlayer(p)
-    if espEnabled then
-        task.defer(function() addESP(p) end)
-    end
-end)
-
-Players.PlayerRemoving:Connect(function(p)
-    if espObjects[p.UserId] then
-        espObjects[p.UserId]:Destroy()
-        espObjects[p.UserId] = nil
-    end
-
-    if espConnections[p] then
-        for _, c in ipairs(espConnections[p]) do
-            pcall(function() c:Disconnect() end)
-        end
-        espConnections[p] = nil
-    end
+    if p ~= LocalPlayer then createESPForPlayer(p) end
 end)
 
 local WalkToggle = makeToggle(MainPage, "WalkSpeed", "Custom movement speed", 7, function(on)
-    local _, _, hum = characterParts()
-
-    if on then
-        if hum then
-            savedWalkSpeed = hum.WalkSpeed
-        end
-        walkSpeedEnabled = true
-
-        if not walkConnection then
-            walkConnection = RunService.Heartbeat:Connect(setWalkSpeed)
-        end
-    else
-        walkSpeedEnabled = false
-
-        if walkConnection then
-            walkConnection:Disconnect()
-            walkConnection = nil
-        end
+    walkSpeedEnabled = on
+    if on and not walkConnection then
+        walkConnection = RunService.Heartbeat:Connect(setWalkSpeed)
+    elseif not on and walkConnection then
+        walkConnection:Disconnect()
+        walkConnection = nil
     end
-
     setWalkSpeed()
 end)
 
@@ -702,16 +617,12 @@ RestoreButton.Text = "RESTORE ALL"
 RestoreButton.BackgroundColor3 = Color3.fromRGB(35, 45, 62)
 RestoreButton.Parent = MainPage
 RestoreButton.MouseButton1Click:Connect(function()
-    stopFly()
-    stopNoclip()
-
+    NOFLY()
+    noclipEnabled = false
+    if noclipConnection then noclipConnection:Disconnect(); noclipConnection = nil end
     walkSpeedEnabled = false
-    if walkConnection then
-        walkConnection:Disconnect()
-        walkConnection = nil
-    end
+    if walkConnection then walkConnection:Disconnect(); walkConnection = nil end
     setWalkSpeed()
-
     espEnabled = false
     clearESP()
 end)
@@ -732,12 +643,32 @@ MainStatus.TextXAlignment = Enum.TextXAlignment.Center
 -- PLAYER PAGE
 -- ============================================================
 
-makeSectionTitle(PlayerPage, "Player", "Players in this server", 1)
+makeSectionTitle(PlayerPage, "Players", "Search and select a player", 1)
 
-local Search = makeInput(PlayerPage, "Search player...", "", 2)
+local Search = makeInput(PlayerPage, "🔎  Search player...", "", 2)
 
-local Count = makeLabel(PlayerPage, "PLAYERS IN SERVER: 0", UDim2.new(1,0,0,26), UDim2.new(0,0,0,0), 12, Color3.fromRGB(65,205,255))
+local Count = makeLabel(
+    PlayerPage,
+    "0",
+    UDim2.new(1, 0, 0, 34),
+    UDim2.new(0, 0, 0, 0),
+    22,
+    Color3.fromRGB(65, 205, 255)
+)
 Count.LayoutOrder = 3
+Count.Font = Enum.Font.GothamBold
+Count.TextXAlignment = Enum.TextXAlignment.Center
+
+local CountCaption = makeLabel(
+    PlayerPage,
+    "PLAYER IN SERVER",
+    UDim2.new(1, 0, 0, 18),
+    UDim2.new(0, 0, 0, 0),
+    9,
+    Color3.fromRGB(115, 155, 195)
+)
+CountCaption.LayoutOrder = 3.5
+CountCaption.TextXAlignment = Enum.TextXAlignment.Center
 
 local PlayerList = Instance.new("Frame")
 PlayerList.Size = UDim2.new(1,0,0,0)
@@ -817,7 +748,7 @@ local function updatePlayers()
         end
     end
 
-    Count.Text = "PLAYERS IN SERVER: " .. count .. " / " .. math.max(#Players:GetPlayers()-1,0)
+    Count.Text = tostring(#Players:GetPlayers())
 end
 
 Search:GetPropertyChangedSignal("Text"):Connect(updatePlayers)
@@ -960,38 +891,10 @@ end)
 
 -- Character respawn support
 LocalPlayer.CharacterAdded:Connect(function()
-    task.wait(0.35)
-
-    -- Old physics objects cannot be reused after respawn.
-    if flyEnabled then
-        startFly()
-    end
-
-    if noclipEnabled then
-        startNoclip()
-    end
-
-    if walkSpeedEnabled then
-        setWalkSpeed()
-    end
-
-    if espEnabled then
-        task.defer(function()
-            for _, p in ipairs(Players:GetPlayers()) do
-                if p ~= LocalPlayer then
-                    addESP(p)
-                end
-            end
-        end)
-    end
+    task.wait(0.25)
+    if walkSpeedEnabled then setWalkSpeed() end
 end)
 
 -- Start
 selectPage("Main")
 updatePlayers()
-task.defer(function()
-    local _, _, hum = characterParts()
-    if hum then
-        savedWalkSpeed = hum.WalkSpeed
-    end
-end)
