@@ -198,7 +198,7 @@ PagesFolder.Parent = MainFrame
 
 --// SPIN FUNCTION
 local spinEnabled = false
-local spinSpeed = 25
+local spinSpeed = 10
 local spinConnection
 local spinCharacterConnection
 
@@ -211,11 +211,23 @@ end
 local function applySpin(root, dt)
     if not root or not root.Parent then return end
 
-    -- Preserve the character's current movement/position while rotating only
-    -- its facing direction. This lets the player keep walking normally.
+    -- Keep the spin rate independent of walking. Humanoid movement can change
+    -- the root orientation, so only apply the requested Spin Speed here.
     local position = root.Position
-    local currentRotation = root.CFrame - position
-    root.CFrame = CFrame.new(position) * currentRotation * CFrame.Angles(0, math.rad(spinSpeed) * dt, 0)
+    local look = root.CFrame.LookVector
+    local flatLook = Vector3.new(look.X, 0, look.Z)
+
+    if flatLook.Magnitude < 0.001 then
+        flatLook = Vector3.new(0, 0, -1)
+    else
+        flatLook = flatLook.Unit
+    end
+
+    local currentFacing = CFrame.lookAt(position, position + flatLook, Vector3.yAxis)
+    local rotated = currentFacing * CFrame.Angles(0, math.rad(spinSpeed) * dt, 0)
+
+    root.CFrame = CFrame.new(position) * (rotated - rotated.Position)
+    root.AssemblyAngularVelocity = Vector3.zero
 end
 
 local function stopSpin()
@@ -372,7 +384,7 @@ SpinSpeedBox.FocusLost:Connect(function()
     local value = tonumber(SpinSpeedBox.Text)
 
     if value then
-        spinSpeed = math.clamp(value, 1, 2000)
+        spinSpeed = math.clamp(value, 10, 1000)
         SpinSpeedBox.Text = tostring(spinSpeed)
     else
         SpinSpeedBox.Text = tostring(spinSpeed)
