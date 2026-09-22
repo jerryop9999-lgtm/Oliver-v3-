@@ -794,7 +794,9 @@ local function createExtraButton(text, callback)
     corner.CornerRadius = UDim.new(0, 6)
     corner.Parent = btn
 
-    btn.MouseButton1Click:Connect(callback)
+    btn.MouseButton1Click:Connect(function()
+        callback(btn)
+    end)
     return btn
 end
 
@@ -839,11 +841,10 @@ local function setAntiAFK(state)
     end
 end
 
-local antiAFKBtn = createExtraButton("Anti-AFK: OFF", function()
+local antiAFKBtn = createExtraButton("Anti-AFK: OFF", function(btn)
     setAntiAFK(not antiAFKEnabled)
-    antiAFKBtn.Text = "Anti-AFK: " .. (antiAFKEnabled and "ON" or "OFF")
-    antiAFKBtn.BackgroundColor3 =
-        antiAFKEnabled and Color3.fromRGB(0, 170, 100) or Color3.fromRGB(45, 45, 60)
+    btn.Text = "Anti-AFK: " .. (antiAFKEnabled and "ON" or "OFF")
+    btn.BackgroundColor3 = antiAFKEnabled and Color3.fromRGB(0, 170, 100) or Color3.fromRGB(45, 45, 60)
 end)
 
 createExtraButton("Reset Character", function()
@@ -868,8 +869,10 @@ createExtraButton("RESTORE ALL", function()
     walkSpeedEnabled = false
     applyWalkSpeed()
 
-    antiAFKBtn.Text = "Anti-AFK: OFF"
-    antiAFKBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
+    if antiAFKBtn then
+        antiAFKBtn.Text = "Anti-AFK: OFF"
+        antiAFKBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
+    end
 end)
 
 -- Header FPS / Ping monitor
