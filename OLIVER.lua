@@ -33,7 +33,7 @@ local TeleportService = game:GetService("TeleportService")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
-local LOGO_MAIN = "rbxassetid://111648653308842"
+local LOGO_MAIN = "rbxassetid://128290087536397"
 local LOGO_PLAYER = "rbxassetid://99191727508887"
 local LOGO_ANIM = "rbxassetid://105863394969753"
 
@@ -99,8 +99,8 @@ end
 
 local Main = Instance.new("Frame")
 Main.Name = "MainWindow"
-Main.Size = UDim2.new(0, 760, 0, 500)
-Main.Position = UDim2.new(0.5, -380, 0.5, -250)
+Main.Size = UDim2.new(0, 620, 0, 410)
+Main.Position = UDim2.new(0.5, -310, 0.5, -205)
 Main.BackgroundColor3 = Color3.fromRGB(7, 17, 34)
 Main.BackgroundTransparency = 0.06
 Main.BorderSizePixel = 0
@@ -109,7 +109,7 @@ corner(Main, 16)
 stroke(Main, Color3.fromRGB(0, 145, 255), 1.5, 0.15)
 
 local Header = Instance.new("Frame")
-Header.Size = UDim2.new(1, 0, 0, 72)
+Header.Size = UDim2.new(1, 0, 0, 58)
 Header.BackgroundColor3 = Color3.fromRGB(5, 14, 29)
 Header.BorderSizePixel = 0
 Header.Parent = Main
@@ -179,8 +179,8 @@ end)
 -- ============================================================
 
 local Sidebar = Instance.new("Frame")
-Sidebar.Size = UDim2.new(0, 175, 1, -82)
-Sidebar.Position = UDim2.new(0, 10, 0, 78)
+Sidebar.Size = UDim2.new(0, 135, 1, -68)
+Sidebar.Position = UDim2.new(0, 8, 0, 64)
 Sidebar.BackgroundColor3 = Color3.fromRGB(6, 22, 43)
 Sidebar.BackgroundTransparency = 0.12
 Sidebar.BorderSizePixel = 0
@@ -231,8 +231,8 @@ SideFooter.TextXAlignment = Enum.TextXAlignment.Center
 -- ============================================================
 
 local Content = Instance.new("Frame")
-Content.Size = UDim2.new(1, -195, 1, -82)
-Content.Position = UDim2.new(0, 185, 0, 78)
+Content.Size = UDim2.new(1, -153, 1, -68)
+Content.Position = UDim2.new(0, 145, 0, 64)
 Content.BackgroundTransparency = 1
 Content.Parent = Main
 
@@ -268,13 +268,16 @@ local flyBG
 
 local noclipEnabled = false
 local noclipConnection
+local savedCollision = {}
 
 local walkSpeedEnabled = false
 local walkSpeedValue = 50
 local walkConnection
+local savedWalkSpeed = 16
 
 local espEnabled = false
 local espObjects = {}
+local espConnections = {}
 
 local function characterParts()
     local char = LocalPlayer.Character
@@ -286,8 +289,12 @@ end
 
 local function setWalkSpeed()
     local _, _, hum = characterParts()
-    if hum then
-        hum.WalkSpeed = walkSpeedEnabled and walkSpeedValue or 16
+    if not hum then return end
+
+    if walkSpeedEnabled then
+        hum.WalkSpeed = walkSpeedValue
+    else
+        hum.WalkSpeed = savedWalkSpeed
     end
 end
 
@@ -311,7 +318,7 @@ end
 
 local function makeInput(parent, placeholder, defaultText, order)
     local box = Instance.new("TextBox")
-    box.Size = UDim2.new(1, 0, 0, 42)
+    box.Size = UDim2.new(1, 0, 0, 38)
     box.LayoutOrder = order
     box.BackgroundColor3 = Color3.fromRGB(12, 31, 55)
     box.TextColor3 = Color3.fromRGB(240,245,255)
@@ -382,7 +389,7 @@ end
 -- MAIN PAGE
 -- ============================================================
 
-makeSectionTitle(MainPage, "Main", "Useful tools for your game", 1)
+makeSectionTitle(MainPage, "Main", "OLIVER V3 • Functions", 1)
 
 local FlySpeed = makeInput(MainPage, "Fly speed...", "50", 2)
 FlySpeed.FocusLost:Connect(function()
@@ -399,12 +406,31 @@ WalkSpeed.FocusLost:Connect(function()
     if walkSpeedEnabled then setWalkSpeed() end
 end)
 
--- Camera-direction Fly. Mobile thumbstick values are read from Humanoid.MoveDirection.
+-- Camera-direction Fly.
+-- Works with keyboard and mobile joystick. Cleans itself up on disable/respawn.
 local function stopFly()
     flyEnabled = false
-    if flyConnection then flyConnection:Disconnect(); flyConnection = nil end
-    if flyBV then flyBV:Destroy(); flyBV = nil end
-    if flyBG then flyBG:Destroy(); flyBG = nil end
+
+    if flyConnection then
+        flyConnection:Disconnect()
+        flyConnection = nil
+    end
+
+    if flyBV then
+        flyBV:Destroy()
+        flyBV = nil
+    end
+
+    if flyBG then
+        flyBG:Destroy()
+        flyBG = nil
+    end
+
+    local _, _, hum = characterParts()
+    if hum then
+        hum.AutoRotate = true
+        hum.PlatformStand = false
+    end
 end
 
 local function startFly()
@@ -416,95 +442,229 @@ local function startFly()
         local camera = workspace.CurrentCamera
         if not (char and root and hum and camera) then return end
 
-        if not flyBV then
+        if not flyBV or flyBV.Parent ~= root then
+            if flyBV then flyBV:Destroy() end
             flyBV = Instance.new("BodyVelocity")
             flyBV.Name = "OLIVER_FlyVelocity"
             flyBV.MaxForce = Vector3.new(1e6, 1e6, 1e6)
-            flyBV.P = 10000
+            flyBV.P = 15000
             flyBV.Parent = root
         end
 
-        if not flyBG then
+        if not flyBG or flyBG.Parent ~= root then
+            if flyBG then flyBG:Destroy() end
             flyBG = Instance.new("BodyGyro")
             flyBG.Name = "OLIVER_FlyGyro"
             flyBG.MaxTorque = Vector3.new(1e6, 1e6, 1e6)
-            flyBG.P = 10000
+            flyBG.P = 15000
+            flyBG.D = 500
             flyBG.Parent = root
         end
 
-        -- Mobile joystick / keyboard input follows the camera direction.
         local move = hum.MoveDirection
-        local camForward = camera.CFrame.LookVector
-        local camRight = camera.CFrame.RightVector
+        local velocity = Vector3.zero
 
-        local x = move:Dot(camRight)
-        local z = move:Dot(camForward)
+        if move.Magnitude > 0.01 then
+            -- MoveDirection is already camera-relative for the Roblox mobile
+            -- thumbstick, so this keeps mobile movement smooth and predictable.
+            velocity = move.Unit * flySpeed
 
-        -- Vertical camera angle controls climb/descent when moving forward.
-        local direction = camRight * x + camForward * z
-        if direction.Magnitude > 1 then direction = direction.Unit end
+            -- When the camera is tilted up/down, forward movement follows it.
+            local camLook = camera.CFrame.LookVector
+            local flatMove = Vector3.new(move.X, 0, move.Z)
 
-        flyBV.Velocity = direction * flySpeed
-        flyBG.CFrame = CFrame.lookAt(root.Position, root.Position + camForward)
+            if flatMove.Magnitude > 0.01 then
+                local forward = Vector3.new(camLook.X, 0, camLook.Z)
+                if forward.Magnitude > 0.01 then
+                    forward = forward.Unit
+                    local right = Vector3.new(camera.CFrame.RightVector.X, 0, camera.CFrame.RightVector.Z)
+                    if right.Magnitude > 0.01 then
+                        right = right.Unit
+                        local x = move:Dot(right)
+                        local z = move:Dot(forward)
+                        local direction = right * x + forward * z
+
+                        if direction.Magnitude > 1 then
+                            direction = direction.Unit
+                        end
+
+                        -- Apply camera pitch mainly to forward/backward motion.
+                        local pitch = math.clamp(camLook.Y, -0.85, 0.85)
+                        local forwardAmount = math.clamp(z, -1, 1)
+                        direction = Vector3.new(
+                            direction.X,
+                            pitch * forwardAmount,
+                            direction.Z
+                        )
+
+                        if direction.Magnitude > 1 then
+                            direction = direction.Unit
+                        end
+
+                        velocity = direction * flySpeed
+                    end
+                end
+            end
+        end
+
+        flyBV.Velocity = velocity
+        flyBG.CFrame = CFrame.lookAt(
+            root.Position,
+            root.Position + Vector3.new(camera.CFrame.LookVector.X, 0, camera.CFrame.LookVector.Z)
+        )
+
         hum.AutoRotate = false
     end)
 end
 
-local FlyToggle = makeToggle(MainPage, "Fly", "Camera direction + mobile joystick", 4, function(on)
+local FlyToggle = makeToggle(MainPage, "Fly (IY Style)", "Camera direction + mobile joystick", 4, function(on)
     if on then startFly() else stopFly() end
 end)
 
-local NoclipToggle = makeToggle(MainPage, "Noclip", "Walk through your character collision", 5, function(on)
-    noclipEnabled = on
+local function stopNoclip()
+    noclipEnabled = false
 
-    if noclipConnection then noclipConnection:Disconnect(); noclipConnection = nil end
+    if noclipConnection then
+        noclipConnection:Disconnect()
+        noclipConnection = nil
+    end
 
-    if on then
-        noclipConnection = RunService.Stepped:Connect(function()
-            local char = LocalPlayer.Character
-            if char then
-                for _, part in ipairs(char:GetDescendants()) do
-                    if part:IsA("BasePart") then
-                        part.CanCollide = false
-                    end
-                end
+    local char = LocalPlayer.Character
+    if char then
+        for _, part in ipairs(char:GetDescendants()) do
+            if part:IsA("BasePart") and savedCollision[part] ~= nil then
+                part.CanCollide = savedCollision[part]
             end
-        end)
+        end
+    end
+
+    table.clear(savedCollision)
+end
+
+local function startNoclip()
+    stopNoclip()
+    noclipEnabled = true
+
+    noclipConnection = RunService.Stepped:Connect(function()
+        local char = LocalPlayer.Character
+        if not char then return end
+
+        for _, part in ipairs(char:GetDescendants()) do
+            if part:IsA("BasePart") then
+                if savedCollision[part] == nil then
+                    savedCollision[part] = part.CanCollide
+                end
+                part.CanCollide = false
+            end
+        end
+    end)
+end
+
+local NoclipToggle = makeToggle(MainPage, "Noclip All Part", "Walk through character parts", 5, function(on)
+    if on then
+        startNoclip()
+    else
+        stopNoclip()
     end
 end)
 
-local ESPToggle = makeToggle(MainPage, "ESP", "Box + line for players", 6, function(on)
-    espEnabled = on
-
+local function clearESP()
     for _, obj in pairs(espObjects) do
         pcall(function() obj:Destroy() end)
     end
     espObjects = {}
+end
+
+local function addESP(player)
+    if not espEnabled or player == LocalPlayer then return end
+
+    local old = espObjects[player.UserId]
+    if old then old:Destroy() end
+
+    local h = Instance.new("Highlight")
+    h.Name = "OLIVER_ESP_" .. player.UserId
+    h.Adornee = player.Character
+    h.FillTransparency = 1
+    h.OutlineColor = Color3.fromRGB(0, 180, 255)
+    h.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    h.Parent = Gui
+    espObjects[player.UserId] = h
+end
+
+local ESPToggle = makeToggle(MainPage, "Box Line (ESP)", "Box + tracer line for players", 6, function(on)
+    espEnabled = on
+    clearESP()
 
     if on then
         for _, p in ipairs(Players:GetPlayers()) do
-            if p ~= LocalPlayer then
-                local h = Instance.new("Highlight")
-                h.Name = "OLIVER_ESP_" .. p.UserId
-                h.Adornee = p.Character
-                h.FillTransparency = 1
-                h.OutlineColor = Color3.fromRGB(0, 180, 255)
-                h.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-                h.Parent = Gui
-                espObjects[p.UserId] = h
-            end
+            addESP(p)
         end
     end
 end)
 
-local WalkToggle = makeToggle(MainPage, "WalkSpeed", "Custom movement speed", 7, function(on)
-    walkSpeedEnabled = on
-    if on and not walkConnection then
-        walkConnection = RunService.Heartbeat:Connect(setWalkSpeed)
-    elseif not on and walkConnection then
-        walkConnection:Disconnect()
-        walkConnection = nil
+local function bindESPPlayer(player)
+    if player == LocalPlayer then return end
+
+    if espConnections[player] then
+        for _, c in ipairs(espConnections[player]) do
+            pcall(function() c:Disconnect() end)
+        end
     end
+
+    espConnections[player] = {
+        player.CharacterAdded:Connect(function()
+            task.wait(0.15)
+            if espEnabled then addESP(player) end
+        end)
+    }
+end
+
+for _, p in ipairs(Players:GetPlayers()) do
+    bindESPPlayer(p)
+end
+
+Players.PlayerAdded:Connect(function(p)
+    bindESPPlayer(p)
+    if espEnabled then
+        task.defer(function() addESP(p) end)
+    end
+end)
+
+Players.PlayerRemoving:Connect(function(p)
+    if espObjects[p.UserId] then
+        espObjects[p.UserId]:Destroy()
+        espObjects[p.UserId] = nil
+    end
+
+    if espConnections[p] then
+        for _, c in ipairs(espConnections[p]) do
+            pcall(function() c:Disconnect() end)
+        end
+        espConnections[p] = nil
+    end
+end)
+
+local WalkToggle = makeToggle(MainPage, "WalkSpeed", "Custom movement speed", 7, function(on)
+    local _, _, hum = characterParts()
+
+    if on then
+        if hum then
+            savedWalkSpeed = hum.WalkSpeed
+        end
+        walkSpeedEnabled = true
+
+        if not walkConnection then
+            walkConnection = RunService.Heartbeat:Connect(setWalkSpeed)
+        end
+    else
+        walkSpeedEnabled = false
+
+        if walkConnection then
+            walkConnection:Disconnect()
+            walkConnection = nil
+        end
+    end
+
     setWalkSpeed()
 end)
 
@@ -543,25 +703,40 @@ RestoreButton.BackgroundColor3 = Color3.fromRGB(35, 45, 62)
 RestoreButton.Parent = MainPage
 RestoreButton.MouseButton1Click:Connect(function()
     stopFly()
-    noclipEnabled = false
-    if noclipConnection then noclipConnection:Disconnect(); noclipConnection = nil end
+    stopNoclip()
+
     walkSpeedEnabled = false
-    if walkConnection then walkConnection:Disconnect(); walkConnection = nil end
+    if walkConnection then
+        walkConnection:Disconnect()
+        walkConnection = nil
+    end
     setWalkSpeed()
+
     espEnabled = false
-    for _, obj in pairs(espObjects) do pcall(function() obj:Destroy() end) end
-    espObjects = {}
+    clearESP()
 end)
+
+
+local MainStatus = makeLabel(
+    MainPage,
+    "FUNCTIONS: FLY  •  NOCLIP  •  ESP  •  WALKSPEED  •  RESET  •  REJOIN  •  RESTORE",
+    UDim2.new(1, 0, 0, 22),
+    UDim2.new(0, 0, 0, 0),
+    9,
+    Color3.fromRGB(80, 145, 190)
+)
+MainStatus.LayoutOrder = 11
+MainStatus.TextXAlignment = Enum.TextXAlignment.Center
 
 -- ============================================================
 -- PLAYER PAGE
 -- ============================================================
 
-makeSectionTitle(PlayerPage, "Player", "Teleport to a player", 1)
+makeSectionTitle(PlayerPage, "Player", "Players in this server", 1)
 
 local Search = makeInput(PlayerPage, "Search player...", "", 2)
 
-local Count = makeLabel(PlayerPage, "Players: 0", UDim2.new(1,0,0,24), UDim2.new(0,0,0,0), 11, Color3.fromRGB(100,160,210))
+local Count = makeLabel(PlayerPage, "PLAYERS IN SERVER: 0", UDim2.new(1,0,0,26), UDim2.new(0,0,0,0), 12, Color3.fromRGB(65,205,255))
 Count.LayoutOrder = 3
 
 local PlayerList = Instance.new("Frame")
@@ -596,7 +771,7 @@ local function updatePlayers()
                 order += 1
 
                 local card = Instance.new("Frame")
-                card.Size = UDim2.new(1,0,0,62)
+                card.Size = UDim2.new(1,0,0,54)
                 card.LayoutOrder = order
                 card.BackgroundColor3 = Color3.fromRGB(10, 31, 54)
                 card.BorderSizePixel = 0
@@ -605,21 +780,21 @@ local function updatePlayers()
                 stroke(card, Color3.fromRGB(25,75,120), 1, 0.25)
 
                 local av = Instance.new("ImageLabel")
-                av.Size = UDim2.new(0,44,0,44)
-                av.Position = UDim2.new(0,9,0.5,-22)
+                av.Size = UDim2.new(0,38,0,38)
+                av.Position = UDim2.new(0,8,0.5,-19)
                 av.BackgroundTransparency = 1
                 av.Image = "rbxthumb://type=AvatarHeadShot&id="..p.UserId.."&w=150&h=150"
                 av.Parent = card
                 corner(av, 10)
 
-                local dn = makeLabel(card, p.DisplayName, UDim2.new(1,-180,0,23), UDim2.new(0,62,0,8), 14, Color3.fromRGB(245,250,255))
+                local dn = makeLabel(card, p.DisplayName, UDim2.new(1,-165,0,20), UDim2.new(0,54,0,6), 13, Color3.fromRGB(245,250,255))
                 dn.Font = Enum.Font.GothamBold
 
-                makeLabel(card, "@"..p.Name, UDim2.new(1,-180,0,18), UDim2.new(0,62,0,32), 10, Color3.fromRGB(120,155,190))
+                makeLabel(card, "@"..p.Name, UDim2.new(1,-165,0,17), UDim2.new(0,54,0,27), 9, Color3.fromRGB(120,155,190))
 
                 local goto = Instance.new("TextButton")
-                goto.Size = UDim2.new(0,72,0,34)
-                goto.Position = UDim2.new(1,-82,0.5,-17)
+                goto.Size = UDim2.new(0,64,0,30)
+                goto.Position = UDim2.new(1,-73,0.5,-15)
                 goto.Text = "Goto"
                 goto.BackgroundColor3 = Color3.fromRGB(0,145,255)
                 goto.TextColor3 = Color3.fromRGB(255,255,255)
@@ -642,7 +817,7 @@ local function updatePlayers()
         end
     end
 
-    Count.Text = "Players: " .. count .. " / " .. math.max(#Players:GetPlayers()-1,0)
+    Count.Text = "PLAYERS IN SERVER: " .. count .. " / " .. math.max(#Players:GetPlayers()-1,0)
 end
 
 Search:GetPropertyChangedSignal("Text"):Connect(updatePlayers)
@@ -785,10 +960,38 @@ end)
 
 -- Character respawn support
 LocalPlayer.CharacterAdded:Connect(function()
-    task.wait(0.25)
-    if walkSpeedEnabled then setWalkSpeed() end
+    task.wait(0.35)
+
+    -- Old physics objects cannot be reused after respawn.
+    if flyEnabled then
+        startFly()
+    end
+
+    if noclipEnabled then
+        startNoclip()
+    end
+
+    if walkSpeedEnabled then
+        setWalkSpeed()
+    end
+
+    if espEnabled then
+        task.defer(function()
+            for _, p in ipairs(Players:GetPlayers()) do
+                if p ~= LocalPlayer then
+                    addESP(p)
+                end
+            end
+        end)
+    end
 end)
 
 -- Start
 selectPage("Main")
 updatePlayers()
+task.defer(function()
+    local _, _, hum = characterParts()
+    if hum then
+        savedWalkSpeed = hum.WalkSpeed
+    end
+end)
