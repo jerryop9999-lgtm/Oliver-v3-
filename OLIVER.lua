@@ -107,7 +107,7 @@ HeaderLogo.BackgroundTransparency = 1
 HeaderLogo.Parent = TopBar
 
 local TitleLabel = Instance.new("TextLabel")
-TitleLabel.Size = UDim2.new(0, 200, 1, 0)
+TitleLabel.Size = UDim2.new(0, 165, 1, 0)
 TitleLabel.Position = UDim2.new(0, 45, 0, 0)
 TitleLabel.Text = "OLIVER V3 HUB"
 TitleLabel.TextColor3 = Color3.fromRGB(0, 220, 255)
@@ -116,6 +116,17 @@ TitleLabel.Font = Enum.Font.SourceSansBold
 TitleLabel.TextSize = 16
 TitleLabel.BackgroundTransparency = 1
 TitleLabel.Parent = TopBar
+
+local HeaderStats = Instance.new("TextLabel")
+HeaderStats.Size = UDim2.new(0, 200, 1, 0)
+HeaderStats.Position = UDim2.new(1, -205, 0, 0)
+HeaderStats.Text = "FPS --  |  PING --"
+HeaderStats.TextColor3 = Color3.fromRGB(235, 235, 235)
+HeaderStats.TextXAlignment = Enum.TextXAlignment.Right
+HeaderStats.Font = Enum.Font.SourceSansBold
+HeaderStats.TextSize = 13
+HeaderStats.BackgroundTransparency = 1
+HeaderStats.Parent = TopBar
 
 ToggleBtn.MouseButton1Click:Connect(function()
     MainFrame.Visible = not MainFrame.Visible
@@ -319,7 +330,8 @@ local function sFLY()
     velocity.Parent = root
 
     FLYING = true
-    hum.PlatformStand = true
+    -- Keep Humanoid active so the mobile joystick supplies MoveDirection.
+    hum.PlatformStand = false
     hum.AutoRotate = false
 
     flyKeyDown = UserInputService.InputBegan:Connect(function(input, processed)
@@ -354,23 +366,29 @@ local function sFLY()
             return
         end
 
-        local forward = control.F + control.B + control.Forward
-        local side = control.L + control.R + control.Left + control.Right
-        local vertical = control.Q + control.E + control.Up - control.Down
-
         local cam = workspace.CurrentCamera
         if not cam then return end
 
+        -- Mobile joystick support through Humanoid.MoveDirection.
         local direction = Vector3.zero
+        local joystickDirection = hum.MoveDirection
 
-        if forward ~= 0 then
-            direction += cam.CFrame.LookVector * forward
+        if joystickDirection.Magnitude > 0.05 then
+            direction += joystickDirection
+        else
+            local forward = control.F + control.B + control.Forward
+            local side = control.L + control.R + control.Left + control.Right
+
+            if forward ~= 0 then
+                direction += cam.CFrame.LookVector * forward
+            end
+
+            if side ~= 0 then
+                direction += cam.CFrame.RightVector * side
+            end
         end
 
-        if side ~= 0 then
-            direction += cam.CFrame.RightVector * side
-        end
-
+        local vertical = control.Q + control.E + control.Up - control.Down
         if vertical ~= 0 then
             direction += Vector3.yAxis * vertical
         end
@@ -499,37 +517,39 @@ local function createInput(placeholder, callback)
     end)
 end
 
-createInput("Fly Speed (Default 1) ______", function(val)
-    iyflyspeed = val
+createInput("Fly Speed (Default 50) ______", function(val)
+    flySpeed = math.clamp(val, 1, 500)
 end)
 
-createInput("WalkSpeed ______", function(val)
-    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-        LocalPlayer.Character.Humanoid.WalkSpeed = val
+local walkSpeedEnabled = false
+local walkSpeedValue = 50
+local walkSpeedBtn
+
+local function applyWalkSpeed()
+    local char = LocalPlayer.Character
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    if hum then
+        hum.WalkSpeed = walkSpeedEnabled and walkSpeedValue or 16
+    end
+end
+
+walkSpeedBtn = createToggleBtn("WalkSpeed", PageMain, function(state)
+    walkSpeedEnabled = state
+    applyWalkSpeed()
+end)
+
+createInput("WalkSpeed Value (Default 50) ______", function(val)
+    walkSpeedValue = math.clamp(val, 1, 500)
+    if walkSpeedEnabled then
+        applyWalkSpeed()
     end
 end)
 
--- Custom Name Tag
-createInput("Name Tag ______", function(text)
-    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head") then
-        local head = LocalPlayer.Character.Head
-        if head:FindFirstChild("CustomNameTag") then head.CustomNameTag:Destroy() end
-        
-        local bb = Instance.new("BillboardGui")
-        bb.Name = "CustomNameTag"
-        bb.Size = UDim2.new(0, 100, 0, 30)
-        bb.StudsOffset = Vector3.new(0, 2.5, 0)
-        bb.AlwaysOnTop = true
-        bb.Parent = head
-        
-        local lbl = Instance.new("TextLabel")
-        lbl.Size = UDim2.new(1, 0, 1, 0)
-        lbl.Text = text
-        lbl.TextColor3 = Color3.fromRGB(255, 215, 0)
-        lbl.TextScaled = true
-        lbl.BackgroundTransparency = 1
-        lbl.Font = Enum.Font.SourceSansBold
-        lbl.Parent = bb
+LocalPlayer.CharacterAdded:Connect(function(char)
+    local hum = char:WaitForChild("Humanoid", 5)
+    if hum then
+        task.wait(0.1)
+        applyWalkSpeed()
     end
 end)
 
@@ -687,13 +707,18 @@ TabPlayerBtn.MouseButton1Click:Connect(function()
 end)
 
 -- ============================================================
--- OLIVER V3 - EXTRA FEATURES
--- Added without removing or replacing existing functions.
+-- OLIVER V3 - UPDATED EXTRAS
+-- Infinite Jump: removed
+-- Name Tag: removed
+-- Anti-AFK: toggle
+-- WalkSpeed: toggle + value
+-- Fly: mobile joystick supported
+-- FPS/Ping: shown in header
 -- ============================================================
 
 local OliverExtraFolder = Instance.new("Frame")
 OliverExtraFolder.Name = "OLIVER_V3_Extras"
-OliverExtraFolder.Size = UDim2.new(0.9, 0, 0, 190)
+OliverExtraFolder.Size = UDim2.new(0.9, 0, 0, 145)
 OliverExtraFolder.BackgroundTransparency = 1
 OliverExtraFolder.Parent = PageMain
 
@@ -702,103 +727,10 @@ ExtraList.Padding = UDim.new(0, 8)
 ExtraList.HorizontalAlignment = Enum.HorizontalAlignment.Center
 ExtraList.Parent = OliverExtraFolder
 
-local StatusLabel = Instance.new("TextLabel")
-StatusLabel.Size = UDim2.new(0.9, 0, 0, 28)
-StatusLabel.Text = "FPS: --   |   Ping: -- ms"
-StatusLabel.TextColor3 = Color3.fromRGB(0, 220, 255)
-StatusLabel.Font = Enum.Font.SourceSansBold
-StatusLabel.TextSize = 14
-StatusLabel.BackgroundColor3 = Color3.fromRGB(35, 35, 48)
-StatusLabel.BackgroundTransparency = 0.1
-StatusLabel.Parent = OliverExtraFolder
-
-local StatusCorner = Instance.new("UICorner")
-StatusCorner.CornerRadius = UDim.new(0, 6)
-StatusCorner.Parent = StatusLabel
-
-local infiniteJump = false
-local infiniteJumpConnection
-
-local function setInfiniteJump(state)
-    infiniteJump = state
-
-    if infiniteJumpConnection then
-        infiniteJumpConnection:Disconnect()
-        infiniteJumpConnection = nil
-    end
-
-    if state then
-        infiniteJumpConnection = UserInputService.JumpRequest:Connect(function()
-            local char = LocalPlayer.Character
-            local hum = char and char:FindFirstChildOfClass("Humanoid")
-            if hum then
-                hum:ChangeState(Enum.HumanoidStateType.Jumping)
-            end
-        end)
-    end
-end
-
-local originalWalkSpeed = 16
-
-local function restoreOliverSettings()
-    pcall(function() NOFLY() end)
-
-    isNoclip = false
-    isESP = false
-    setInfiniteJump(false)
-
-    local char = LocalPlayer.Character
-    local hum = char and char:FindFirstChildOfClass("Humanoid")
-    if hum then
-        hum.WalkSpeed = originalWalkSpeed
-        hum.JumpPower = 50
-        hum.AutoRotate = true
-        hum.PlatformStand = false
-    end
-
-    if char then
-        local head = char:FindFirstChild("Head")
-        local tag = head and head:FindFirstChild("CustomNameTag")
-        if tag then tag:Destroy() end
-    end
-
-    -- Restore collisions for the local character.
-    if char then
-        for _, part in ipairs(char:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = true
-            end
-        end
-    end
-end
-
-local function createExtraButton(text, callback)
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0.9, 0, 0, 32)
-    btn.Text = text
-    btn.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
-    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    btn.Font = Enum.Font.SourceSans
-    btn.TextSize = 14
-    btn.Parent = OliverExtraFolder
-
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 6)
-    corner.Parent = btn
-
-    btn.MouseButton1Click:Connect(callback)
-    return btn
-end
-
-local infiniteJumpBtn = createExtraButton("Infinite Jump: OFF", function()
-    setInfiniteJump(not infiniteJump)
-    infiniteJumpBtn.Text = "Infinite Jump: " .. (infiniteJump and "ON" or "OFF")
-    infiniteJumpBtn.BackgroundColor3 =
-        infiniteJump and Color3.fromRGB(0, 170, 100) or Color3.fromRGB(45, 45, 60)
-end)
-
 local antiAFKEnabled = false
 local antiAFKConnection
+local antiAFKHeartbeat
+local VirtualUser = game:GetService("VirtualUser")
 
 local function setAntiAFK(state)
     antiAFKEnabled = state
@@ -808,13 +740,30 @@ local function setAntiAFK(state)
         antiAFKConnection = nil
     end
 
+    if antiAFKHeartbeat then
+        antiAFKHeartbeat:Disconnect()
+        antiAFKHeartbeat = nil
+    end
+
     if state then
-        local VirtualUser = game:GetService("VirtualUser")
         antiAFKConnection = LocalPlayer.Idled:Connect(function()
             pcall(function()
                 VirtualUser:CaptureController()
                 VirtualUser:ClickButton2(Vector2.new(0, 0))
             end)
+        end)
+
+        -- Periodic idle-reset attempt while enabled.
+        local elapsed = 0
+        antiAFKHeartbeat = RunService.Heartbeat:Connect(function(dt)
+            elapsed += dt
+            if elapsed >= 30 then
+                elapsed = 0
+                pcall(function()
+                    VirtualUser:CaptureController()
+                    VirtualUser:ClickButton2(Vector2.new(0, 0))
+                end)
+            end
         end)
     end
 end
@@ -839,14 +788,20 @@ createExtraButton("Rejoin Server", function()
 end)
 
 createExtraButton("RESTORE ALL", function()
-    restoreOliverSettings()
-    infiniteJumpBtn.Text = "Infinite Jump: OFF"
-    infiniteJumpBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
+    pcall(function() NOFLY() end)
+
+    isNoclip = false
+    isESP = false
+    setAntiAFK(false)
+
+    walkSpeedEnabled = false
+    applyWalkSpeed()
+
     antiAFKBtn.Text = "Anti-AFK: OFF"
     antiAFKBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
 end)
 
--- FPS / Ping monitor
+-- Header FPS / Ping monitor
 local fpsFrames = 0
 local fpsElapsed = 0
 
@@ -862,13 +817,12 @@ RunService.RenderStepped:Connect(function(dt)
             ping = math.floor(LocalPlayer:GetNetworkPing() * 1000 + 0.5)
         end)
 
-        StatusLabel.Text = "FPS: " .. fps .. "   |   Ping: " .. ping .. " ms"
+        HeaderStats.Text = "FPS " .. fps .. "  |  PING " .. ping .. " ms"
+
         fpsFrames = 0
         fpsElapsed = 0
     end
 end)
 
--- Make the scrolling area include the new controls.
-PageMain.CanvasSize = UDim2.new(0, 0, 0, 560)
-
+PageMain.CanvasSize = UDim2.new(0, 0, 0, 500)
 
