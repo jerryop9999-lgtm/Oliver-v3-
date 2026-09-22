@@ -198,18 +198,40 @@ PagesFolder.Parent = MainFrame
 
 --// SPIN FUNCTION
 local spinEnabled = false
-local spinSpeed = 10
+local spinSpeed = 25
 local spinConnection
+local spinCharacterConnection
+
+local function getSpinRoot()
+    local char = LocalPlayer.Character
+    if not char then return nil end
+    return char:FindFirstChild("HumanoidRootPart")
+end
+
+local function applySpin(root, dt)
+    if not root or not root.Parent then return end
+
+    -- Preserve the character's current movement/position while rotating only
+    -- its facing direction. This lets the player keep walking normally.
+    local position = root.Position
+    local currentRotation = root.CFrame - position
+    root.CFrame = CFrame.new(position) * currentRotation * CFrame.Angles(0, math.rad(spinSpeed) * dt, 0)
+end
 
 local function stopSpin()
     spinEnabled = false
+
     if spinConnection then
         spinConnection:Disconnect()
         spinConnection = nil
     end
 
-    local char = LocalPlayer.Character
-    local root = char and char:FindFirstChild("HumanoidRootPart")
+    if spinCharacterConnection then
+        spinCharacterConnection:Disconnect()
+        spinCharacterConnection = nil
+    end
+
+    local root = getSpinRoot()
     if root then
         root.AssemblyAngularVelocity = Vector3.zero
     end
@@ -218,6 +240,12 @@ end
 local function startSpin()
     if spinConnection then
         spinConnection:Disconnect()
+        spinConnection = nil
+    end
+
+    if spinCharacterConnection then
+        spinCharacterConnection:Disconnect()
+        spinCharacterConnection = nil
     end
 
     spinEnabled = true
@@ -225,12 +253,16 @@ local function startSpin()
     spinConnection = RunService.RenderStepped:Connect(function(dt)
         if not spinEnabled then return end
 
-        local char = LocalPlayer.Character
-        local root = char and char:FindFirstChild("HumanoidRootPart")
-        if not root then return end
+        local root = getSpinRoot()
+        if root then
+            applySpin(root, dt)
+        end
+    end)
 
-        root.CFrame = root.CFrame * CFrame.Angles(0, math.rad(spinSpeed) * dt, 0)
-        root.AssemblyAngularVelocity = Vector3.zero
+    -- Keep Spin active after respawn without requiring the button to be pressed again.
+    spinCharacterConnection = LocalPlayer.CharacterAdded:Connect(function(char)
+        if not spinEnabled then return end
+        char:WaitForChild("HumanoidRootPart", 5)
     end)
 end
 
@@ -331,7 +363,7 @@ SpinButton.MouseButton1Click:Connect(function()
         SpinButton.BackgroundColor3 = Color3.fromRGB(0, 170, 100)
     else
         stopSpin()
-        SpinButton.Text = "OFF"
+        SpinButton.Text = "Spin: OFF"
         SpinButton.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
     end
 end)
@@ -340,7 +372,7 @@ SpinSpeedBox.FocusLost:Connect(function()
     local value = tonumber(SpinSpeedBox.Text)
 
     if value then
-        spinSpeed = math.clamp(value, 1, 360)
+        spinSpeed = math.clamp(value, 1, 2000)
         SpinSpeedBox.Text = tostring(spinSpeed)
     else
         SpinSpeedBox.Text = tostring(spinSpeed)
@@ -664,14 +696,6 @@ local function NOFLY()
     clearFly()
 end
 
-createToggleBtn("Fly (IY Style)", PageMain, function(state)
-    if state then
-        sFLY()
-    else
-        NOFLY()
-    end
-end)
-
 -- Noclip All Parts
 createToggleBtn("Noclip All Part", PageMain, function(state)
     isNoclip = state
@@ -752,31 +776,108 @@ Players.PlayerAdded:Connect(function(p)
     if p ~= LocalPlayer then createESPForPlayer(p) end
 end)
 
--- Speed Input Box
-local function createInput(placeholder, callback)
-    local box = Instance.new("TextBox")
-    box.Size = UDim2.new(0.9, 0, 0, 32)
-    box.PlaceholderText = placeholder
-    box.Text = ""
-    box.BackgroundColor3 = Color3.fromRGB(35, 35, 48)
-    box.TextColor3 = Color3.fromRGB(255, 255, 255)
-    box.Font = Enum.Font.SourceSans
-    box.TextSize = 14
-    box.Parent = PageMain
-    
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 6)
-    corner.Parent = box
-    
-    box.FocusLost:Connect(function()
-        local val = tonumber(box.Text)
-        if val then callback(val) end
+-- Compact speed rows styled like the Spin control.
+local function createSpeedRow(title, defaultValue, minValue, maxValue, onToggle, onSpeedChanged)
+    local row = Instance.new("Frame")
+    row.Size = UDim2.new(0.9, 0, 0, 74)
+    row.BackgroundColor3 = Color3.fromRGB(30, 30, 42)
+    row.BorderSizePixel = 0
+    row.Parent = PageMain
+
+    local rowCorner = Instance.new("UICorner")
+    rowCorner.CornerRadius = UDim.new(0, 6)
+    rowCorner.Parent = row
+
+    local titleLabel = Instance.new("TextLabel")
+    titleLabel.BackgroundTransparency = 1
+    titleLabel.Position = UDim2.new(0, 12, 0, 7)
+    titleLabel.Size = UDim2.new(0.5, 0, 0, 25)
+    titleLabel.Font = Enum.Font.SourceSansBold
+    titleLabel.Text = title
+    titleLabel.TextSize = 15
+    titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    titleLabel.Parent = row
+
+    local toggle = Instance.new("TextButton")
+    toggle.Size = UDim2.new(0, 86, 0, 28)
+    toggle.Position = UDim2.new(1, -98, 0, 7)
+    toggle.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
+    toggle.BorderSizePixel = 0
+    toggle.Font = Enum.Font.SourceSansBold
+    toggle.Text = title .. ": OFF"
+    toggle.TextSize = 13
+    toggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+    toggle.Parent = row
+
+    local toggleCorner = Instance.new("UICorner")
+    toggleCorner.CornerRadius = UDim.new(0, 6)
+    toggleCorner.Parent = toggle
+
+    local speedBox = Instance.new("TextBox")
+    speedBox.Size = UDim2.new(0, 86, 0, 27)
+    speedBox.Position = UDim2.new(1, -98, 0, 40)
+    speedBox.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+    speedBox.BorderSizePixel = 0
+    speedBox.Font = Enum.Font.SourceSans
+    speedBox.PlaceholderText = "Speed..."
+    speedBox.Text = tostring(defaultValue)
+    speedBox.TextSize = 12
+    speedBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    speedBox.Parent = row
+
+    local speedCorner = Instance.new("UICorner")
+    speedCorner.CornerRadius = UDim.new(0, 6)
+    speedCorner.Parent = speedBox
+
+    local speedLabel = Instance.new("TextLabel")
+    speedLabel.BackgroundTransparency = 1
+    speedLabel.Position = UDim2.new(0, 12, 0, 40)
+    speedLabel.Size = UDim2.new(0.5, 0, 0, 25)
+    speedLabel.Font = Enum.Font.SourceSans
+    speedLabel.Text = title .. " Speed"
+    speedLabel.TextSize = 12
+    speedLabel.TextColor3 = Color3.fromRGB(175, 175, 190)
+    speedLabel.TextXAlignment = Enum.TextXAlignment.Left
+    speedLabel.Parent = row
+
+    local enabled = false
+
+    toggle.MouseButton1Click:Connect(function()
+        enabled = not enabled
+        toggle.Text = title .. ": " .. (enabled and "ON" or "OFF")
+        toggle.BackgroundColor3 = enabled
+            and Color3.fromRGB(0, 170, 100)
+            or Color3.fromRGB(45, 45, 60)
+        onToggle(enabled)
     end)
+
+    speedBox.FocusLost:Connect(function()
+        local value = tonumber(speedBox.Text)
+        if value then
+            value = math.clamp(value, minValue, maxValue)
+            speedBox.Text = tostring(value)
+            onSpeedChanged(value)
+        else
+            speedBox.Text = tostring(defaultValue)
+        end
+    end)
+
+    return row
 end
 
-createInput("Fly Speed (Default 50) ______", function(val)
-    flySpeed = math.clamp(val, 1, 500)
-end)
+createSpeedRow("Fly", flySpeed, 1, 500,
+    function(state)
+        if state then
+            sFLY()
+        else
+            NOFLY()
+        end
+    end,
+    function(value)
+        flySpeed = value
+    end
+)
 
 local walkSpeedEnabled = false
 local walkSpeedValue = 50
@@ -790,17 +891,18 @@ local function applyWalkSpeed()
     end
 end
 
-walkSpeedBtn = createToggleBtn("WalkSpeed", PageMain, function(state)
-    walkSpeedEnabled = state
-    applyWalkSpeed()
-end)
-
-createInput("WalkSpeed Value (Default 50) ______", function(val)
-    walkSpeedValue = math.clamp(val, 1, 500)
-    if walkSpeedEnabled then
+walkSpeedBtn = createSpeedRow("Walk Speed", walkSpeedValue, 1, 500,
+    function(state)
+        walkSpeedEnabled = state
         applyWalkSpeed()
+    end,
+    function(value)
+        walkSpeedValue = value
+        if walkSpeedEnabled then
+            applyWalkSpeed()
+        end
     end
-end)
+)
 
 LocalPlayer.CharacterAdded:Connect(function(char)
     local hum = char:WaitForChild("Humanoid", 5)
