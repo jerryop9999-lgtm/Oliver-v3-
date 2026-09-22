@@ -192,29 +192,6 @@ PagesFolder.BackgroundTransparency = 1
 PagesFolder.Parent = MainFrame
 
 
--- Page logo helper: every page gets the OLIVER logo.
-local function addPageLogo(page, title)
-    local logo = Instance.new("ImageLabel")
-    logo.Name = "PageLogo"
-    logo.Size = UDim2.new(0, 58, 0, 58)
-    logo.AnchorPoint = Vector2.new(0.5, 0)
-    logo.Position = UDim2.new(0.5, 0, 0, 8)
-    logo.BackgroundTransparency = 1
-    logo.ScaleType = Enum.ScaleType.Fit
-
-    if title == "Main" then
-        logo.Image = "rbxassetid://111648653308842"
-    elseif title == "Player" then
-        logo.Image = "rbxassetid://99191727508887"
-    elseif title == "Animations" then
-        logo.Image = "rbxassetid://105863394969753"
-    end
-
-    logo.Parent = page
-    return logo
-end
-
-
 -- ==========================================
 -- PAGE 1: MAIN PAGE
 -- ==========================================
@@ -238,8 +215,6 @@ local MainPagePadding = Instance.new("UIPadding")
 MainPagePadding.PaddingTop = UDim.new(0, 50)
 MainPagePadding.PaddingBottom = UDim.new(0, 12)
 MainPagePadding.Parent = PageMain
-
-addPageLogo(PageMain, "Main")
 
 local isNoclip = false
 local isESP = false
@@ -644,8 +619,6 @@ PageAnimations.BackgroundTransparency = 1
 PageAnimations.Visible = false
 PageAnimations.Parent = PagesFolder
 
-addPageLogo(PageAnimations, "Animations")
-
 local ComingSoon = Instance.new("TextLabel")
 ComingSoon.Name = "ComingSoon"
 ComingSoon.Size = UDim2.new(1, -20, 0, 70)
@@ -675,8 +648,6 @@ PagePlayer.Size = UDim2.new(1, 0, 1, 0)
 PagePlayer.BackgroundTransparency = 1
 PagePlayer.Visible = false
 PagePlayer.Parent = PagesFolder
-
-addPageLogo(PagePlayer, "Player")
 
 -- Local Player Avatar Header
 local AvatarImage = Instance.new("ImageLabel")
