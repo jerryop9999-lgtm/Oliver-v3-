@@ -249,6 +249,20 @@ end
 -- Mobile: on-screen direction controls
 -- ==========================================
 local FLYING = false
+
+-- OLIVER_MAIN_FUNCTIONS_LABEL
+local MainFunctionsLabel = Instance.new("TextLabel")
+MainFunctionsLabel.Name = "OLIVER_MAIN_FUNCTIONS_LABEL"
+MainFunctionsLabel.BackgroundTransparency = 1
+MainFunctionsLabel.Size = UDim2.new(1, 0, 0, 22)
+MainFunctionsLabel.Font = Enum.Font.GothamBold
+MainFunctionsLabel.Text = "MOVEMENT & TOOLS"
+MainFunctionsLabel.TextSize = 10
+MainFunctionsLabel.TextColor3 = Color3.fromRGB(70, 200, 245)
+MainFunctionsLabel.TextXAlignment = Enum.TextXAlignment.Left
+MainFunctionsLabel.LayoutOrder = -9
+MainFunctionsLabel.Parent = MainPage
+
 local flySpeed = 50
 local flyKeyDown, flyKeyUp, flyRender
 local flyControlsGui
