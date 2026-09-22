@@ -107,7 +107,7 @@ HeaderLogo.BackgroundTransparency = 1
 HeaderLogo.Parent = TopBar
 
 local TitleLabel = Instance.new("TextLabel")
-TitleLabel.Size = UDim2.new(0, 200, 1, 0)
+TitleLabel.Size = UDim2.new(0, 180, 1, 0)
 TitleLabel.Position = UDim2.new(0, 45, 0, 0)
 TitleLabel.Text = "OLIVER V3 HUB"
 TitleLabel.TextColor3 = Color3.fromRGB(0, 220, 255)
@@ -118,8 +118,8 @@ TitleLabel.BackgroundTransparency = 1
 TitleLabel.Parent = TopBar
 
 local HeaderStats = Instance.new("TextLabel")
-HeaderStats.Size = UDim2.new(0, 170, 1, 0)
-HeaderStats.Position = UDim2.new(1, -175, 0, 0)
+HeaderStats.Size = UDim2.new(0, 150, 1, 0)
+HeaderStats.Position = UDim2.new(1, -155, 0, 0)
 HeaderStats.Text = "FPS --  |  PING --"
 HeaderStats.TextColor3 = Color3.fromRGB(235, 235, 235)
 HeaderStats.TextXAlignment = Enum.TextXAlignment.Right
@@ -159,12 +159,62 @@ TabPlayerBtn.Font = Enum.Font.SourceSansBold
 TabPlayerBtn.TextSize = 14
 TabPlayerBtn.Parent = TabBar
 
+
+local TabAnimationsBtn = Instance.new("TextButton")
+TabAnimationsBtn.Size = UDim2.new(1, -10, 0, 35)
+TabAnimationsBtn.Position = UDim2.new(0, 5, 0, 90)
+TabAnimationsBtn.Text = "Animations"
+TabAnimationsBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
+TabAnimationsBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+TabAnimationsBtn.Font = Enum.Font.SourceSansBold
+TabAnimationsBtn.TextSize = 14
+TabAnimationsBtn.Parent = TabBar
+
+for _, tabButton in ipairs({TabMainBtn, TabPlayerBtn, TabAnimationsBtn}) do
+    local tabLogo = Instance.new("ImageLabel")
+    tabLogo.Name = "Logo"
+    tabLogo.Size = UDim2.new(0, 18, 0, 18)
+    tabLogo.Position = UDim2.new(0, 5, 0.5, -9)
+    tabLogo.BackgroundTransparency = 1
+    tabLogo.Image = CUSTOM_LOGO_ID
+    tabLogo.Parent = tabButton
+
+    tabButton.TextXAlignment = Enum.TextXAlignment.Center
+end
+
 -- 6. Content Pages Container
 local PagesFolder = Instance.new("Frame")
 PagesFolder.Size = UDim2.new(1, -100, 1, -40)
 PagesFolder.Position = UDim2.new(0, 100, 0, 40)
 PagesFolder.BackgroundTransparency = 1
 PagesFolder.Parent = MainFrame
+
+
+-- Page logo helper: every page gets the OLIVER logo.
+local function addPageLogo(page, title)
+    local logo = Instance.new("ImageLabel")
+    logo.Name = "PageLogo"
+    logo.Size = UDim2.new(0, 34, 0, 34)
+    logo.Position = UDim2.new(0, 10, 0, 8)
+    logo.BackgroundTransparency = 1
+    logo.Image = CUSTOM_LOGO_ID
+    logo.Parent = page
+
+    local label = Instance.new("TextLabel")
+    label.Name = "PageTitle"
+    label.Size = UDim2.new(1, -55, 0, 34)
+    label.Position = UDim2.new(0, 52, 0, 8)
+    label.BackgroundTransparency = 1
+    label.Text = title
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.Font = Enum.Font.SourceSansBold
+    label.TextSize = 16
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = page
+
+    return logo, label
+end
+
 
 -- ==========================================
 -- PAGE 1: MAIN PAGE
@@ -186,9 +236,11 @@ MainList.SortOrder = Enum.SortOrder.LayoutOrder
 MainList.Parent = PageMain
 
 local MainPagePadding = Instance.new("UIPadding")
-MainPagePadding.PaddingTop = UDim.new(0, 10)
+MainPagePadding.PaddingTop = UDim.new(0, 50)
 MainPagePadding.PaddingBottom = UDim.new(0, 12)
 MainPagePadding.Parent = PageMain
+
+addPageLogo(PageMain, "Main")
 
 local isNoclip = false
 local isESP = false
@@ -584,71 +636,53 @@ LocalPlayer.CharacterAdded:Connect(function(char)
 end)
 
 -- ==========================================
--- PAGE 2: PLAYER PAGE
+-- PAGE 2: ANIMATIONS PAGE
 -- ==========================================
-
--- ============================================================
--- OLIVER V3 - ANIMATIONS PAGE (COMING SOON)
--- ============================================================
-local PageAnimations = Instance.new("ScrollingFrame")
-PageAnimations.Name = "Animations"
+local PageAnimations = Instance.new("Frame")
+PageAnimations.Name = "PageAnimations"
 PageAnimations.Size = UDim2.new(1, 0, 1, 0)
 PageAnimations.BackgroundTransparency = 1
-PageAnimations.BorderSizePixel = 0
-PageAnimations.ScrollBarThickness = 4
 PageAnimations.Visible = false
-PageAnimations.CanvasSize = UDim2.new(0, 0, 0, 0)
-PageAnimations.Parent = MainFrame
+PageAnimations.Parent = PagesFolder
 
-local AnimationsLogo = Instance.new("ImageLabel")
-AnimationsLogo.Name = "PageLogo"
-AnimationsLogo.Size = UDim2.new(0, 42, 0, 42)
-AnimationsLogo.Position = UDim2.new(0, 18, 0, 18)
-AnimationsLogo.BackgroundTransparency = 1
-AnimationsLogo.Image = "rbxassetid://131681030058686"
-AnimationsLogo.Parent = PageAnimations
-
-local AnimationsTitle = Instance.new("TextLabel")
-AnimationsTitle.Size = UDim2.new(1, -80, 0, 42)
-AnimationsTitle.Position = UDim2.new(0, 70, 0, 18)
-AnimationsTitle.BackgroundTransparency = 1
-AnimationsTitle.Text = "Animations"
-AnimationsTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-AnimationsTitle.Font = Enum.Font.SourceSansBold
-AnimationsTitle.TextSize = 22
-AnimationsTitle.TextXAlignment = Enum.TextXAlignment.Left
-AnimationsTitle.Parent = PageAnimations
+addPageLogo(PageAnimations, "Animations")
 
 local ComingSoon = Instance.new("TextLabel")
 ComingSoon.Name = "ComingSoon"
-ComingSoon.Size = UDim2.new(0.9, 0, 0, 80)
-ComingSoon.Position = UDim2.new(0.05, 0, 0.5, -40)
+ComingSoon.Size = UDim2.new(1, -20, 0, 70)
+ComingSoon.Position = UDim2.new(0, 10, 0.5, -20)
 ComingSoon.BackgroundTransparency = 1
 ComingSoon.Text = "COMING SOON"
 ComingSoon.Font = Enum.Font.GothamBlack
-ComingSoon.TextSize = 34
+ComingSoon.TextSize = 30
 ComingSoon.TextStrokeTransparency = 0.55
+ComingSoon.TextXAlignment = Enum.TextXAlignment.Center
 ComingSoon.Parent = PageAnimations
 
 local rgbHue = 0
 RunService.RenderStepped:Connect(function(dt)
+    rgbHue = (rgbHue + dt * 0.35) % 1
     if ComingSoon.Parent then
-        rgbHue = (rgbHue + dt * 0.35) % 1
         ComingSoon.TextColor3 = Color3.fromHSV(rgbHue, 1, 1)
     end
 end)
 
-
+-- ==========================================
+-- PAGE 3: PLAYER PAGE
+-- ==========================================
+-- ==========================================
 local PagePlayer = Instance.new("Frame")
 PagePlayer.Size = UDim2.new(1, 0, 1, 0)
 PagePlayer.BackgroundTransparency = 1
 PagePlayer.Visible = false
 PagePlayer.Parent = PagesFolder
 
+addPageLogo(PagePlayer, "Player")
+
 -- Local Player Avatar Header
 local AvatarImage = Instance.new("ImageLabel")
 AvatarImage.Size = UDim2.new(0, 45, 0, 45)
-AvatarImage.Position = UDim2.new(0, 10, 0, 10)
+AvatarImage.Position = UDim2.new(0, 10, 0, 48)
 AvatarImage.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
 AvatarImage.Image = "rbxthumb://type=AvatarHeadShot&id=" .. LocalPlayer.UserId .. "&w=150&h=150"
 AvatarImage.Parent = PagePlayer
@@ -659,7 +693,7 @@ AvatarCorner.Parent = AvatarImage
 
 local UsernameLabel = Instance.new("TextLabel")
 UsernameLabel.Size = UDim2.new(0, 200, 0, 45)
-UsernameLabel.Position = UDim2.new(0, 62, 0, 10)
+UsernameLabel.Position = UDim2.new(0, 62, 0, 48)
 UsernameLabel.Text = "@" .. LocalPlayer.Name
 UsernameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 UsernameLabel.Font = Enum.Font.SourceSansBold
@@ -671,7 +705,7 @@ UsernameLabel.Parent = PagePlayer
 -- Search Player Box
 local SearchBox = Instance.new("TextBox")
 SearchBox.Size = UDim2.new(0.95, 0, 0, 30)
-SearchBox.Position = UDim2.new(0.025, 0, 0, 65)
+SearchBox.Position = UDim2.new(0.025, 0, 0, 100)
 SearchBox.PlaceholderText = "Search player name..."
 SearchBox.Text = ""
 SearchBox.BackgroundColor3 = Color3.fromRGB(35, 35, 48)
@@ -686,8 +720,8 @@ SearchCorner.Parent = SearchBox
 
 -- Player Scroll List
 local PlayerListScroll = Instance.new("ScrollingFrame")
-PlayerListScroll.Size = UDim2.new(0.95, 0, 1, -105)
-PlayerListScroll.Position = UDim2.new(0.025, 0, 0, 100)
+PlayerListScroll.Size = UDim2.new(0.95, 0, 1, -140)
+PlayerListScroll.Position = UDim2.new(0.025, 0, 0, 135)
 PlayerListScroll.BackgroundTransparency = 1
 PlayerListScroll.BorderSizePixel = 0
 PlayerListScroll.ScrollBarThickness = 5
@@ -792,22 +826,35 @@ Players.PlayerAdded:Connect(function() updatePlayerList(SearchBox.Text) end)
 Players.PlayerRemoving:Connect(function() updatePlayerList(SearchBox.Text) end)
 
 -- Tab Navigation System
+local function selectTab(tab)
+    PageMain.Visible = (tab == "Main")
+    PagePlayer.Visible = (tab == "Player")
+    PageAnimations.Visible = (tab == "Animations")
+
+    local active = Color3.fromRGB(0, 140, 255)
+    local inactive = Color3.fromRGB(40, 40, 55)
+    local activeText = Color3.fromRGB(255, 255, 255)
+    local inactiveText = Color3.fromRGB(200, 200, 200)
+
+    TabMainBtn.BackgroundColor3 = (tab == "Main") and active or inactive
+    TabPlayerBtn.BackgroundColor3 = (tab == "Player") and active or inactive
+    TabAnimationsBtn.BackgroundColor3 = (tab == "Animations") and active or inactive
+
+    TabMainBtn.TextColor3 = (tab == "Main") and activeText or inactiveText
+    TabPlayerBtn.TextColor3 = (tab == "Player") and activeText or inactiveText
+    TabAnimationsBtn.TextColor3 = (tab == "Animations") and activeText or inactiveText
+end
+
 TabMainBtn.MouseButton1Click:Connect(function()
-    PageMain.Visible = true
-    PagePlayer.Visible = false
-    TabMainBtn.BackgroundColor3 = Color3.fromRGB(0, 140, 255)
-    TabMainBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    TabPlayerBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
-    TabPlayerBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+    selectTab("Main")
 end)
 
 TabPlayerBtn.MouseButton1Click:Connect(function()
-    PageMain.Visible = false
-    PagePlayer.Visible = true
-    TabPlayerBtn.BackgroundColor3 = Color3.fromRGB(0, 140, 255)
-    TabPlayerBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    TabMainBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
-    TabMainBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+    selectTab("Player")
+end)
+
+TabAnimationsBtn.MouseButton1Click:Connect(function()
+    selectTab("Animations")
 end)
 
 -- ============================================================
@@ -821,7 +868,7 @@ end)
 
 local OliverExtraFolder = Instance.new("Frame")
 OliverExtraFolder.Name = "OLIVER_V3_Extras"
-OliverExtraFolder.Size = UDim2.new(0.9, 0, 0, 160)
+OliverExtraFolder.Size = UDim2.new(0.9, 0, 0, 120)
 OliverExtraFolder.BackgroundTransparency = 1
 OliverExtraFolder.Parent = PageMain
 
@@ -852,8 +899,6 @@ local function createExtraButton(text, callback)
     return btn
 end
 
-local VirtualUser = game:GetService("VirtualUser")
-
 createExtraButton("Reset Character", function()
     local char = LocalPlayer.Character
     local hum = char and char:FindFirstChildOfClass("Humanoid")
@@ -874,8 +919,6 @@ createExtraButton("RESTORE ALL", function()
 
     walkSpeedEnabled = false
     applyWalkSpeed()
-
-    end
 end)
 
 -- Header FPS / Ping monitor
@@ -925,5 +968,3 @@ local function setOliverOrder()
 end
 setOliverOrder()
 
-
--- Animations page is created above; connect it to the existing sidebar in your tab switcher.
