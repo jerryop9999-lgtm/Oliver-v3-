@@ -80,8 +80,8 @@ makeSmoothDraggable(ToggleBtn)
 -- 3. Main Frame
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 420, 0, 300)
-MainFrame.Position = UDim2.new(0.5, -210, 0.5, -150)
+MainFrame.Size = UDim2.new(0, 440, 0, 360)
+MainFrame.Position = UDim2.new(0.5, -220, 0.5, -180)
 MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
 MainFrame.BorderSizePixel = 0
 MainFrame.ClipsDescendants = true
@@ -107,7 +107,7 @@ HeaderLogo.BackgroundTransparency = 1
 HeaderLogo.Parent = TopBar
 
 local TitleLabel = Instance.new("TextLabel")
-TitleLabel.Size = UDim2.new(0, 165, 1, 0)
+TitleLabel.Size = UDim2.new(0, 200, 1, 0)
 TitleLabel.Position = UDim2.new(0, 45, 0, 0)
 TitleLabel.Text = "OLIVER V3 HUB"
 TitleLabel.TextColor3 = Color3.fromRGB(0, 220, 255)
@@ -118,13 +118,13 @@ TitleLabel.BackgroundTransparency = 1
 TitleLabel.Parent = TopBar
 
 local HeaderStats = Instance.new("TextLabel")
-HeaderStats.Size = UDim2.new(0, 200, 1, 0)
-HeaderStats.Position = UDim2.new(1, -205, 0, 0)
+HeaderStats.Size = UDim2.new(0, 170, 1, 0)
+HeaderStats.Position = UDim2.new(1, -175, 0, 0)
 HeaderStats.Text = "FPS --  |  PING --"
 HeaderStats.TextColor3 = Color3.fromRGB(235, 235, 235)
 HeaderStats.TextXAlignment = Enum.TextXAlignment.Right
 HeaderStats.Font = Enum.Font.SourceSansBold
-HeaderStats.TextSize = 13
+HeaderStats.TextSize = 14
 HeaderStats.BackgroundTransparency = 1
 HeaderStats.Parent = TopBar
 
@@ -172,14 +172,23 @@ PagesFolder.Parent = MainFrame
 local PageMain = Instance.new("ScrollingFrame")
 PageMain.Size = UDim2.new(1, 0, 1, 0)
 PageMain.BackgroundTransparency = 1
-PageMain.CanvasSize = UDim2.new(0, 0, 0, 320)
-PageMain.ScrollBarThickness = 4
+PageMain.CanvasSize = UDim2.new(0, 0, 0, 0)
+PageMain.AutomaticCanvasSize = Enum.AutomaticSize.Y
+PageMain.ScrollingDirection = Enum.ScrollingDirection.Y
+PageMain.ScrollBarThickness = 5
+PageMain.ScrollBarImageTransparency = 0.15
 PageMain.Parent = PagesFolder
 
 local MainList = Instance.new("UIListLayout")
 MainList.Padding = UDim.new(0, 8)
 MainList.HorizontalAlignment = Enum.HorizontalAlignment.Center
+MainList.SortOrder = Enum.SortOrder.LayoutOrder
 MainList.Parent = PageMain
+
+local MainPagePadding = Instance.new("UIPadding")
+MainPagePadding.PaddingTop = UDim.new(0, 10)
+MainPagePadding.PaddingBottom = UDim.new(0, 12)
+MainPagePadding.Parent = PageMain
 
 local isNoclip = false
 local isESP = false
@@ -369,25 +378,46 @@ local function sFLY()
         local cam = workspace.CurrentCamera
         if not cam then return end
 
-        -- Mobile joystick support through Humanoid.MoveDirection.
+        -- Camera-relative flight:
+        -- Mobile joystick forward/back follows the camera pitch too,
+        -- so looking up makes the player fly up and looking down makes
+        -- the player fly down. Side movement stays camera-relative.
         local direction = Vector3.zero
         local joystickDirection = hum.MoveDirection
 
+        local flatLook = Vector3.new(cam.CFrame.LookVector.X, 0, cam.CFrame.LookVector.Z)
+        local flatRight = Vector3.new(cam.CFrame.RightVector.X, 0, cam.CFrame.RightVector.Z)
+
+        if flatLook.Magnitude > 0.001 then
+            flatLook = flatLook.Unit
+        end
+        if flatRight.Magnitude > 0.001 then
+            flatRight = flatRight.Unit
+        end
+
         if joystickDirection.Magnitude > 0.05 then
-            direction += joystickDirection
+            -- Convert the normal Roblox joystick direction into
+            -- camera-relative forward/side input.
+            local forwardAmount = joystickDirection:Dot(flatLook)
+            local sideAmount = joystickDirection:Dot(flatRight)
+
+            direction += cam.CFrame.LookVector * forwardAmount
+            direction += flatRight * sideAmount
         else
             local forward = control.F + control.B + control.Forward
             local side = control.L + control.R + control.Left + control.Right
 
             if forward ~= 0 then
+                -- Keyboard forward/back also follows camera up/down.
                 direction += cam.CFrame.LookVector * forward
             end
 
             if side ~= 0 then
-                direction += cam.CFrame.RightVector * side
+                direction += flatRight * side
             end
         end
 
+        -- E/Q and mobile up/down buttons remain available.
         local vertical = control.Q + control.E + control.Up - control.Down
         if vertical ~= 0 then
             direction += Vector3.yAxis * vertical
@@ -606,12 +636,31 @@ local PlayerListScroll = Instance.new("ScrollingFrame")
 PlayerListScroll.Size = UDim2.new(0.95, 0, 1, -105)
 PlayerListScroll.Position = UDim2.new(0.025, 0, 0, 100)
 PlayerListScroll.BackgroundTransparency = 1
-PlayerListScroll.ScrollBarThickness = 4
+PlayerListScroll.BorderSizePixel = 0
+PlayerListScroll.ScrollBarThickness = 5
+PlayerListScroll.ScrollingDirection = Enum.ScrollingDirection.Y
+PlayerListScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+PlayerListScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+PlayerListScroll.ElasticBehavior = Enum.ElasticBehavior.Always
 PlayerListScroll.Parent = PagePlayer
 
 local PlayerListLayout = Instance.new("UIListLayout")
 PlayerListLayout.Padding = UDim.new(0, 5)
+PlayerListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 PlayerListLayout.Parent = PlayerListScroll
+
+local PlayerListPadding = Instance.new("UIPadding")
+PlayerListPadding.PaddingBottom = UDim.new(0, 8)
+PlayerListPadding.Parent = PlayerListScroll
+
+local function updatePlayerCanvas()
+    task.defer(function()
+        PlayerListScroll.CanvasSize = UDim2.new(
+            0, 0,
+            0, PlayerListLayout.AbsoluteContentSize.Y + 12
+        )
+    end)
+end
 
 local function updatePlayerList(searchText)
     for _, item in pairs(PlayerListScroll:GetChildren()) do
@@ -678,6 +727,8 @@ local function updatePlayerList(searchText)
             end)
         end
     end
+
+    updatePlayerCanvas()
 end
 
 updatePlayerList()
@@ -718,14 +769,34 @@ end)
 
 local OliverExtraFolder = Instance.new("Frame")
 OliverExtraFolder.Name = "OLIVER_V3_Extras"
-OliverExtraFolder.Size = UDim2.new(0.9, 0, 0, 145)
+OliverExtraFolder.Size = UDim2.new(0.9, 0, 0, 160)
 OliverExtraFolder.BackgroundTransparency = 1
 OliverExtraFolder.Parent = PageMain
 
 local ExtraList = Instance.new("UIListLayout")
 ExtraList.Padding = UDim.new(0, 8)
 ExtraList.HorizontalAlignment = Enum.HorizontalAlignment.Center
+ExtraList.SortOrder = Enum.SortOrder.LayoutOrder
 ExtraList.Parent = OliverExtraFolder
+
+local function createExtraButton(text, callback)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, 0, 0, 32)
+    btn.Text = text
+    btn.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Font = Enum.Font.SourceSans
+    btn.TextSize = 14
+    btn.AutoButtonColor = true
+    btn.Parent = OliverExtraFolder
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 6)
+    corner.Parent = btn
+
+    btn.MouseButton1Click:Connect(callback)
+    return btn
+end
 
 local antiAFKEnabled = false
 local antiAFKConnection
@@ -824,5 +895,27 @@ RunService.RenderStepped:Connect(function(dt)
     end
 end)
 
-PageMain.CanvasSize = UDim2.new(0, 0, 0, 500)
+-- Canvas size is automatic; all controls remain reachable by vertical scrolling.
+-- Clean, predictable Main-page order
+local function setOliverOrder()
+    local order = {
+        ["Fly Speed (Default 50) ______"] = 10,
+        ["WalkSpeed Value (Default 50) ______"] = 20,
+        ["Fly (IY Style): OFF"] = 30,
+        ["Noclip All Part: OFF"] = 40,
+        ["Box Line (ESP): OFF"] = 50,
+        ["OLIVER_V3_Extras"] = 60,
+    }
+
+    for _, child in ipairs(PageMain:GetChildren()) do
+        if child:IsA("TextBox") then
+            child.LayoutOrder = order[child.PlaceholderText] or 100
+        elseif child:IsA("TextButton") then
+            child.LayoutOrder = order[child.Text] or 100
+        elseif child.Name == "OLIVER_V3_Extras" then
+            child.LayoutOrder = order[child.Name]
+        end
+    end
+end
+setOliverOrder()
 
