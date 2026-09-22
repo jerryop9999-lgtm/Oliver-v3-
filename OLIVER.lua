@@ -1,32 +1,3 @@
-
---// SPIN LOGIC
-local spinEnabled = false
-local spinSpeed = 10
-local spinConnection
-
-local function stopSpin()
-    spinEnabled = false
-    if spinConnection then
-        spinConnection:Disconnect()
-        spinConnection = nil
-    end
-    local char = LocalPlayer.Character
-    local root = char and char:FindFirstChild("HumanoidRootPart")
-    if root then root.AssemblyAngularVelocity = Vector3.zero end
-end
-
-local function startSpin()
-    if spinConnection then spinConnection:Disconnect() end
-    spinEnabled = true
-    spinConnection = RunService.RenderStepped:Connect(function(dt)
-        local char = LocalPlayer.Character
-        local root = char and char:FindFirstChild("HumanoidRootPart")
-        if not root then return end
-        root.CFrame = root.CFrame * CFrame.Angles(0, math.rad(spinSpeed) * dt, 0)
-        root.AssemblyAngularVelocity = Vector3.zero
-    end)
-end
-
 -- ==========================================
 -- SCRIPT NAME: OLIVER V3
 -- FLY SYSTEM: AUTHENTIC INFINITE YIELD ENGINE
@@ -224,6 +195,45 @@ PagesFolder.Parent = MainFrame
 -- ==========================================
 -- PAGE 1: MAIN PAGE
 -- ==========================================
+
+--// SPIN FUNCTION
+local spinEnabled = false
+local spinSpeed = 10
+local spinConnection
+
+local function stopSpin()
+    spinEnabled = false
+    if spinConnection then
+        spinConnection:Disconnect()
+        spinConnection = nil
+    end
+
+    local char = LocalPlayer.Character
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+    if root then
+        root.AssemblyAngularVelocity = Vector3.zero
+    end
+end
+
+local function startSpin()
+    if spinConnection then
+        spinConnection:Disconnect()
+    end
+
+    spinEnabled = true
+
+    spinConnection = RunService.RenderStepped:Connect(function(dt)
+        if not spinEnabled then return end
+
+        local char = LocalPlayer.Character
+        local root = char and char:FindFirstChild("HumanoidRootPart")
+        if not root then return end
+
+        root.CFrame = root.CFrame * CFrame.Angles(0, math.rad(spinSpeed) * dt, 0)
+        root.AssemblyAngularVelocity = Vector3.zero
+    end)
+end
+
 local PageMain = Instance.new("ScrollingFrame")
 PageMain.Size = UDim2.new(1, 0, 1, 0)
 PageMain.BackgroundTransparency = 1
@@ -241,101 +251,101 @@ MainList.SortOrder = Enum.SortOrder.LayoutOrder
 MainList.Parent = PageMain
 
 local MainPagePadding = Instance.new("UIPadding")
+MainPagePadding.PaddingTop = UDim.new(0, 50)
+MainPagePadding.PaddingBottom = UDim.new(0, 12)
+MainPagePadding.Parent = PageMain
 
---// SPIN CONTROLS - MAIN PAGE
-local SpinCard = Instance.new("Frame")
-SpinCard.Name = "SpinCard"
-SpinCard.Size = UDim2.new(1, -10, 0, 82)
-SpinCard.BackgroundColor3 = Color3.fromRGB(20, 28, 40)
-SpinCard.BackgroundTransparency = 0.05
-SpinCard.BorderSizePixel = 0
-SpinCard.LayoutOrder = 100
-SpinCard.Parent = MainPage
 
-local SpinCardCorner = Instance.new("UICorner")
-SpinCardCorner.CornerRadius = UDim.new(0, 10)
-SpinCardCorner.Parent = SpinCard
+--// SPIN - MAIN PAGE FUNCTION
+local SpinRow = Instance.new("Frame")
+SpinRow.Name = "Spin"
+SpinRow.Size = UDim2.new(0.9, 0, 0, 74)
+SpinRow.BackgroundColor3 = Color3.fromRGB(35, 35, 48)
+SpinRow.BorderSizePixel = 0
+SpinRow.LayoutOrder = 10
+SpinRow.Parent = PageMain
 
-local SpinLabel = Instance.new("TextLabel")
-SpinLabel.BackgroundTransparency = 1
-SpinLabel.Position = UDim2.new(0, 12, 0, 8)
-SpinLabel.Size = UDim2.new(0, 150, 0, 22)
-SpinLabel.Font = Enum.Font.GothamBold
-SpinLabel.Text = "SPIN"
-SpinLabel.TextSize = 13
-SpinLabel.TextColor3 = Color3.fromRGB(80, 215, 255)
-SpinLabel.TextXAlignment = Enum.TextXAlignment.Left
-SpinLabel.Parent = SpinCard
+local SpinRowCorner = Instance.new("UICorner")
+SpinRowCorner.CornerRadius = UDim.new(0, 7)
+SpinRowCorner.Parent = SpinRow
+
+local SpinTitle = Instance.new("TextLabel")
+SpinTitle.BackgroundTransparency = 1
+SpinTitle.Position = UDim2.new(0, 12, 0, 7)
+SpinTitle.Size = UDim2.new(0.5, 0, 0, 25)
+SpinTitle.Font = Enum.Font.SourceSansBold
+SpinTitle.Text = "Spin"
+SpinTitle.TextSize = 15
+SpinTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+SpinTitle.TextXAlignment = Enum.TextXAlignment.Left
+SpinTitle.Parent = SpinRow
 
 local SpinButton = Instance.new("TextButton")
-SpinButton.Size = UDim2.new(0, 92, 0, 30)
-SpinButton.Position = UDim2.new(1, -104, 0, 8)
-SpinButton.BackgroundColor3 = Color3.fromRGB(42, 55, 70)
+SpinButton.Size = UDim2.new(0, 86, 0, 28)
+SpinButton.Position = UDim2.new(1, -98, 0, 7)
+SpinButton.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
 SpinButton.BorderSizePixel = 0
-SpinButton.Font = Enum.Font.GothamBold
+SpinButton.Font = Enum.Font.SourceSansBold
 SpinButton.Text = "OFF"
-SpinButton.TextSize = 11
-SpinButton.TextColor3 = Color3.fromRGB(235, 240, 245)
-SpinButton.Parent = SpinCard
+SpinButton.TextSize = 13
+SpinButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+SpinButton.Parent = SpinRow
 
 local SpinButtonCorner = Instance.new("UICorner")
-SpinButtonCorner.CornerRadius = UDim.new(0, 8)
+SpinButtonCorner.CornerRadius = UDim.new(0, 6)
 SpinButtonCorner.Parent = SpinButton
+
+local SpinSpeedBox = Instance.new("TextBox")
+SpinSpeedBox.Size = UDim2.new(0, 86, 0, 27)
+SpinSpeedBox.Position = UDim2.new(1, -98, 0, 40)
+SpinSpeedBox.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+SpinSpeedBox.BorderSizePixel = 0
+SpinSpeedBox.Font = Enum.Font.SourceSans
+SpinSpeedBox.PlaceholderText = "Speed..."
+SpinSpeedBox.Text = tostring(spinSpeed)
+SpinSpeedBox.TextSize = 12
+SpinSpeedBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+SpinSpeedBox.Parent = SpinRow
+
+local SpinSpeedCorner = Instance.new("UICorner")
+SpinSpeedCorner.CornerRadius = UDim.new(0, 6)
+SpinSpeedCorner.Parent = SpinSpeedBox
 
 local SpinSpeedLabel = Instance.new("TextLabel")
 SpinSpeedLabel.BackgroundTransparency = 1
-SpinSpeedLabel.Position = UDim2.new(0, 12, 0, 43)
-SpinSpeedLabel.Size = UDim2.new(0, 90, 0, 24)
-SpinSpeedLabel.Font = Enum.Font.Gotham
+SpinSpeedLabel.Position = UDim2.new(0, 12, 0, 40)
+SpinSpeedLabel.Size = UDim2.new(0.5, 0, 0, 25)
+SpinSpeedLabel.Font = Enum.Font.SourceSans
 SpinSpeedLabel.Text = "Spin speed"
-SpinSpeedLabel.TextSize = 10
-SpinSpeedLabel.TextColor3 = Color3.fromRGB(145, 165, 185)
+SpinSpeedLabel.TextSize = 12
+SpinSpeedLabel.TextColor3 = Color3.fromRGB(175, 175, 190)
 SpinSpeedLabel.TextXAlignment = Enum.TextXAlignment.Left
-SpinSpeedLabel.Parent = SpinCard
+SpinSpeedLabel.Parent = SpinRow
 
-local SpinSpeedBox = Instance.new("TextBox")
-SpinSpeedBox.Size = UDim2.new(0, 92, 0, 28)
-SpinSpeedBox.Position = UDim2.new(1, -104, 0, 43)
-SpinSpeedBox.BackgroundColor3 = Color3.fromRGB(11, 19, 30)
-SpinSpeedBox.BorderSizePixel = 0
-SpinSpeedBox.Font = Enum.Font.Gotham
-SpinSpeedBox.PlaceholderText = "10"
-SpinSpeedBox.Text = tostring(spinSpeed or 10)
-SpinSpeedBox.TextSize = 10
-SpinSpeedBox.TextColor3 = Color3.fromRGB(235, 240, 245)
-SpinSpeedBox.ClearTextOnFocus = false
-SpinSpeedBox.Parent = SpinCard
-
-local SpinSpeedCorner = Instance.new("UICorner")
-SpinSpeedCorner.CornerRadius = UDim.new(0, 8)
-SpinSpeedCorner.Parent = SpinSpeedBox
-
-SpinButton.Activated:Connect(function()
+SpinButton.MouseButton1Click:Connect(function()
     spinEnabled = not spinEnabled
+
     if spinEnabled then
         startSpin()
         SpinButton.Text = "ON"
-        SpinButton.BackgroundColor3 = Color3.fromRGB(0, 135, 190)
+        SpinButton.BackgroundColor3 = Color3.fromRGB(0, 170, 100)
     else
         stopSpin()
         SpinButton.Text = "OFF"
-        SpinButton.BackgroundColor3 = Color3.fromRGB(42, 55, 70)
+        SpinButton.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
     end
 end)
 
 SpinSpeedBox.FocusLost:Connect(function()
-    local n = tonumber(SpinSpeedBox.Text)
-    if n then
-        spinSpeed = math.clamp(n, 1, 360)
+    local value = tonumber(SpinSpeedBox.Text)
+
+    if value then
+        spinSpeed = math.clamp(value, 1, 360)
         SpinSpeedBox.Text = tostring(spinSpeed)
     else
-        SpinSpeedBox.Text = tostring(spinSpeed or 10)
+        SpinSpeedBox.Text = tostring(spinSpeed)
     end
 end)
-
-MainPagePadding.PaddingTop = UDim.new(0, 50)
-MainPagePadding.PaddingBottom = UDim.new(0, 12)
-MainPagePadding.Parent = PageMain
 
 local isNoclip = false
 local isESP = false
