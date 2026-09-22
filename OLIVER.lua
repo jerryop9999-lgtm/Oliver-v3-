@@ -610,6 +610,80 @@ LocalPlayer.CharacterAdded:Connect(function(char)
 end)
 
 -- ==========================================
+-- KALECH: VEHICLE TELEPORT CYCLE
+-- Teleports the local character to each other player once per second
+-- while the character is seated in a Seat/VehicleSeat.
+-- ==========================================
+local kalechEnabled = false
+local kalechThread = nil
+
+local function isRidingSomething()
+    local char = LocalPlayer.Character
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    local seat = hum and hum.SeatPart
+    return seat ~= nil and (seat:IsA("Seat") or seat:IsA("VehicleSeat"))
+end
+
+local function teleportToPlayer(targetPlayer)
+    local char = LocalPlayer.Character
+    local targetChar = targetPlayer and targetPlayer.Character
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+    local targetRoot = targetChar and targetChar:FindFirstChild("HumanoidRootPart")
+
+    if root and targetRoot then
+        root.CFrame = targetRoot.CFrame * CFrame.new(0, 2.5, 0)
+    end
+end
+
+local function stopKalech()
+    kalechEnabled = false
+    kalechThread = nil
+end
+
+local KalechButton = createToggleBtn("កាលិច", PageMain, function(state)
+    kalechEnabled = state
+
+    if not state then
+        kalechThread = nil
+        return
+    end
+
+    if kalechThread then return end
+
+    local myThread = {}
+    kalechThread = myThread
+
+    task.spawn(function()
+        local index = 0
+
+        while kalechEnabled and kalechThread == myThread do
+            if isRidingSomething() then
+                local targets = {}
+                for _, player in ipairs(Players:GetPlayers()) do
+                    if player ~= LocalPlayer then
+                        table.insert(targets, player)
+                    end
+                end
+
+                if #targets > 0 then
+                    index = (index % #targets) + 1
+                    teleportToPlayer(targets[index])
+                end
+            else
+                -- Only cycles while seated.
+                index = 0
+            end
+
+            task.wait(1)
+        end
+
+        if kalechThread == myThread then
+            kalechThread = nil
+        end
+    end)
+end)
+
+-- ==========================================
 -- PAGE 2: ANIMATIONS PAGE
 -- ==========================================
 local PageAnimations = Instance.new("Frame")
