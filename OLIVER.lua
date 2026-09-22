@@ -12,7 +12,7 @@ local CoreGui = game:GetService("CoreGui")
 local Camera = workspace.CurrentCamera
 local Mouse = LocalPlayer:GetMouse()
 
-local CUSTOM_LOGO_ID = "rbxassetid://128290087536397"
+local CUSTOM_LOGO_ID = "rbxassetid://111648653308842"
 
 -- 1. ScreenGui Setup
 local ScreenGui = Instance.new("ScreenGui")
@@ -170,17 +170,22 @@ TabAnimationsBtn.Font = Enum.Font.SourceSansBold
 TabAnimationsBtn.TextSize = 14
 TabAnimationsBtn.Parent = TabBar
 
-for _, tabButton in ipairs({TabMainBtn, TabPlayerBtn, TabAnimationsBtn}) do
+local function setupLogoTab(tabButton, assetId)
+    tabButton.Text = ""
+    tabButton.TextXAlignment = Enum.TextXAlignment.Center
+
     local tabLogo = Instance.new("ImageLabel")
     tabLogo.Name = "Logo"
-    tabLogo.Size = UDim2.new(0, 18, 0, 18)
-    tabLogo.Position = UDim2.new(0, 5, 0.5, -9)
+    tabLogo.Size = UDim2.new(0, 28, 0, 28)
+    tabLogo.Position = UDim2.new(0.5, -14, 0.5, -14)
     tabLogo.BackgroundTransparency = 1
-    tabLogo.Image = CUSTOM_LOGO_ID
+    tabLogo.Image = assetId
     tabLogo.Parent = tabButton
-
-    tabButton.TextXAlignment = Enum.TextXAlignment.Center
 end
+
+setupLogoTab(TabMainBtn, "rbxassetid://111648653308842")
+setupLogoTab(TabPlayerBtn, "rbxassetid://99191727508887")
+setupLogoTab(TabAnimationsBtn, "rbxassetid://105863394969753")
 
 -- 6. Content Pages Container
 local PagesFolder = Instance.new("Frame")
@@ -194,25 +199,20 @@ PagesFolder.Parent = MainFrame
 local function addPageLogo(page, title)
     local logo = Instance.new("ImageLabel")
     logo.Name = "PageLogo"
-    logo.Size = UDim2.new(0, 34, 0, 34)
+    logo.Size = UDim2.new(0, 42, 0, 42)
     logo.Position = UDim2.new(0, 10, 0, 8)
     logo.BackgroundTransparency = 1
-    logo.Image = CUSTOM_LOGO_ID
+
+    if title == "Main" then
+        logo.Image = "rbxassetid://111648653308842"
+    elseif title == "Player" then
+        logo.Image = "rbxassetid://99191727508887"
+    elseif title == "Animations" then
+        logo.Image = "rbxassetid://105863394969753"
+    end
+
     logo.Parent = page
-
-    local label = Instance.new("TextLabel")
-    label.Name = "PageTitle"
-    label.Size = UDim2.new(1, -55, 0, 34)
-    label.Position = UDim2.new(0, 52, 0, 8)
-    label.BackgroundTransparency = 1
-    label.Text = title
-    label.TextColor3 = Color3.fromRGB(255, 255, 255)
-    label.Font = Enum.Font.SourceSansBold
-    label.TextSize = 16
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.Parent = page
-
-    return logo, label
+    return logo
 end
 
 
