@@ -365,18 +365,42 @@ local function sFLY()
         Up = 0, Down = 0, Left = 0, Right = 0, Forward = 0
     }
 
-    local gyro = Instance.new("BodyGyro")
-    gyro.Name = "OliverFlyGyro"
-    gyro.P = 9e4
-    gyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
-    gyro.CFrame = Camera.CFrame
-    gyro.Parent = root
+    -- Keep fly physics off the character while seated in a vehicle.
+    -- A full BodyGyro on the seated assembly can force cars/bikes to spin.
+    local gyro = nil
+    local velocity = nil
+    local wasSeated = false
 
-    local velocity = Instance.new("BodyVelocity")
-    velocity.Name = "OliverFlyVelocity"
-    velocity.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-    velocity.Velocity = Vector3.zero
-    velocity.Parent = root
+    local function enableCharacterFlyPhysics()
+        if velocity and velocity.Parent then return end
+
+        gyro = Instance.new("BodyGyro")
+        gyro.Name = "OliverFlyGyro"
+        gyro.P = 9e4
+        gyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+        gyro.CFrame = Camera.CFrame
+        gyro.Parent = root
+
+        velocity = Instance.new("BodyVelocity")
+        velocity.Name = "OliverFlyVelocity"
+        velocity.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+        velocity.Velocity = Vector3.zero
+        velocity.Parent = root
+    end
+
+    local function disableCharacterFlyPhysics()
+        if velocity then
+            velocity:Destroy()
+            velocity = nil
+        end
+        if gyro then
+            gyro:Destroy()
+            gyro = nil
+        end
+        root.AssemblyAngularVelocity = Vector3.zero
+    end
+
+    enableCharacterFlyPhysics()
 
     FLYING = true
     -- Keep Humanoid active so the mobile joystick supplies MoveDirection.
@@ -413,6 +437,32 @@ local function sFLY()
         if not FLYING or not root.Parent then
             clearFly()
             return
+        end
+
+        -- IMPORTANT: when sitting in a car/bike/vehicle, pause the fly
+        -- physics completely. This prevents BodyGyro from fighting the
+        -- vehicle's own orientation and making it spin.
+        local seatPart = hum.SeatPart
+        if seatPart then
+            if not wasSeated then
+                wasSeated = true
+                -- Keep BodyVelocity so the vehicle can still fly.
+                -- Remove only the orientation controller so it cannot spin.
+                if gyro then
+                    gyro:Destroy()
+                    gyro = nil
+                end
+                hum.AutoRotate = true
+            end
+
+            -- Never allow the seated vehicle assembly to accumulate spin.
+            if root and root.Parent then
+                root.AssemblyAngularVelocity = Vector3.zero
+            end
+        elseif wasSeated then
+            wasSeated = false
+            hum.AutoRotate = false
+            enableCharacterFlyPhysics()
         end
 
         local cam = workspace.CurrentCamera
@@ -469,7 +519,13 @@ local function sFLY()
             velocity.Velocity = Vector3.zero
         end
 
-        gyro.CFrame = cam.CFrame
+        if gyro and gyro.Parent and not wasSeated then
+            gyro.CFrame = cam.CFrame
+        end
+
+        if wasSeated and root and root.Parent then
+            root.AssemblyAngularVelocity = Vector3.zero
+        end
     end)
 end
 
