@@ -263,6 +263,46 @@ MainFunctionsLabel.TextXAlignment = Enum.TextXAlignment.Left
 MainFunctionsLabel.LayoutOrder = -9
 MainFunctionsLabel.Parent = MainPage
 
+
+--// OLIVER Spin
+local spinEnabled = false
+local spinSpeed = 10
+local spinConnection
+
+local function stopSpin()
+    spinEnabled = false
+    if spinConnection then
+        spinConnection:Disconnect()
+        spinConnection = nil
+    end
+
+    local char = LocalPlayer.Character
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+    if root then
+        root.AssemblyAngularVelocity = Vector3.zero
+    end
+end
+
+local function startSpin()
+    if spinConnection then
+        spinConnection:Disconnect()
+    end
+
+    spinEnabled = true
+
+    spinConnection = RunService.RenderStepped:Connect(function(dt)
+        if not spinEnabled then return end
+
+        local char = LocalPlayer.Character
+        local root = char and char:FindFirstChild("HumanoidRootPart")
+        if not root then return end
+
+        local radians = math.rad(spinSpeed) * dt
+        root.CFrame = root.CFrame * CFrame.Angles(0, radians, 0)
+        root.AssemblyAngularVelocity = Vector3.zero
+    end)
+end
+
 local flySpeed = 50
 local flyKeyDown, flyKeyUp, flyRender
 local flyControlsGui
@@ -468,68 +508,6 @@ local function sFLY()
         local cam = workspace.CurrentCamera
         if not cam then return end
 
-        -- Vehicle steering:
-        -- When seated, steer only the vehicle's horizontal heading toward
-        -- the camera. Do not use the camera pitch or roll, which prevents
-        -- the vehicle from flipping/spinning.
-        if wasSeated and seatPart and seatPart.Parent then
-            local vehicleRoot = seatPart.AssemblyRootPart or seatPart
-            if vehicleRoot and vehicleRoot.Parent then
-                local look = cam.CFrame.LookVector
-                local flatLook = Vector3.new(look.X, 0, look.Z)
-
-                if flatLook.Magnitude > 0.001 then
-                    flatLook = flatLook.Unit
-
-                    -- Smooth steering: rotate only toward the camera heading.
-                    -- Turn rate follows how far the camera is turned:
-                    -- small camera movement = slow turn, large movement = fast turn.
-                    local currentLook = vehicleRoot.CFrame.LookVector
-                    local currentFlat = Vector3.new(currentLook.X, 0, currentLook.Z)
-
-                    if currentFlat.Magnitude > 0.001 then
-                        currentFlat = currentFlat.Unit
-
-                        local dot = math.clamp(currentFlat:Dot(flatLook), -1, 1)
-                        local crossY = currentFlat.X * flatLook.Z - currentFlat.Z * flatLook.X
-                        local angle = math.atan2(crossY, dot)
-
-                        -- Proportional steering with a maximum turn speed.
-                        -- This prevents instant snapping and prevents spinning.
-                        local maxTurnPerFrame = math.rad(5.5)
-                        local turn = math.clamp(angle, -maxTurnPerFrame, maxTurnPerFrame)
-
-                        local pos = vehicleRoot.Position
-                        local rotationOnly = vehicleRoot.CFrame - vehicleRoot.CFrame.Position
-
-                        if math.abs(turn) > 0.0005 then
-                            local nextCF =
-                                CFrame.new(pos)
-                                * CFrame.fromAxisAngle(Vector3.yAxis, turn)
-                                * rotationOnly
-
-                            vehicleRoot.CFrame = nextCF
-
-                            -- Apply only the requested yaw rate. This prevents
-                            -- leftover physics angular velocity from carrying
-                            -- the vehicle on spinning after the camera stops.
-                            local yawRate = math.clamp(
-                                angle * 8,
-                                -math.rad(90),
-                                math.rad(90)
-                            )
-                            vehicleRoot.AssemblyAngularVelocity =
-                                Vector3.new(0, yawRate, 0)
-                        else
-                            -- Camera/hand stopped turning: immediately stop
-                            -- residual spin instead of letting inertia continue.
-                            vehicleRoot.AssemblyAngularVelocity = Vector3.zero
-                        end
-                    end
-                end
-            end
-        end
-
         -- Camera-relative flight:
         -- Mobile joystick forward/back follows the camera pitch too,
         -- so looking up makes the player fly up and looking down makes
@@ -588,7 +566,6 @@ local function sFLY()
         if wasSeated and root and root.Parent then
             root.AssemblyAngularVelocity = Vector3.zero
         end
-
     end)
 end
 
@@ -1139,3 +1116,43 @@ local function setOliverOrder()
 end
 setOliverOrder()
 
+
+
+--// Spin UI
+local SpinToggle
+local SpinSpeedBox
+
+if makeToggle then
+    SpinToggle = makeToggle(
+        MainPage,
+        "Spin",
+        "Rotate your character",
+        20,
+        function(on)
+            if on then
+                startSpin()
+            else
+                stopSpin()
+            end
+        end
+    )
+end
+
+if makeInput then
+    SpinSpeedBox = makeInput(
+        MainPage,
+        "Spin speed...",
+        "10",
+        21
+    )
+
+    SpinSpeedBox.FocusLost:Connect(function()
+        local value = tonumber(SpinSpeedBox.Text)
+        if value then
+            spinSpeed = math.clamp(value, 1, 360)
+            SpinSpeedBox.Text = tostring(spinSpeed)
+        else
+            SpinSpeedBox.Text = tostring(spinSpeed)
+        end
+    end)
+end
