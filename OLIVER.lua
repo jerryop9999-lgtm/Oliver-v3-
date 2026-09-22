@@ -390,7 +390,9 @@ SpinSpeedBox.FocusLost:Connect(function()
     local value = tonumber(SpinSpeedBox.Text)
 
     if value then
-        spinSpeed = math.max(value, 10)
+        -- Spin Speed input range: 10 to 10000000000000000000.
+        local maxSpinInput = 10000000000000000000
+        spinSpeed = math.clamp(value, 10, maxSpinInput)
         SpinSpeedBox.Text = tostring(spinSpeed)
     else
         SpinSpeedBox.Text = tostring(spinSpeed)
