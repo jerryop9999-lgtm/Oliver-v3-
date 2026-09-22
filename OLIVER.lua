@@ -640,61 +640,103 @@ RunService.RenderStepped:Connect(function(dt)
 end)
 
 -- ==========================================
--- PAGE 3: PLAYER PAGE
 -- ==========================================
+-- PAGE 3: PLAYER PAGE (UPDATED UI)
 -- ==========================================
 local PagePlayer = Instance.new("Frame")
+PagePlayer.Name = "PagePlayer"
 PagePlayer.Size = UDim2.new(1, 0, 1, 0)
 PagePlayer.BackgroundTransparency = 1
 PagePlayer.Visible = false
 PagePlayer.Parent = PagesFolder
 
--- Local Player Avatar Header
+-- Player header
+local PlayerHeader = Instance.new("Frame")
+PlayerHeader.Size = UDim2.new(0.95, 0, 0, 58)
+PlayerHeader.Position = UDim2.new(0.025, 0, 0, 8)
+PlayerHeader.BackgroundColor3 = Color3.fromRGB(28, 28, 40)
+PlayerHeader.BorderSizePixel = 0
+PlayerHeader.Parent = PagePlayer
+
+local PlayerHeaderCorner = Instance.new("UICorner")
+PlayerHeaderCorner.CornerRadius = UDim.new(0, 8)
+PlayerHeaderCorner.Parent = PlayerHeader
+
 local AvatarImage = Instance.new("ImageLabel")
-AvatarImage.Size = UDim2.new(0, 45, 0, 45)
-AvatarImage.Position = UDim2.new(0, 10, 0, 48)
-AvatarImage.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
+AvatarImage.Size = UDim2.new(0, 44, 0, 44)
+AvatarImage.Position = UDim2.new(0, 7, 0.5, -22)
+AvatarImage.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
 AvatarImage.Image = "rbxthumb://type=AvatarHeadShot&id=" .. LocalPlayer.UserId .. "&w=150&h=150"
-AvatarImage.Parent = PagePlayer
+AvatarImage.Parent = PlayerHeader
 
 local AvatarCorner = Instance.new("UICorner")
 AvatarCorner.CornerRadius = UDim.new(0, 8)
 AvatarCorner.Parent = AvatarImage
 
+local OnlineDot = Instance.new("Frame")
+OnlineDot.Size = UDim2.new(0, 10, 0, 10)
+OnlineDot.Position = UDim2.new(0, 42, 1, -15)
+OnlineDot.BackgroundColor3 = Color3.fromRGB(60, 220, 110)
+OnlineDot.BorderSizePixel = 0
+OnlineDot.Parent = PlayerHeader
+
+local DotCorner = Instance.new("UICorner")
+DotCorner.CornerRadius = UDim.new(1, 0)
+DotCorner.Parent = OnlineDot
+
 local UsernameLabel = Instance.new("TextLabel")
-UsernameLabel.Size = UDim2.new(0, 200, 0, 45)
-UsernameLabel.Position = UDim2.new(0, 62, 0, 48)
+UsernameLabel.Size = UDim2.new(1, -65, 0, 24)
+UsernameLabel.Position = UDim2.new(0, 60, 0, 8)
 UsernameLabel.Text = "@" .. LocalPlayer.Name
 UsernameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 UsernameLabel.Font = Enum.Font.SourceSansBold
 UsernameLabel.TextSize = 16
 UsernameLabel.TextXAlignment = Enum.TextXAlignment.Left
+UsernameLabel.TextTruncate = Enum.TextTruncate.AtEnd
 UsernameLabel.BackgroundTransparency = 1
-UsernameLabel.Parent = PagePlayer
+UsernameLabel.Parent = PlayerHeader
 
--- Search Player Box
+local PlayerCountLabel = Instance.new("TextLabel")
+PlayerCountLabel.Size = UDim2.new(1, -65, 0, 18)
+PlayerCountLabel.Position = UDim2.new(0, 60, 0, 31)
+PlayerCountLabel.Text = "Players in server: 0"
+PlayerCountLabel.TextColor3 = Color3.fromRGB(155, 160, 175)
+PlayerCountLabel.Font = Enum.Font.SourceSans
+PlayerCountLabel.TextSize = 12
+PlayerCountLabel.TextXAlignment = Enum.TextXAlignment.Left
+PlayerCountLabel.BackgroundTransparency = 1
+PlayerCountLabel.Parent = PlayerHeader
+
+-- Search box
 local SearchBox = Instance.new("TextBox")
-SearchBox.Size = UDim2.new(0.95, 0, 0, 30)
-SearchBox.Position = UDim2.new(0.025, 0, 0, 100)
+SearchBox.Size = UDim2.new(0.95, 0, 0, 34)
+SearchBox.Position = UDim2.new(0.025, 0, 0, 73)
 SearchBox.PlaceholderText = "Search player name..."
 SearchBox.Text = ""
+SearchBox.ClearTextOnFocus = false
 SearchBox.BackgroundColor3 = Color3.fromRGB(35, 35, 48)
 SearchBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+SearchBox.PlaceholderColor3 = Color3.fromRGB(145, 145, 160)
 SearchBox.Font = Enum.Font.SourceSans
 SearchBox.TextSize = 14
 SearchBox.Parent = PagePlayer
 
 local SearchCorner = Instance.new("UICorner")
-SearchCorner.CornerRadius = UDim.new(0, 6)
+SearchCorner.CornerRadius = UDim.new(0, 7)
 SearchCorner.Parent = SearchBox
 
--- Player Scroll List
+local SearchPadding = Instance.new("UIPadding")
+SearchPadding.PaddingLeft = UDim.new(0, 12)
+SearchPadding.PaddingRight = UDim.new(0, 12)
+SearchPadding.Parent = SearchBox
+
+-- Player scroll list
 local PlayerListScroll = Instance.new("ScrollingFrame")
-PlayerListScroll.Size = UDim2.new(0.95, 0, 1, -140)
-PlayerListScroll.Position = UDim2.new(0.025, 0, 0, 135)
+PlayerListScroll.Size = UDim2.new(0.95, 0, 1, -117)
+PlayerListScroll.Position = UDim2.new(0.025, 0, 0, 113)
 PlayerListScroll.BackgroundTransparency = 1
 PlayerListScroll.BorderSizePixel = 0
-PlayerListScroll.ScrollBarThickness = 5
+PlayerListScroll.ScrollBarThickness = 4
 PlayerListScroll.ScrollingDirection = Enum.ScrollingDirection.Y
 PlayerListScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
 PlayerListScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
@@ -702,86 +744,112 @@ PlayerListScroll.ElasticBehavior = Enum.ElasticBehavior.Always
 PlayerListScroll.Parent = PagePlayer
 
 local PlayerListLayout = Instance.new("UIListLayout")
-PlayerListLayout.Padding = UDim.new(0, 5)
+PlayerListLayout.Padding = UDim.new(0, 6)
 PlayerListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 PlayerListLayout.Parent = PlayerListScroll
 
 local PlayerListPadding = Instance.new("UIPadding")
-PlayerListPadding.PaddingBottom = UDim.new(0, 8)
+PlayerListPadding.PaddingBottom = UDim.new(0, 10)
 PlayerListPadding.Parent = PlayerListScroll
 
 local function updatePlayerCanvas()
     task.defer(function()
-        PlayerListScroll.CanvasSize = UDim2.new(
-            0, 0,
-            0, PlayerListLayout.AbsoluteContentSize.Y + 12
-        )
+        PlayerListScroll.CanvasSize = UDim2.new(0, 0, 0, PlayerListLayout.AbsoluteContentSize.Y + 12)
+        PlayerCountLabel.Text = "Players in server: " .. tostring(math.max(#Players:GetPlayers() - 1, 0))
     end)
 end
 
 local function updatePlayerList(searchText)
-    for _, item in pairs(PlayerListScroll:GetChildren()) do
-        if item:IsA("Frame") then item:Destroy() end
+    for _, item in ipairs(PlayerListScroll:GetChildren()) do
+        if item:IsA("Frame") then
+            item:Destroy()
+        end
     end
-    
-    searchText = searchText and searchText:lower() or ""
-    
-    for _, targetPlayer in pairs(Players:GetPlayers()) do
-        if targetPlayer ~= LocalPlayer and (searchText == "" or targetPlayer.Name:lower():find(searchText)) then
-            local card = Instance.new("Frame")
-            card.Size = UDim2.new(1, -8, 0, 38)
-            card.BackgroundColor3 = Color3.fromRGB(35, 35, 48)
-            card.Parent = PlayerListScroll
-            
-            local cCorner = Instance.new("UICorner")
-            cCorner.CornerRadius = UDim.new(0, 6)
-            cCorner.Parent = card
-            
-            -- Avatar Headshot Icon
-            local pAvatar = Instance.new("ImageLabel")
-            pAvatar.Size = UDim2.new(0, 28, 0, 28)
-            pAvatar.Position = UDim2.new(0, 5, 0, 5)
-            pAvatar.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
-            pAvatar.Image = "rbxthumb://type=AvatarHeadShot&id=" .. targetPlayer.UserId .. "&w=150&h=150"
-            pAvatar.Parent = card
-            
-            local pAvatarCorner = Instance.new("UICorner")
-            pAvatarCorner.CornerRadius = UDim.new(0, 6)
-            pAvatarCorner.Parent = pAvatar
-            
-            -- Player Name
-            local pName = Instance.new("TextLabel")
-            pName.Size = UDim2.new(0.5, 0, 1, 0)
-            pName.Position = UDim2.new(0, 40, 0, 0)
-            pName.Text = targetPlayer.Name
-            pName.TextColor3 = Color3.fromRGB(255, 255, 255)
-            pName.TextXAlignment = Enum.TextXAlignment.Left
-            pName.Font = Enum.Font.SourceSans
-            pName.TextSize = 13
-            pName.TextTruncate = Enum.TextTruncate.AtEnd
-            pName.BackgroundTransparency = 1
-            pName.Parent = card
-            
-            -- Goto Button
-            local gotoBtn = Instance.new("TextButton")
-            gotoBtn.Size = UDim2.new(0.28, 0, 0.75, 0)
-            gotoBtn.Position = UDim2.new(0.7, 0, 0.125, 0)
-            gotoBtn.Text = "Goto"
-            gotoBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
-            gotoBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-            gotoBtn.Font = Enum.Font.SourceSansBold
-            gotoBtn.TextSize = 12
-            gotoBtn.Parent = card
-            
-            local gCorner = Instance.new("UICorner")
-            gCorner.CornerRadius = UDim.new(0, 4)
-            gCorner.Parent = gotoBtn
-            
-            gotoBtn.MouseButton1Click:Connect(function()
-                if targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                    LocalPlayer.Character.HumanoidRootPart.CFrame = targetPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
-                end
-            end)
+
+    searchText = tostring(searchText or ""):lower()
+    local layoutOrder = 0
+
+    for _, targetPlayer in ipairs(Players:GetPlayers()) do
+        if targetPlayer ~= LocalPlayer then
+            local nameMatch = targetPlayer.Name:lower():find(searchText, 1, true)
+            local displayMatch = targetPlayer.DisplayName:lower():find(searchText, 1, true)
+
+            if searchText == "" or nameMatch or displayMatch then
+                layoutOrder += 1
+
+                local card = Instance.new("Frame")
+                card.Name = "Player_" .. targetPlayer.UserId
+                card.Size = UDim2.new(1, -8, 0, 48)
+                card.BackgroundColor3 = Color3.fromRGB(35, 35, 48)
+                card.BorderSizePixel = 0
+                card.LayoutOrder = layoutOrder
+                card.Parent = PlayerListScroll
+
+                local cCorner = Instance.new("UICorner")
+                cCorner.CornerRadius = UDim.new(0, 7)
+                cCorner.Parent = card
+
+                local pAvatar = Instance.new("ImageLabel")
+                pAvatar.Size = UDim2.new(0, 36, 0, 36)
+                pAvatar.Position = UDim2.new(0, 6, 0.5, -18)
+                pAvatar.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
+                pAvatar.Image = "rbxthumb://type=AvatarHeadShot&id=" .. targetPlayer.UserId .. "&w=150&h=150"
+                pAvatar.Parent = card
+
+                local pAvatarCorner = Instance.new("UICorner")
+                pAvatarCorner.CornerRadius = UDim.new(0, 7)
+                pAvatarCorner.Parent = pAvatar
+
+                local pName = Instance.new("TextLabel")
+                pName.Size = UDim2.new(1, -145, 0, 21)
+                pName.Position = UDim2.new(0, 50, 0, 5)
+                pName.Text = targetPlayer.DisplayName
+                pName.TextColor3 = Color3.fromRGB(255, 255, 255)
+                pName.TextXAlignment = Enum.TextXAlignment.Left
+                pName.Font = Enum.Font.SourceSansBold
+                pName.TextSize = 14
+                pName.TextTruncate = Enum.TextTruncate.AtEnd
+                pName.BackgroundTransparency = 1
+                pName.Parent = card
+
+                local pUser = Instance.new("TextLabel")
+                pUser.Size = UDim2.new(1, -145, 0, 17)
+                pUser.Position = UDim2.new(0, 50, 0, 26)
+                pUser.Text = "@" .. targetPlayer.Name
+                pUser.TextColor3 = Color3.fromRGB(150, 155, 170)
+                pUser.TextXAlignment = Enum.TextXAlignment.Left
+                pUser.Font = Enum.Font.SourceSans
+                pUser.TextSize = 11
+                pUser.TextTruncate = Enum.TextTruncate.AtEnd
+                pUser.BackgroundTransparency = 1
+                pUser.Parent = card
+
+                local gotoBtn = Instance.new("TextButton")
+                gotoBtn.Size = UDim2.new(0, 72, 0, 32)
+                gotoBtn.Position = UDim2.new(1, -80, 0.5, -16)
+                gotoBtn.Text = "Goto"
+                gotoBtn.BackgroundColor3 = Color3.fromRGB(0, 160, 220)
+                gotoBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+                gotoBtn.Font = Enum.Font.SourceSansBold
+                gotoBtn.TextSize = 13
+                gotoBtn.AutoButtonColor = true
+                gotoBtn.Parent = card
+
+                local gCorner = Instance.new("UICorner")
+                gCorner.CornerRadius = UDim.new(0, 6)
+                gCorner.Parent = gotoBtn
+
+                gotoBtn.MouseButton1Click:Connect(function()
+                    local targetCharacter = targetPlayer.Character
+                    local localCharacter = LocalPlayer.Character
+                    local targetRoot = targetCharacter and targetCharacter:FindFirstChild("HumanoidRootPart")
+                    local localRoot = localCharacter and localCharacter:FindFirstChild("HumanoidRootPart")
+
+                    if targetRoot and localRoot then
+                        localRoot.CFrame = targetRoot.CFrame * CFrame.new(0, 0, 3)
+                    end
+                end)
+            end
         end
     end
 
