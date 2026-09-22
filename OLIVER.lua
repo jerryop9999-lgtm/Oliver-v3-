@@ -481,10 +481,51 @@ local function sFLY()
                 if flatLook.Magnitude > 0.001 then
                     flatLook = flatLook.Unit
 
-                    -- Preserve the vehicle's current position and vertical
-                    -- orientation; change only its yaw.
-                    local pos = vehicleRoot.Position
-                    vehicleRoot.CFrame = CFrame.lookAt(pos, pos + flatLook, Vector3.yAxis)
+                    -- Smooth steering: rotate only toward the camera heading.
+                    -- Turn rate follows how far the camera is turned:
+                    -- small camera movement = slow turn, large movement = fast turn.
+                    local currentLook = vehicleRoot.CFrame.LookVector
+                    local currentFlat = Vector3.new(currentLook.X, 0, currentLook.Z)
+
+                    if currentFlat.Magnitude > 0.001 then
+                        currentFlat = currentFlat.Unit
+
+                        local dot = math.clamp(currentFlat:Dot(flatLook), -1, 1)
+                        local crossY = currentFlat.X * flatLook.Z - currentFlat.Z * flatLook.X
+                        local angle = math.atan2(crossY, dot)
+
+                        -- Proportional steering with a maximum turn speed.
+                        -- This prevents instant snapping and prevents spinning.
+                        local maxTurnPerFrame = math.rad(5.5)
+                        local turn = math.clamp(angle, -maxTurnPerFrame, maxTurnPerFrame)
+
+                        local pos = vehicleRoot.Position
+                        local rotationOnly = vehicleRoot.CFrame - vehicleRoot.CFrame.Position
+
+                        if math.abs(turn) > 0.0005 then
+                            local nextCF =
+                                CFrame.new(pos)
+                                * CFrame.fromAxisAngle(Vector3.yAxis, turn)
+                                * rotationOnly
+
+                            vehicleRoot.CFrame = nextCF
+
+                            -- Apply only the requested yaw rate. This prevents
+                            -- leftover physics angular velocity from carrying
+                            -- the vehicle on spinning after the camera stops.
+                            local yawRate = math.clamp(
+                                angle * 8,
+                                -math.rad(90),
+                                math.rad(90)
+                            )
+                            vehicleRoot.AssemblyAngularVelocity =
+                                Vector3.new(0, yawRate, 0)
+                        else
+                            -- Camera/hand stopped turning: immediately stop
+                            -- residual spin instead of letting inertia continue.
+                            vehicleRoot.AssemblyAngularVelocity = Vector3.zero
+                        end
+                    end
                 end
             end
         end
@@ -548,12 +589,6 @@ local function sFLY()
             root.AssemblyAngularVelocity = Vector3.zero
         end
 
-        if wasSeated and seatPart and seatPart.Parent then
-            local vehicleRoot = seatPart.AssemblyRootPart or seatPart
-            if vehicleRoot and vehicleRoot.Parent then
-                vehicleRoot.AssemblyAngularVelocity = Vector3.zero
-            end
-        end
     end)
 end
 
