@@ -958,8 +958,7 @@ LocalPlayer.CharacterAdded:Connect(function(char)
 end)
 
 -- ==========================================
--- PAGE 2: ANIMATIONS PAGE
--- ==========================================
+-- PAGE 2: ANIMATIONS PAGE - ADIDAS COMMUNITY
 local PageAnimations = Instance.new("Frame")
 PageAnimations.Name = "PageAnimations"
 PageAnimations.Size = UDim2.new(1, 0, 1, 0)
@@ -967,28 +966,60 @@ PageAnimations.BackgroundTransparency = 1
 PageAnimations.Visible = false
 PageAnimations.Parent = PagesFolder
 
-local ComingSoon = Instance.new("TextLabel")
-ComingSoon.Name = "ComingSoon"
-ComingSoon.Size = UDim2.new(1, -20, 0, 70)
-ComingSoon.Position = UDim2.new(0, 10, 0.5, -20)
-ComingSoon.BackgroundTransparency = 1
-ComingSoon.Text = "COMING SOON"
-ComingSoon.Font = Enum.Font.GothamBlack
-ComingSoon.TextSize = 30
-ComingSoon.TextStrokeTransparency = 0.55
-ComingSoon.TextXAlignment = Enum.TextXAlignment.Center
-ComingSoon.Parent = PageAnimations
+local AdidasAnimationLogoId = "rbxassetid://105863394969753"
 
-local rgbHue = 0
-RunService.RenderStepped:Connect(function(dt)
-    rgbHue = (rgbHue + dt * 0.35) % 1
-    if ComingSoon.Parent then
-        ComingSoon.TextColor3 = Color3.fromHSV(rgbHue, 1, 1)
-    end
-end)
+local AdidasHeader = Instance.new("Frame")
+AdidasHeader.Size = UDim2.new(0.95, 0, 0, 64)
+AdidasHeader.Position = UDim2.new(0.025, 0, 0, 8)
+AdidasHeader.BackgroundColor3 = Color3.fromRGB(28, 28, 40)
+AdidasHeader.BorderSizePixel = 0
+AdidasHeader.Parent = PageAnimations
 
--- ==========================================
--- ==========================================
+local AdidasHeaderCorner = Instance.new("UICorner")
+AdidasHeaderCorner.CornerRadius = UDim.new(0, 8)
+AdidasHeaderCorner.Parent = AdidasHeader
+
+local AdidasLogo = Instance.new("ImageLabel")
+AdidasLogo.Name = "AdidasCommunityLogo"
+AdidasLogo.Size = UDim2.new(0, 46, 0, 46)
+AdidasLogo.Position = UDim2.new(0, 9, 0.5, -23)
+AdidasLogo.BackgroundTransparency = 1
+AdidasLogo.Image = AdidasAnimationLogoId
+AdidasLogo.Parent = AdidasHeader
+
+local AdidasTitle = Instance.new("TextLabel")
+AdidasTitle.Size = UDim2.new(1, -70, 0, 25)
+AdidasTitle.Position = UDim2.new(0, 65, 0, 8)
+AdidasTitle.BackgroundTransparency = 1
+AdidasTitle.Text = "Adidas Community"
+AdidasTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+AdidasTitle.Font = Enum.Font.GothamBold
+AdidasTitle.TextSize = 17
+AdidasTitle.TextXAlignment = Enum.TextXAlignment.Left
+AdidasTitle.Parent = AdidasHeader
+
+local AdidasSubtitle = Instance.new("TextLabel")
+AdidasSubtitle.Size = UDim2.new(1, -70, 0, 20)
+AdidasSubtitle.Position = UDim2.new(0, 65, 0, 34)
+AdidasSubtitle.BackgroundTransparency = 1
+AdidasSubtitle.Text = "Animations"
+AdidasSubtitle.TextColor3 = Color3.fromRGB(150, 155, 170)
+AdidasSubtitle.Font = Enum.Font.SourceSans
+AdidasSubtitle.TextSize = 13
+AdidasSubtitle.TextXAlignment = Enum.TextXAlignment.Left
+AdidasSubtitle.Parent = AdidasHeader
+
+local AdidasStatus = Instance.new("TextLabel")
+AdidasStatus.Size = UDim2.new(0.95, 0, 0, 30)
+AdidasStatus.Position = UDim2.new(0.025, 0, 0, 84)
+AdidasStatus.BackgroundTransparency = 1
+AdidasStatus.Text = "Adidas Community Animations"
+AdidasStatus.Font = Enum.Font.GothamBold
+AdidasStatus.TextSize = 18
+AdidasStatus.TextColor3 = Color3.fromRGB(70, 200, 245)
+AdidasStatus.TextXAlignment = Enum.TextXAlignment.Center
+AdidasStatus.Parent = PageAnimations
+
 -- PAGE 3: PLAYER PAGE (UPDATED UI)
 -- ==========================================
 local PagePlayer = Instance.new("Frame")
