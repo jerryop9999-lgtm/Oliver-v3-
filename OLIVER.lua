@@ -990,7 +990,7 @@ local animationEnabled = false
 local animationCleanup = nil
 local animationRespawnConnection = nil
 local activeAnimationPack = nil -- "Adidas" or "ENDLESS"
-local applyEndlessAnimations
+
 
 local function stopAdidasAnimations(character)
     if animationCleanup then
@@ -1074,14 +1074,14 @@ local function applyAdidasAnimations(character)
         end
     end
 
-    loadTrack("Idle", AdidasCommunity.Idle, Enum.AnimationPriority.Idle, true)
-    loadTrack("Walk", AdidasCommunity.Walk, Enum.AnimationPriority.Movement, true)
-    loadTrack("Run", AdidasCommunity.Run, Enum.AnimationPriority.Movement, true)
-    loadTrack("Jump", AdidasCommunity.Jump, Enum.AnimationPriority.Movement, false)
-    loadTrack("Fall", AdidasCommunity.Fall, Enum.AnimationPriority.Movement, true)
-    loadTrack("Climb", AdidasCommunity.Climb, Enum.AnimationPriority.Movement, true)
-    loadTrack("Swim", AdidasCommunity.Swim, Enum.AnimationPriority.Movement, true)
-    loadTrack("SwimIdle", AdidasCommunity.SwimIdle, Enum.AnimationPriority.Movement, true)
+    loadTrack("Idle", AdidasCommunity.Idle, Enum.AnimationPriority.Action, true)
+    loadTrack("Walk", AdidasCommunity.Walk, Enum.AnimationPriority.Action, true)
+    loadTrack("Run", AdidasCommunity.Run, Enum.AnimationPriority.Action, true)
+    loadTrack("Jump", AdidasCommunity.Jump, Enum.AnimationPriority.Action, false)
+    loadTrack("Fall", AdidasCommunity.Fall, Enum.AnimationPriority.Action, true)
+    loadTrack("Climb", AdidasCommunity.Climb, Enum.AnimationPriority.Action, true)
+    loadTrack("Swim", AdidasCommunity.Swim, Enum.AnimationPriority.Action, true)
+    loadTrack("SwimIdle", AdidasCommunity.SwimIdle, Enum.AnimationPriority.Action, true)
 
     local currentTrack = nil
     local stateConnection
@@ -1185,13 +1185,18 @@ local function stopCurrentAnimation(character)
         local humanoid = character:FindFirstChildOfClass("Humanoid")
         local animate = character:FindFirstChild("Animate")
 
+        -- Only remove OLIVER custom animation tracks.
+        -- Do NOT stop every Animator track: Roblox's normal Animate
+        -- controller must remain free to restore idle/walk/jump.
         if humanoid then
             local animator = humanoid:FindFirstChildOfClass("Animator")
             if animator then
                 for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
-                    pcall(function()
-                        track:Stop(0.08)
-                    end)
+                    if tostring(track.Name):sub(1, 7) == "OLIVER_" then
+                        pcall(function()
+                            track:Stop(0.08)
+                        end)
+                    end
                 end
             end
         end
@@ -1199,12 +1204,11 @@ local function stopCurrentAnimation(character)
         local adidasFolder = character:FindFirstChild("__OLIVER_AdidasAnimation")
         if adidasFolder then adidasFolder:Destroy() end
 
-        local angelFolder = character:FindFirstChild("__OLIVER_ENDLESS_Animation")
-        if angelFolder then angelFolder:Destroy() end
+        local endlessFolder = character:FindFirstChild("__OLIVER_ENDLESS_Animation")
+        if endlessFolder then endlessFolder:Destroy() end
 
+        -- Keep the normal Roblox animation controller enabled.
         if animate then
-            animate.Enabled = false
-            task.wait(0.05)
             animate.Enabled = true
         end
     end
@@ -1222,15 +1226,22 @@ local function enableAdidas()
     end
 end
 
-local function disableAdidas()
+local function disableCurrentAnimation()
+    local wasEndless = (activeAnimationPack == "ENDLESS")
+
     animationEnabled = false
     activeAnimationPack = nil
 
     local character = LocalPlayer.Character
     if character then
+        if wasEndless then
+            restoreEndlessAnimations()
+        end
         stopCurrentAnimation(character)
     end
 end
+
+local disableAdidas = disableCurrentAnimation
 
 if animationRespawnConnection then
     animationRespawnConnection:Disconnect()
@@ -1246,13 +1257,15 @@ animationRespawnConnection = LocalPlayer.CharacterAdded:Connect(function(charact
     if activeAnimationPack == "Adidas" then
         applyAdidasAnimations(character)
     elseif activeAnimationPack == "ENDLESS" then
+        task.wait(0.15)
         applyEndlessAnimations(character)
     end
 end)
 
 
 -- ==========================================
--- ANGEL (FLOATING) - SAFE CONTROLLER
+-- ENDLESS AURA FLOATING - REAL ANIMATE OVERRIDE
+-- Uses Roblox's normal Animate controller.
 -- ==========================================
 local EndlessAnimations = {
     Idle     = "rbxassetid://75638427965557",
@@ -1265,187 +1278,132 @@ local EndlessAnimations = {
     SwimIdle = "rbxassetid://110044773049875",
 }
 
-local applyEndlessAnimations
-local endlessCleanup = nil
-local endlessConnections = {}
+local endlessOriginal = nil
 
-local function clearEndless()
-    for _, c in ipairs(endlessConnections) do
-        pcall(function() c:Disconnect() end)
-    end
-    table.clear(endlessConnections)
+local function getAnimateObject(character)
+    return character and character:FindFirstChild("Animate")
+end
 
-    if endlessCleanup then
-        pcall(endlessCleanup)
-        endlessCleanup = nil
-    end
-
-    local character = LocalPlayer.Character
-    if not character then return end
-
-    local folder = character:FindFirstChild("__OLIVER_ENDLESS_Animation")
-    if folder then folder:Destroy() end
-
-    local humanoid = character:FindFirstChildOfClass("Humanoid")
-    if humanoid then
-        local animator = humanoid:FindFirstChildOfClass("Animator")
-        if animator then
-            for _, tr in ipairs(animator:GetPlayingAnimationTracks()) do
-                if tr.Name:sub(1, 13) == "OLIVER_ENDLESS_" then
-                    pcall(function() tr:Stop(0.08) end)
-                end
-            end
-        end
-    end
-
-    -- IMPORTANT: never leave Roblox Animate disabled.
-    local animate = character:FindFirstChild("Animate")
-    if animate then
-        animate.Enabled = true
+local function setAnimationId(parent, childName, id)
+    local obj = parent and parent:FindFirstChild(childName)
+    if obj and obj:IsA("Animation") then
+        obj.AnimationId = id
+        return obj
     end
 end
 
-applyEndlessAnimations = function(character)
+local function applyEndlessAnimations(character)
     if not character or not character.Parent then return false end
     if not animationEnabled or activeAnimationPack ~= "ENDLESS" then return false end
 
-    clearEndless()
+    local animate = getAnimateObject(character)
+    if not animate then return false end
 
-    local humanoid = character:FindFirstChildOfClass("Humanoid")
-    if not humanoid then return false end
+    -- Save the real Roblox Animate IDs once for Restore.
+    endlessOriginal = {
+        character = character,
+        idle1 = animate:FindFirstChild("idle")
+            and animate.idle:FindFirstChild("Animation1")
+            and animate.idle.Animation1.AnimationId,
+        idle2 = animate:FindFirstChild("idle")
+            and animate.idle:FindFirstChild("Animation2")
+            and animate.idle.Animation2.AnimationId,
+        walk = animate:FindFirstChild("walk")
+            and animate.walk:FindFirstChild("WalkAnim")
+            and animate.walk.WalkAnim.AnimationId,
+        run = animate:FindFirstChild("run")
+            and animate.run:FindFirstChild("RunAnim")
+            and animate.run.RunAnim.AnimationId,
+        jump = animate:FindFirstChild("jump")
+            and animate.jump:FindFirstChild("JumpAnim")
+            and animate.jump.JumpAnim.AnimationId,
+        fall = animate:FindFirstChild("fall")
+            and animate.fall:FindFirstChild("FallAnim")
+            and animate.fall.FallAnim.AnimationId,
+        climb = animate:FindFirstChild("climb")
+            and animate.climb:FindFirstChild("ClimbAnim")
+            and animate.climb.ClimbAnim.AnimationId,
+        swim = animate:FindFirstChild("swim")
+            and animate.swim:FindFirstChild("Swim")
+            and animate.swim.Swim.AnimationId,
+        swimIdle = animate:FindFirstChild("swimidle")
+            and animate.swimidle:FindFirstChild("SwimIdle")
+            and animate.swimidle.SwimIdle.AnimationId,
+    }
 
-    local animator = humanoid:FindFirstChildOfClass("Animator")
-    if not animator then
-        animator = Instance.new("Animator")
-        animator.Parent = humanoid
+    local idle = animate:FindFirstChild("idle")
+    local walk = animate:FindFirstChild("walk")
+    local run = animate:FindFirstChild("run")
+    local jump = animate:FindFirstChild("jump")
+    local fall = animate:FindFirstChild("fall")
+    local climb = animate:FindFirstChild("climb")
+    local swim = animate:FindFirstChild("swim")
+    local swimIdle = animate:FindFirstChild("swimidle")
+
+    if idle then
+        setAnimationId(idle, "Animation1", EndlessAnimations.Idle)
+        setAnimationId(idle, "Animation2", EndlessAnimations.Idle)
     end
+    setAnimationId(walk, "WalkAnim", EndlessAnimations.Walk)
+    setAnimationId(run, "RunAnim", EndlessAnimations.Run)
+    setAnimationId(jump, "JumpAnim", EndlessAnimations.Jump)
+    setAnimationId(fall, "FallAnim", EndlessAnimations.Fall)
+    setAnimationId(climb, "ClimbAnim", EndlessAnimations.Climb)
+    setAnimationId(swim, "Swim", EndlessAnimations.Swim)
+    setAnimationId(swimIdle, "SwimIdle", EndlessAnimations.SwimIdle)
 
-    local animate = character:FindFirstChild("Animate")
-    if animate then
-        -- Keep default controller alive; custom tracks override visually.
-        animate.Enabled = true
-    end
+    -- Restart only Roblox's normal controller so the new IDs are picked up.
+    animate.Enabled = false
+    task.wait()
+    animate.Enabled = true
 
-    local folder = Instance.new("Folder")
-    folder.Name = "__OLIVER_ENDLESS_Animation"
-    folder.Parent = character
-
-    local tracks = {}
-
-    local function load(name, id, priority, looped)
-        local anim = Instance.new("Animation")
-        anim.Name = "OLIVER_ENDLESS_" .. name
-        anim.AnimationId = id
-        anim.Parent = folder
-
-        local ok, tr = pcall(function()
-            return animator:LoadAnimation(anim)
-        end)
-
-        if ok and tr then
-            tr.Name = "OLIVER_ENDLESS_" .. name
-            tr.Priority = priority
-            tr.Looped = looped
-            tracks[name] = tr
-            return tr
-        end
-    end
-
-    -- Action priority reliably overlays Roblox's default movement tracks.
-    load("Idle", EndlessAnimations.Idle, Enum.AnimationPriority.Action, true)
-    load("Walk", EndlessAnimations.Walk, Enum.AnimationPriority.Action, true)
-    load("Run", EndlessAnimations.Run, Enum.AnimationPriority.Action, true)
-    load("Jump", EndlessAnimations.Jump, Enum.AnimationPriority.Action, false)
-    load("Fall", EndlessAnimations.Fall, Enum.AnimationPriority.Action, true)
-    load("Climb", EndlessAnimations.Climb, Enum.AnimationPriority.Action, true)
-    load("Swim", EndlessAnimations.Swim, Enum.AnimationPriority.Action, true)
-    load("SwimIdle", EndlessAnimations.SwimIdle, Enum.AnimationPriority.Action, true)
-
-    if not next(tracks) then
-        folder:Destroy()
-        return false
-    end
-
-    local current
-
-    local function stopOthers(except)
-        for _, tr in pairs(tracks) do
-            if tr ~= except and tr.IsPlaying then
-                pcall(function() tr:Stop(0.08) end)
-            end
-        end
-    end
-
-    local function play(name, speed)
-        local tr = tracks[name]
-        if not tr then return end
-
-        if current ~= tr then
-            stopOthers(tr)
-            current = tr
-            pcall(function() tr:Play(0.08, 1, speed or 1) end)
-        elseif speed then
-            pcall(function() tr:AdjustSpeed(speed) end)
-        end
-    end
-
-    local function update()
-        if not animationEnabled or activeAnimationPack ~= "ENDLESS" then return end
-        if humanoid.Health <= 0 then return end
-
-        local state = humanoid:GetState()
-        local moving = humanoid.MoveDirection.Magnitude > 0.05
-        local speed = humanoid.WalkSpeed
-
-        if state == Enum.HumanoidStateType.Jumping then
-            play("Jump", 1)
-        elseif state == Enum.HumanoidStateType.Freefall then
-            play("Fall", 1)
-        elseif state == Enum.HumanoidStateType.Climbing then
-            play("Climb", math.max(speed / 8, 0.5))
-        elseif state == Enum.HumanoidStateType.Swimming then
-            play(moving and "Swim" or "SwimIdle", math.max(speed / 8, 0.5))
-        elseif moving then
-            if speed >= 14 and tracks.Run then
-                play("Run", math.max(speed / 16, 0.5))
-            else
-                play("Walk", math.max(speed / 8, 0.5))
-            end
-        else
-            play("Idle", 1)
-        end
-    end
-
-    table.insert(endlessConnections, humanoid.StateChanged:Connect(function()
-        task.defer(update)
-    end))
-
-    table.insert(endlessConnections, humanoid:GetPropertyChangedSignal("MoveDirection"):Connect(function()
-        task.defer(update)
-    end))
-
-    table.insert(endlessConnections, humanoid:GetPropertyChangedSignal("WalkSpeed"):Connect(function()
-        task.defer(update)
-    end))
-
-    table.insert(endlessConnections, humanoid.Died:Connect(function()
-        clearEndless()
-    end))
-
-    endlessCleanup = function()
-        for _, tr in pairs(tracks) do
-            pcall(function() tr:Stop(0.08) end)
-        end
-        if folder and folder.Parent then
-            folder:Destroy()
-        end
-    end
-
-    update()
     return true
 end
 
+local function restoreEndlessAnimations()
+    local original = endlessOriginal
+    endlessOriginal = nil
+
+    if not original then return end
+
+    local character = original.character
+    if not character or not character.Parent then return end
+
+    local animate = getAnimateObject(character)
+    if not animate then return end
+
+    local idle = animate:FindFirstChild("idle")
+    local walk = animate:FindFirstChild("walk")
+    local run = animate:FindFirstChild("run")
+    local jump = animate:FindFirstChild("jump")
+    local fall = animate:FindFirstChild("fall")
+    local climb = animate:FindFirstChild("climb")
+    local swim = animate:FindFirstChild("swim")
+    local swimIdle = animate:FindFirstChild("swimidle")
+
+    if idle then
+        setAnimationId(idle, "Animation1", original.idle1)
+        setAnimationId(idle, "Animation2", original.idle2)
+    end
+    setAnimationId(walk, "WalkAnim", original.walk)
+    setAnimationId(run, "RunAnim", original.run)
+    setAnimationId(jump, "JumpAnim", original.jump)
+    setAnimationId(fall, "FallAnim", original.fall)
+    setAnimationId(climb, "ClimbAnim", original.climb)
+    setAnimationId(swim, "Swim", original.swim)
+    setAnimationId(swimIdle, "SwimIdle", original.swimIdle)
+
+    animate.Enabled = false
+    task.wait()
+    animate.Enabled = true
+end
+
+local function clearEndless()
+    restoreEndlessAnimations()
+end
+
 local function enableEndless()
+    -- If ENDLESS was already active, re-apply instead of stacking tracks.
     animationEnabled = true
     activeAnimationPack = "ENDLESS"
 
@@ -1456,8 +1414,6 @@ local function enableEndless()
     if not ok then
         animationEnabled = false
         activeAnimationPack = nil
-        local animate = character:FindFirstChild("Animate")
-        if animate then animate.Enabled = true end
     end
     return ok
 end
@@ -1579,7 +1535,7 @@ AdidasCard.Activated:Connect(function()
 end)
 
 RestoreAnimation.Activated:Connect(function()
-    disableAdidas()
+    disableCurrentAnimation()
     AnimationStatus.Text = "Restored • Default Animation"
     AnimationStatus.TextColor3 = Color3.fromRGB(170, 175, 190)
 end)
