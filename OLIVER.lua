@@ -1202,6 +1202,7 @@ AdidasHeader.Position = UDim2.new(0.025, 0, 0, 8)
 AdidasHeader.BackgroundColor3 = Color3.fromRGB(28, 28, 40)
 AdidasHeader.BorderSizePixel = 0
 AdidasHeader.Parent = PageAnimations
+AdidasHeader.Visible = false
 Instance.new("UICorner", AdidasHeader).CornerRadius = UDim.new(0, 8)
 
 local AdidasLogo = Instance.new("ImageLabel")
@@ -1233,49 +1234,97 @@ AdidasSubtitle.TextSize = 13
 AdidasSubtitle.TextXAlignment = Enum.TextXAlignment.Left
 AdidasSubtitle.Parent = AdidasHeader
 
-local AdidasToggle = Instance.new("TextButton")
-AdidasToggle.Size = UDim2.new(0.95, 0, 0, 42)
-AdidasToggle.Position = UDim2.new(0.025, 0, 0, 82)
-AdidasToggle.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
-AdidasToggle.BorderSizePixel = 0
-AdidasToggle.Font = Enum.Font.GothamBold
-AdidasToggle.Text = "Adidas Community: OFF"
-AdidasToggle.TextSize = 14
-AdidasToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
-AdidasToggle.Parent = PageAnimations
-Instance.new("UICorner", AdidasToggle).CornerRadius = UDim.new(0, 7)
+-- Click the Adidas Community card itself to enable the animation.
+local AdidasCommunityButton = Instance.new("TextButton")
+AdidasCommunityButton.Name = "AdidasCommunityButton"
+AdidasCommunityButton.Size = UDim2.new(0.95, 0, 0, 64)
+AdidasCommunityButton.Position = UDim2.new(0.025, 0, 0, 8)
+AdidasCommunityButton.BackgroundColor3 = Color3.fromRGB(28, 28, 40)
+AdidasCommunityButton.BackgroundTransparency = 0
+AdidasCommunityButton.BorderSizePixel = 0
+AdidasCommunityButton.Text = ""
+AdidasCommunityButton.AutoButtonColor = true
+AdidasCommunityButton.Active = true
+AdidasCommunityButton.ZIndex = 30
+AdidasCommunityButton.Parent = PageAnimations
 
-AdidasToggle.MouseButton1Click:Connect(function()
-    animationEnabled = not animationEnabled
+local AdidasButtonCorner = Instance.new("UICorner")
+AdidasButtonCorner.CornerRadius = UDim.new(0, 8)
+AdidasButtonCorner.Parent = AdidasCommunityButton
 
-    if animationEnabled then
-        AdidasToggle.Text = "Adidas Community: ON"
-        AdidasToggle.BackgroundColor3 = Color3.fromRGB(0, 170, 100)
-        enableAdidas()
-    else
-        AdidasToggle.Text = "Adidas Community: OFF"
-        AdidasToggle.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
-        disableAdidas()
-    end
+local AdidasButtonLogo = Instance.new("ImageLabel")
+AdidasButtonLogo.Size = UDim2.new(0, 46, 0, 46)
+AdidasButtonLogo.Position = UDim2.new(0, 9, 0.5, -23)
+AdidasButtonLogo.BackgroundTransparency = 1
+AdidasButtonLogo.Image = AdidasAnimationLogoId
+AdidasButtonLogo.ZIndex = 31
+AdidasButtonLogo.Parent = AdidasCommunityButton
+
+local AdidasButtonTitle = Instance.new("TextLabel")
+AdidasButtonTitle.Size = UDim2.new(1, -70, 0, 25)
+AdidasButtonTitle.Position = UDim2.new(0, 65, 0, 8)
+AdidasButtonTitle.BackgroundTransparency = 1
+AdidasButtonTitle.Text = "Adidas Community"
+AdidasButtonTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+AdidasButtonTitle.Font = Enum.Font.GothamBold
+AdidasButtonTitle.TextSize = 17
+AdidasButtonTitle.TextXAlignment = Enum.TextXAlignment.Left
+AdidasButtonTitle.ZIndex = 31
+AdidasButtonTitle.Parent = AdidasCommunityButton
+
+local AdidasButtonSubtitle = Instance.new("TextLabel")
+AdidasButtonSubtitle.Size = UDim2.new(1, -70, 0, 20)
+AdidasButtonSubtitle.Position = UDim2.new(0, 65, 0, 34)
+AdidasButtonSubtitle.BackgroundTransparency = 1
+AdidasButtonSubtitle.Text = "Animations • Tap to use"
+AdidasButtonSubtitle.TextColor3 = Color3.fromRGB(150, 155, 170)
+AdidasButtonSubtitle.Font = Enum.Font.SourceSans
+AdidasButtonSubtitle.TextSize = 13
+AdidasButtonSubtitle.TextXAlignment = Enum.TextXAlignment.Left
+AdidasButtonSubtitle.ZIndex = 31
+AdidasButtonSubtitle.Parent = AdidasCommunityButton
+
+local RestoreAnimation = Instance.new("TextButton")
+RestoreAnimation.Name = "RestoreAnimation"
+RestoreAnimation.Size = UDim2.new(0.95, 0, 0, 42)
+RestoreAnimation.Position = UDim2.new(0.025, 0, 0, 82)
+RestoreAnimation.BackgroundColor3 = Color3.fromRGB(55, 55, 70)
+RestoreAnimation.BorderSizePixel = 0
+RestoreAnimation.Font = Enum.Font.GothamBold
+RestoreAnimation.Text = "Restore"
+RestoreAnimation.TextSize = 14
+RestoreAnimation.TextColor3 = Color3.fromRGB(255, 255, 255)
+RestoreAnimation.AutoButtonColor = true
+RestoreAnimation.Active = true
+RestoreAnimation.ZIndex = 30
+RestoreAnimation.Parent = PageAnimations
+Instance.new("UICorner", RestoreAnimation).CornerRadius = UDim.new(0, 7)
+
+local AdidasStatus = Instance.new("TextLabel")
+AdidasStatus.Size = UDim2.new(0.95, 0, 0, 25)
+AdidasStatus.Position = UDim2.new(0.025, 0, 0, 132)
+AdidasStatus.BackgroundTransparency = 1
+AdidasStatus.Text = "Adidas Community Animations"
+AdidasStatus.Font = Enum.Font.SourceSans
+AdidasStatus.TextSize = 13
+AdidasStatus.TextColor3 = Color3.fromRGB(150, 155, 170)
+AdidasStatus.TextXAlignment = Enum.TextXAlignment.Center
+AdidasStatus.ZIndex = 30
+AdidasStatus.Parent = PageAnimations
+
+AdidasCommunityButton.Activated:Connect(function()
+    animationEnabled = true
+    enableAdidas()
+    AdidasStatus.Text = "Adidas Community • Active"
+    AdidasStatus.TextColor3 = Color3.fromRGB(70, 200, 245)
 end)
 
-local AdidasReset = Instance.new("TextButton")
-AdidasReset.Size = UDim2.new(0.95, 0, 0, 38)
-AdidasReset.Position = UDim2.new(0.025, 0, 0, 132)
-AdidasReset.BackgroundColor3 = Color3.fromRGB(150, 55, 55)
-AdidasReset.BorderSizePixel = 0
-AdidasReset.Font = Enum.Font.GothamBold
-AdidasReset.Text = "Reset Animation"
-AdidasReset.TextSize = 13
-AdidasReset.TextColor3 = Color3.fromRGB(255, 255, 255)
-AdidasReset.Parent = PageAnimations
-Instance.new("UICorner", AdidasReset).CornerRadius = UDim.new(0, 7)
-
-AdidasReset.MouseButton1Click:Connect(function()
+RestoreAnimation.Activated:Connect(function()
     disableAdidas()
-    AdidasToggle.Text = "Adidas Community: OFF"
-    AdidasToggle.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
+    AdidasStatus.Text = "Restored • Default Animation"
+    AdidasStatus.TextColor3 = Color3.fromRGB(170, 175, 190)
 end)
+
 
 -- PAGE 3: PLAYER PAGE (UPDATED UI)
 -- ==========================================
@@ -1519,15 +1568,15 @@ local function selectTab(tab)
     TabAnimationsBtn.TextColor3 = (tab == "Animations") and activeText or inactiveText
 end
 
-TabMainBtn.MouseButton1Click:Connect(function()
+TabMainBtn.Activated:Connect(function()
     selectTab("Main")
 end)
 
-TabPlayerBtn.MouseButton1Click:Connect(function()
+TabPlayerBtn.Activated:Connect(function()
     selectTab("Player")
 end)
 
-TabAnimationsBtn.MouseButton1Click:Connect(function()
+TabAnimationsBtn.Activated:Connect(function()
     selectTab("Animations")
 end)
 
