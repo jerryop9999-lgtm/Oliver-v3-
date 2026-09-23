@@ -989,8 +989,8 @@ local AdidasCommunity = {
 local animationEnabled = false
 local animationCleanup = nil
 local animationRespawnConnection = nil
-local activeAnimationPack = nil -- "Adidas" or "Angel"
-local applyAngelAnimations
+local activeAnimationPack = nil -- "Adidas" or "ENDLESS"
+local applyEndlessAnimations
 
 local function stopAdidasAnimations(character)
     if animationCleanup then
@@ -1199,7 +1199,7 @@ local function stopCurrentAnimation(character)
         local adidasFolder = character:FindFirstChild("__OLIVER_AdidasAnimation")
         if adidasFolder then adidasFolder:Destroy() end
 
-        local angelFolder = character:FindFirstChild("__OLIVER_AngelAnimation")
+        local angelFolder = character:FindFirstChild("__OLIVER_ENDLESS_Animation")
         if angelFolder then angelFolder:Destroy() end
 
         if animate then
@@ -1245,8 +1245,8 @@ animationRespawnConnection = LocalPlayer.CharacterAdded:Connect(function(charact
 
     if activeAnimationPack == "Adidas" then
         applyAdidasAnimations(character)
-    elseif activeAnimationPack == "Angel" then
-        applyAngelAnimations(character)
+    elseif activeAnimationPack == "ENDLESS" then
+        applyEndlessAnimations(character)
     end
 end)
 
@@ -1254,36 +1254,36 @@ end)
 -- ==========================================
 -- ANGEL (FLOATING) - SAFE CONTROLLER
 -- ==========================================
-local AngelFloating = {
-    Idle     = "rbxassetid://138791542100078",
-    Walk     = "rbxassetid://98178584535094",
-    Run      = "rbxassetid://120880326870608",
-    Jump     = "rbxassetid://140709061221147",
-    Fall     = "rbxassetid://98791635084597",
-    Climb    = "rbxassetid://132683235998205",
-    Swim     = "rbxassetid://133193009842625",
-    SwimIdle = "rbxassetid://133193009842625",
+local EndlessAnimations = {
+    Idle     = "rbxassetid://75638427965557",
+    Walk     = "rbxassetid://131290152729043",
+    Run      = "rbxassetid://77610456891399",
+    Jump     = "rbxassetid://74451563346167",
+    Fall     = "rbxassetid://74203422263286",
+    Climb    = "rbxassetid://116293937663140",
+    Swim     = "rbxassetid://110044773049875",
+    SwimIdle = "rbxassetid://110044773049875",
 }
 
-local applyAngelAnimations
-local angelCleanup = nil
-local angelConnections = {}
+local applyEndlessAnimations
+local endlessCleanup = nil
+local endlessConnections = {}
 
-local function clearAngel()
-    for _, c in ipairs(angelConnections) do
+local function clearEndless()
+    for _, c in ipairs(endlessConnections) do
         pcall(function() c:Disconnect() end)
     end
-    table.clear(angelConnections)
+    table.clear(endlessConnections)
 
-    if angelCleanup then
-        pcall(angelCleanup)
-        angelCleanup = nil
+    if endlessCleanup then
+        pcall(endlessCleanup)
+        endlessCleanup = nil
     end
 
     local character = LocalPlayer.Character
     if not character then return end
 
-    local folder = character:FindFirstChild("__OLIVER_AngelAnimation")
+    local folder = character:FindFirstChild("__OLIVER_ENDLESS_Animation")
     if folder then folder:Destroy() end
 
     local humanoid = character:FindFirstChildOfClass("Humanoid")
@@ -1291,7 +1291,7 @@ local function clearAngel()
         local animator = humanoid:FindFirstChildOfClass("Animator")
         if animator then
             for _, tr in ipairs(animator:GetPlayingAnimationTracks()) do
-                if tr.Name:sub(1, 13) == "OLIVER_Angel_" then
+                if tr.Name:sub(1, 13) == "OLIVER_ENDLESS_" then
                     pcall(function() tr:Stop(0.08) end)
                 end
             end
@@ -1305,11 +1305,11 @@ local function clearAngel()
     end
 end
 
-applyAngelAnimations = function(character)
+applyEndlessAnimations = function(character)
     if not character or not character.Parent then return false end
-    if not animationEnabled or activeAnimationPack ~= "Angel" then return false end
+    if not animationEnabled or activeAnimationPack ~= "ENDLESS" then return false end
 
-    clearAngel()
+    clearEndless()
 
     local humanoid = character:FindFirstChildOfClass("Humanoid")
     if not humanoid then return false end
@@ -1327,14 +1327,14 @@ applyAngelAnimations = function(character)
     end
 
     local folder = Instance.new("Folder")
-    folder.Name = "__OLIVER_AngelAnimation"
+    folder.Name = "__OLIVER_ENDLESS_Animation"
     folder.Parent = character
 
     local tracks = {}
 
     local function load(name, id, priority, looped)
         local anim = Instance.new("Animation")
-        anim.Name = "OLIVER_Angel_" .. name
+        anim.Name = "OLIVER_ENDLESS_" .. name
         anim.AnimationId = id
         anim.Parent = folder
 
@@ -1343,7 +1343,7 @@ applyAngelAnimations = function(character)
         end)
 
         if ok and tr then
-            tr.Name = "OLIVER_Angel_" .. name
+            tr.Name = "OLIVER_ENDLESS_" .. name
             tr.Priority = priority
             tr.Looped = looped
             tracks[name] = tr
@@ -1352,14 +1352,14 @@ applyAngelAnimations = function(character)
     end
 
     -- Action priority reliably overlays Roblox's default movement tracks.
-    load("Idle", AngelFloating.Idle, Enum.AnimationPriority.Action, true)
-    load("Walk", AngelFloating.Walk, Enum.AnimationPriority.Action, true)
-    load("Run", AngelFloating.Run, Enum.AnimationPriority.Action, true)
-    load("Jump", AngelFloating.Jump, Enum.AnimationPriority.Action, false)
-    load("Fall", AngelFloating.Fall, Enum.AnimationPriority.Action, true)
-    load("Climb", AngelFloating.Climb, Enum.AnimationPriority.Action, true)
-    load("Swim", AngelFloating.Swim, Enum.AnimationPriority.Action, true)
-    load("SwimIdle", AngelFloating.SwimIdle, Enum.AnimationPriority.Action, true)
+    load("Idle", EndlessAnimations.Idle, Enum.AnimationPriority.Action, true)
+    load("Walk", EndlessAnimations.Walk, Enum.AnimationPriority.Action, true)
+    load("Run", EndlessAnimations.Run, Enum.AnimationPriority.Action, true)
+    load("Jump", EndlessAnimations.Jump, Enum.AnimationPriority.Action, false)
+    load("Fall", EndlessAnimations.Fall, Enum.AnimationPriority.Action, true)
+    load("Climb", EndlessAnimations.Climb, Enum.AnimationPriority.Action, true)
+    load("Swim", EndlessAnimations.Swim, Enum.AnimationPriority.Action, true)
+    load("SwimIdle", EndlessAnimations.SwimIdle, Enum.AnimationPriority.Action, true)
 
     if not next(tracks) then
         folder:Destroy()
@@ -1390,7 +1390,7 @@ applyAngelAnimations = function(character)
     end
 
     local function update()
-        if not animationEnabled or activeAnimationPack ~= "Angel" then return end
+        if not animationEnabled or activeAnimationPack ~= "ENDLESS" then return end
         if humanoid.Health <= 0 then return end
 
         local state = humanoid:GetState()
@@ -1416,23 +1416,23 @@ applyAngelAnimations = function(character)
         end
     end
 
-    table.insert(angelConnections, humanoid.StateChanged:Connect(function()
+    table.insert(endlessConnections, humanoid.StateChanged:Connect(function()
         task.defer(update)
     end))
 
-    table.insert(angelConnections, humanoid:GetPropertyChangedSignal("MoveDirection"):Connect(function()
+    table.insert(endlessConnections, humanoid:GetPropertyChangedSignal("MoveDirection"):Connect(function()
         task.defer(update)
     end))
 
-    table.insert(angelConnections, humanoid:GetPropertyChangedSignal("WalkSpeed"):Connect(function()
+    table.insert(endlessConnections, humanoid:GetPropertyChangedSignal("WalkSpeed"):Connect(function()
         task.defer(update)
     end))
 
-    table.insert(angelConnections, humanoid.Died:Connect(function()
-        clearAngel()
+    table.insert(endlessConnections, humanoid.Died:Connect(function()
+        clearEndless()
     end))
 
-    angelCleanup = function()
+    endlessCleanup = function()
         for _, tr in pairs(tracks) do
             pcall(function() tr:Stop(0.08) end)
         end
@@ -1445,14 +1445,14 @@ applyAngelAnimations = function(character)
     return true
 end
 
-local function enableAngel()
+local function enableEndless()
     animationEnabled = true
-    activeAnimationPack = "Angel"
+    activeAnimationPack = "ENDLESS"
 
     local character = LocalPlayer.Character
     if not character then return false end
 
-    local ok = applyAngelAnimations(character)
+    local ok = applyEndlessAnimations(character)
     if not ok then
         animationEnabled = false
         activeAnimationPack = nil
@@ -1517,9 +1517,9 @@ end
 
 local AdidasAnimationLogoId = "rbxassetid://105863394969753"
 
-local AngelCard = makeAnimationCard(
+local EndlessCard = makeAnimationCard(
     PageAnimations,
-    "Angel (Floating)",
+    "ENDLESS",
     "Juno's Animations • Tap to use",
     AdidasAnimationLogoId,
     8
@@ -1561,13 +1561,13 @@ AnimationStatus.TextXAlignment = Enum.TextXAlignment.Center
 AnimationStatus.ZIndex = 30
 AnimationStatus.Parent = PageAnimations
 
-AngelCard.Activated:Connect(function()
-    local ok = enableAngel()
+EndlessCard.Activated:Connect(function()
+    local ok = enableEndless()
     if ok then
-        AnimationStatus.Text = "Angel (Floating) • Active"
+        AnimationStatus.Text = "ENDLESS • Active"
         AnimationStatus.TextColor3 = Color3.fromRGB(70, 200, 245)
     else
-        AnimationStatus.Text = "Angel animation could not load"
+        AnimationStatus.Text = "ENDLESS animation could not load"
         AnimationStatus.TextColor3 = Color3.fromRGB(255, 120, 120)
     end
 end)
