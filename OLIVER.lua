@@ -91,7 +91,7 @@ local MainCorner = Instance.new("UICorner")
 MainCorner.CornerRadius = UDim.new(0, 10)
 MainCorner.Parent = MainFrame
 
--- Dragging is attached to TopBar after it is created.
+makeSmoothDraggable(MainFrame)
 
 -- 4. Top Header
 local TopBar = Instance.new("Frame")
@@ -128,9 +128,7 @@ HeaderStats.TextSize = 14
 HeaderStats.BackgroundTransparency = 1
 HeaderStats.Parent = TopBar
 
-makeSmoothDraggable(MainFrame, TopBar)
-
-ToggleBtn.Activated:Connect(function()
+ToggleBtn.MouseButton1Click:Connect(function()
     MainFrame.Visible = not MainFrame.Visible
 end)
 
@@ -148,7 +146,6 @@ TabMainBtn.Text = ""
 TabMainBtn.BackgroundColor3 = Color3.fromRGB(0, 140, 255)
 TabMainBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 TabMainBtn.Font = Enum.Font.SourceSansBold
-TabMainBtn.Active = true
 TabMainBtn.TextSize = 14
 TabMainBtn.Parent = TabBar
 
@@ -159,7 +156,6 @@ TabPlayerBtn.Text = ""
 TabPlayerBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
 TabPlayerBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
 TabPlayerBtn.Font = Enum.Font.SourceSansBold
-TabPlayerBtn.Active = true
 TabPlayerBtn.TextSize = 14
 TabPlayerBtn.Parent = TabBar
 
@@ -171,7 +167,6 @@ TabAnimationsBtn.Text = ""
 TabAnimationsBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
 TabAnimationsBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
 TabAnimationsBtn.Font = Enum.Font.SourceSansBold
-TabAnimationsBtn.Active = true
 TabAnimationsBtn.TextSize = 14
 TabAnimationsBtn.Parent = TabBar
 
@@ -403,7 +398,7 @@ SpinSpeedLabel.TextColor3 = Color3.fromRGB(175, 175, 190)
 SpinSpeedLabel.TextXAlignment = Enum.TextXAlignment.Left
 SpinSpeedLabel.Parent = SpinRow
 
-SpinButton.Activated:Connect(function()
+SpinButton.MouseButton1Click:Connect(function()
     spinEnabled = not spinEnabled
 
     if spinEnabled then
@@ -893,7 +888,7 @@ local function createSpeedRow(title, defaultValue, minValue, maxValue, onToggle,
 
     local enabled = false
 
-    toggle.Activated:Connect(function()
+    toggle.MouseButton1Click:Connect(function()
         enabled = not enabled
         toggle.Text = title .. ": " .. (enabled and "ON" or "OFF")
         toggle.BackgroundColor3 = enabled
@@ -989,8 +984,6 @@ local AdidasCommunity = {
 local animationEnabled = false
 local animationCleanup = nil
 local animationRespawnConnection = nil
-local activeAnimationPack = nil -- "Adidas" or "Zombie"
-
 
 local function stopAdidasAnimations(character)
     if animationCleanup then
@@ -1044,11 +1037,8 @@ local function applyAdidasAnimations(character)
         oldFolder:Destroy()
     end
 
-    -- Keep Roblox's Animate controller enabled so walking/jumping input
-    -- never gets stuck. Our tracks use Action priority below to override
-    -- the visual animation without disabling character movement.
     if animate then
-        animate.Enabled = true
+        animate.Enabled = false
     end
 
     local folder = Instance.new("Folder")
@@ -1074,14 +1064,14 @@ local function applyAdidasAnimations(character)
         end
     end
 
-    loadTrack("Idle", AdidasCommunity.Idle, Enum.AnimationPriority.Action, true)
-    loadTrack("Walk", AdidasCommunity.Walk, Enum.AnimationPriority.Action, true)
-    loadTrack("Run", AdidasCommunity.Run, Enum.AnimationPriority.Action, true)
-    loadTrack("Jump", AdidasCommunity.Jump, Enum.AnimationPriority.Action, false)
-    loadTrack("Fall", AdidasCommunity.Fall, Enum.AnimationPriority.Action, true)
-    loadTrack("Climb", AdidasCommunity.Climb, Enum.AnimationPriority.Action, true)
-    loadTrack("Swim", AdidasCommunity.Swim, Enum.AnimationPriority.Action, true)
-    loadTrack("SwimIdle", AdidasCommunity.SwimIdle, Enum.AnimationPriority.Action, true)
+    loadTrack("Idle", AdidasCommunity.Idle, Enum.AnimationPriority.Idle, true)
+    loadTrack("Walk", AdidasCommunity.Walk, Enum.AnimationPriority.Movement, true)
+    loadTrack("Run", AdidasCommunity.Run, Enum.AnimationPriority.Movement, true)
+    loadTrack("Jump", AdidasCommunity.Jump, Enum.AnimationPriority.Movement, false)
+    loadTrack("Fall", AdidasCommunity.Fall, Enum.AnimationPriority.Movement, true)
+    loadTrack("Climb", AdidasCommunity.Climb, Enum.AnimationPriority.Movement, true)
+    loadTrack("Swim", AdidasCommunity.Swim, Enum.AnimationPriority.Movement, true)
+    loadTrack("SwimIdle", AdidasCommunity.SwimIdle, Enum.AnimationPriority.Movement, true)
 
     local currentTrack = nil
     local stateConnection
@@ -1175,324 +1165,129 @@ local function applyAdidasAnimations(character)
     return next(tracks) ~= nil
 end
 
-local function stopCurrentAnimation(character)
-    if animationCleanup then
-        pcall(animationCleanup)
-        animationCleanup = nil
-    end
-
-    if character then
-        local humanoid = character:FindFirstChildOfClass("Humanoid")
-        local animate = character:FindFirstChild("Animate")
-
-        -- Only remove OLIVER custom animation tracks.
-        -- Do NOT stop every Animator track: Roblox's normal Animate
-        -- controller must remain free to restore idle/walk/jump.
-        if humanoid then
-            local animator = humanoid:FindFirstChildOfClass("Animator")
-            if animator then
-                for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
-                    if tostring(track.Name):sub(1, 7) == "OLIVER_" then
-                        pcall(function()
-                            track:Stop(0.08)
-                        end)
-                    end
-                end
-            end
-        end
-
-        local adidasFolder = character:FindFirstChild("__OLIVER_AdidasAnimation")
-        if adidasFolder then adidasFolder:Destroy() end
-
-        local zombieFolder = character:FindFirstChild("__OLIVER_ZombieAnimation")
-        if zombieFolder then zombieFolder:Destroy() end
-
-        -- Keep the normal Roblox animation controller enabled.
-        if animate then
-            animate.Enabled = true
-        end
-    end
-end
-
-
--- ==========================================
--- ZOMBIE ANIMATIONS
--- Roblox Zombie avatar animation pack.
--- ==========================================
-local ZombieAnimations = {
-    Run      = "rbxassetid://616163682",
-    Walk     = "rbxassetid://616168032",
-    Jump     = "rbxassetid://616161997",
-    Idle1    = "rbxassetid://616158929",
-    Idle2    = "rbxassetid://616160636",
-    Fall     = "rbxassetid://616157476",
-    Swim     = "rbxassetid://616165109",
-    SwimIdle = "rbxassetid://616166655",
-    Climb    = "rbxassetid://616156119",
-}
-
-local function applyZombieAnimations(character)
-    if not character or not character.Parent then return false end
-
-    local humanoid = character:FindFirstChildOfClass("Humanoid")
-    if not humanoid then return false end
-
-    local animator = humanoid:FindFirstChildOfClass("Animator")
-    if not animator then
-        animator = Instance.new("Animator")
-        animator.Parent = humanoid
-    end
-
-    stopCurrentAnimation(character)
-
-    animationEnabled = true
-    activeAnimationPack = "Zombie"
-
-    local animate = character:FindFirstChild("Animate")
-    if animate then animate.Enabled = true end
-
-    local folder = Instance.new("Folder")
-    folder.Name = "__OLIVER_ZombieAnimation"
-    folder.Parent = character
-
-    local tracks = {}
-
-    local function loadTrack(name, id, looped)
-        local anim = Instance.new("Animation")
-        anim.Name = "Zombie_" .. name
-        anim.AnimationId = id
-        anim.Parent = folder
-
-        local ok, track = pcall(function()
-            return animator:LoadAnimation(anim)
-        end)
-
-        if ok and track then
-            track.Priority = Enum.AnimationPriority.Action
-            track.Looped = looped
-            tracks[name] = track
-        end
-    end
-
-    loadTrack("Idle1", ZombieAnimations.Idle1, true)
-    loadTrack("Idle2", ZombieAnimations.Idle2, true)
-    loadTrack("Walk", ZombieAnimations.Walk, true)
-    loadTrack("Run", ZombieAnimations.Run, true)
-    loadTrack("Jump", ZombieAnimations.Jump, false)
-    loadTrack("Fall", ZombieAnimations.Fall, true)
-    loadTrack("Climb", ZombieAnimations.Climb, true)
-    loadTrack("Swim", ZombieAnimations.Swim, true)
-    loadTrack("SwimIdle", ZombieAnimations.SwimIdle, true)
-
-    local currentTrack
-    local stateConnection
-    local moveConnection
-    local ancestryConnection
-
-    local function stopAll(fade)
-        for _, track in pairs(tracks) do
-            if track.IsPlaying then
-                track:Stop(fade or 0.08)
-            end
-        end
-    end
-
-    local function play(name, speed)
-        local track = tracks[name]
-        if not track then return end
-
-        if currentTrack ~= track then
-            stopAll(0.08)
-            currentTrack = track
-            track:Play(0.08, 1, speed or 1)
-        elseif speed then
-            track:AdjustSpeed(speed)
-        end
-    end
-
-    local function update()
-        if not animationEnabled or activeAnimationPack ~= "Zombie" then return end
-
-        local state = humanoid:GetState()
-        local moving = humanoid.MoveDirection.Magnitude > 0.05
-        local speed = humanoid.WalkSpeed
-
-        if state == Enum.HumanoidStateType.Jumping then
-            play("Jump", 1)
-        elseif state == Enum.HumanoidStateType.Freefall then
-            play("Fall", 1)
-        elseif state == Enum.HumanoidStateType.Climbing then
-            play("Climb", math.max(speed / 8, 0.5))
-        elseif state == Enum.HumanoidStateType.Swimming then
-            if moving then
-                play("Swim", math.max(speed / 8, 0.5))
-            else
-                play("SwimIdle", 1)
-            end
-        elseif moving then
-            if speed >= 14 then
-                play("Run", math.max(speed / 16, 0.5))
-            else
-                play("Walk", math.max(speed / 8, 0.5))
-            end
-        else
-            play("Idle1", 1)
-        end
-    end
-
-    stateConnection = humanoid.StateChanged:Connect(function()
-        task.defer(update)
-    end)
-
-    moveConnection = humanoid:GetPropertyChangedSignal("MoveDirection"):Connect(function()
-        task.defer(update)
-    end)
-
-    ancestryConnection = character.AncestryChanged:Connect(function(_, parent)
-        if parent then return end
-        if animationCleanup then
-            pcall(animationCleanup)
-            animationCleanup = nil
-        end
-    end)
-
-    animationCleanup = function()
-        if stateConnection then stateConnection:Disconnect(); stateConnection = nil end
-        if moveConnection then moveConnection:Disconnect(); moveConnection = nil end
-        if ancestryConnection then ancestryConnection:Disconnect(); ancestryConnection = nil end
-
-        for _, track in pairs(tracks) do
-            pcall(function()
-                track:Stop(0.08)
-                track:Destroy()
-            end)
-        end
-
-        if folder.Parent then folder:Destroy() end
-        currentTrack = nil
-    end
-
-    update()
-    return next(tracks) ~= nil
-end
-
 local function enableAdidas()
-    local character = LocalPlayer.Character
-    if not character then return false end
-
-    animationEnabled = false
-    activeAnimationPack = nil
-    stopCurrentAnimation(character)
-
     animationEnabled = true
-    activeAnimationPack = "Adidas"
-    return applyAdidasAnimations(character)
-end
-
-local function disableCurrentAnimation()
-    animationEnabled = false
-    activeAnimationPack = nil
 
     local character = LocalPlayer.Character
     if character then
-        stopCurrentAnimation(character)
+        applyAdidasAnimations(character)
     end
 end
 
-local disableAdidas = disableCurrentAnimation
+local function disableAdidas()
+    animationEnabled = false
+
+    local character = LocalPlayer.Character
+    if character then
+        stopAdidasAnimations(character)
+    end
+end
 
 if animationRespawnConnection then
     animationRespawnConnection:Disconnect()
 end
 
 animationRespawnConnection = LocalPlayer.CharacterAdded:Connect(function(character)
-    if not animationEnabled or not activeAnimationPack then return end
-    task.wait(0.5)
     if not animationEnabled then return end
-
-    if activeAnimationPack == "Adidas" then
+    task.wait(0.5)
+    if animationEnabled then
         applyAdidasAnimations(character)
-    elseif activeAnimationPack == "Zombie" then
-        applyZombieAnimations(character)
     end
 end)
 
-
 -- UI
-local function makeAnimationCard(parent, name, subtitle, logoId, y)
-    local card = Instance.new("TextButton")
-    card.Name = name:gsub("%W", "") .. "Card"
-    card.Size = UDim2.new(0.95, 0, 0, 64)
-    card.Position = UDim2.new(0.025, 0, 0, y)
-    card.BackgroundColor3 = Color3.fromRGB(28, 28, 40)
-    card.BorderSizePixel = 0
-    card.Text = ""
-    card.AutoButtonColor = true
-    card.Active = true
-    card.ZIndex = 30
-    card.Parent = parent
+local AdidasHeader = Instance.new("Frame")
+AdidasHeader.Size = UDim2.new(0.95, 0, 0, 64)
+AdidasHeader.Position = UDim2.new(0.025, 0, 0, 8)
+AdidasHeader.BackgroundColor3 = Color3.fromRGB(28, 28, 40)
+AdidasHeader.BorderSizePixel = 0
+AdidasHeader.Parent = PageAnimations
+AdidasHeader.Visible = false
+Instance.new("UICorner", AdidasHeader).CornerRadius = UDim.new(0, 8)
 
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 8)
-    corner.Parent = card
+local AdidasLogo = Instance.new("ImageLabel")
+AdidasLogo.Size = UDim2.new(0, 46, 0, 46)
+AdidasLogo.Position = UDim2.new(0, 9, 0.5, -23)
+AdidasLogo.BackgroundTransparency = 1
+AdidasLogo.Image = AdidasAnimationLogoId
+AdidasLogo.Parent = AdidasHeader
 
-    local logo = Instance.new("ImageLabel")
-    logo.Size = UDim2.new(0, 46, 0, 46)
-    logo.Position = UDim2.new(0, 9, 0.5, -23)
-    logo.BackgroundTransparency = 1
-    logo.Image = logoId
-    logo.ZIndex = 31
-    logo.Parent = card
+local AdidasTitle = Instance.new("TextLabel")
+AdidasTitle.Size = UDim2.new(1, -70, 0, 25)
+AdidasTitle.Position = UDim2.new(0, 65, 0, 8)
+AdidasTitle.BackgroundTransparency = 1
+AdidasTitle.Text = "Adidas Community"
+AdidasTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+AdidasTitle.Font = Enum.Font.GothamBold
+AdidasTitle.TextSize = 17
+AdidasTitle.TextXAlignment = Enum.TextXAlignment.Left
+AdidasTitle.Parent = AdidasHeader
 
-    local title = Instance.new("TextLabel")
-    title.Size = UDim2.new(1, -70, 0, 25)
-    title.Position = UDim2.new(0, 65, 0, 8)
-    title.BackgroundTransparency = 1
-    title.Text = name
-    title.TextColor3 = Color3.fromRGB(255, 255, 255)
-    title.Font = Enum.Font.GothamBold
-    title.TextSize = 17
-    title.TextXAlignment = Enum.TextXAlignment.Left
-    title.ZIndex = 31
-    title.Parent = card
+local AdidasSubtitle = Instance.new("TextLabel")
+AdidasSubtitle.Size = UDim2.new(1, -70, 0, 20)
+AdidasSubtitle.Position = UDim2.new(0, 65, 0, 34)
+AdidasSubtitle.BackgroundTransparency = 1
+AdidasSubtitle.Text = "Real Animation Pack"
+AdidasSubtitle.TextColor3 = Color3.fromRGB(150, 155, 170)
+AdidasSubtitle.Font = Enum.Font.SourceSans
+AdidasSubtitle.TextSize = 13
+AdidasSubtitle.TextXAlignment = Enum.TextXAlignment.Left
+AdidasSubtitle.Parent = AdidasHeader
 
-    local sub = Instance.new("TextLabel")
-    sub.Size = UDim2.new(1, -70, 0, 20)
-    sub.Position = UDim2.new(0, 65, 0, 34)
-    sub.BackgroundTransparency = 1
-    sub.Text = subtitle
-    sub.TextColor3 = Color3.fromRGB(150, 155, 170)
-    sub.Font = Enum.Font.SourceSans
-    sub.TextSize = 13
-    sub.TextXAlignment = Enum.TextXAlignment.Left
-    sub.ZIndex = 31
-    sub.Parent = card
+-- Click the Adidas Community card itself to enable the animation.
+local AdidasCommunityButton = Instance.new("TextButton")
+AdidasCommunityButton.Name = "AdidasCommunityButton"
+AdidasCommunityButton.Size = UDim2.new(0.95, 0, 0, 64)
+AdidasCommunityButton.Position = UDim2.new(0.025, 0, 0, 8)
+AdidasCommunityButton.BackgroundColor3 = Color3.fromRGB(28, 28, 40)
+AdidasCommunityButton.BackgroundTransparency = 0
+AdidasCommunityButton.BorderSizePixel = 0
+AdidasCommunityButton.Text = ""
+AdidasCommunityButton.AutoButtonColor = true
+AdidasCommunityButton.Active = true
+AdidasCommunityButton.ZIndex = 30
+AdidasCommunityButton.Parent = PageAnimations
 
-    return card
-end
+local AdidasButtonCorner = Instance.new("UICorner")
+AdidasButtonCorner.CornerRadius = UDim.new(0, 8)
+AdidasButtonCorner.Parent = AdidasCommunityButton
 
-local AdidasAnimationLogoId = "rbxassetid://105863394969753"
+local AdidasButtonLogo = Instance.new("ImageLabel")
+AdidasButtonLogo.Size = UDim2.new(0, 46, 0, 46)
+AdidasButtonLogo.Position = UDim2.new(0, 9, 0.5, -23)
+AdidasButtonLogo.BackgroundTransparency = 1
+AdidasButtonLogo.Image = AdidasAnimationLogoId
+AdidasButtonLogo.ZIndex = 31
+AdidasButtonLogo.Parent = AdidasCommunityButton
 
-local AdidasCard = makeAnimationCard(
-    PageAnimations,
-    "Adidas Community",
-    "Animations • Tap to use",
-    AdidasAnimationLogoId,
-    8
-)
+local AdidasButtonTitle = Instance.new("TextLabel")
+AdidasButtonTitle.Size = UDim2.new(1, -70, 0, 25)
+AdidasButtonTitle.Position = UDim2.new(0, 65, 0, 8)
+AdidasButtonTitle.BackgroundTransparency = 1
+AdidasButtonTitle.Text = "Adidas Community"
+AdidasButtonTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+AdidasButtonTitle.Font = Enum.Font.GothamBold
+AdidasButtonTitle.TextSize = 17
+AdidasButtonTitle.TextXAlignment = Enum.TextXAlignment.Left
+AdidasButtonTitle.ZIndex = 31
+AdidasButtonTitle.Parent = AdidasCommunityButton
 
-local ZombieCard = makeAnimationCard(
-    PageAnimations,
-    "Zombie",
-    "Roblox Zombie Animations • Tap to use",
-    AdidasAnimationLogoId,
-    80
-)
+local AdidasButtonSubtitle = Instance.new("TextLabel")
+AdidasButtonSubtitle.Size = UDim2.new(1, -70, 0, 20)
+AdidasButtonSubtitle.Position = UDim2.new(0, 65, 0, 34)
+AdidasButtonSubtitle.BackgroundTransparency = 1
+AdidasButtonSubtitle.Text = "Animations • Tap to use"
+AdidasButtonSubtitle.TextColor3 = Color3.fromRGB(150, 155, 170)
+AdidasButtonSubtitle.Font = Enum.Font.SourceSans
+AdidasButtonSubtitle.TextSize = 13
+AdidasButtonSubtitle.TextXAlignment = Enum.TextXAlignment.Left
+AdidasButtonSubtitle.ZIndex = 31
+AdidasButtonSubtitle.Parent = AdidasCommunityButton
 
 local RestoreAnimation = Instance.new("TextButton")
 RestoreAnimation.Name = "RestoreAnimation"
 RestoreAnimation.Size = UDim2.new(0.95, 0, 0, 42)
-RestoreAnimation.Position = UDim2.new(0.025, 0, 0, 152)
+RestoreAnimation.Position = UDim2.new(0.025, 0, 0, 82)
 RestoreAnimation.BackgroundColor3 = Color3.fromRGB(55, 55, 70)
 RestoreAnimation.BorderSizePixel = 0
 RestoreAnimation.Font = Enum.Font.GothamBold
@@ -1505,40 +1300,31 @@ RestoreAnimation.ZIndex = 30
 RestoreAnimation.Parent = PageAnimations
 Instance.new("UICorner", RestoreAnimation).CornerRadius = UDim.new(0, 7)
 
-local AnimationStatus = Instance.new("TextLabel")
-AnimationStatus.Size = UDim2.new(0.95, 0, 0, 25)
-AnimationStatus.Position = UDim2.new(0.025, 0, 0, 202)
-AnimationStatus.BackgroundTransparency = 1
-AnimationStatus.Text = "Choose an animation"
-AnimationStatus.Font = Enum.Font.SourceSans
-AnimationStatus.TextSize = 13
-AnimationStatus.TextColor3 = Color3.fromRGB(150, 155, 170)
-AnimationStatus.TextXAlignment = Enum.TextXAlignment.Center
-AnimationStatus.ZIndex = 30
-AnimationStatus.Parent = PageAnimations
+local AdidasStatus = Instance.new("TextLabel")
+AdidasStatus.Size = UDim2.new(0.95, 0, 0, 25)
+AdidasStatus.Position = UDim2.new(0.025, 0, 0, 132)
+AdidasStatus.BackgroundTransparency = 1
+AdidasStatus.Text = "Adidas Community Animations"
+AdidasStatus.Font = Enum.Font.SourceSans
+AdidasStatus.TextSize = 13
+AdidasStatus.TextColor3 = Color3.fromRGB(150, 155, 170)
+AdidasStatus.TextXAlignment = Enum.TextXAlignment.Center
+AdidasStatus.ZIndex = 30
+AdidasStatus.Parent = PageAnimations
 
-AdidasCard.Activated:Connect(function()
+AdidasCommunityButton.Activated:Connect(function()
+    animationEnabled = true
     enableAdidas()
-    AnimationStatus.Text = "Adidas Community • Active"
-    AnimationStatus.TextColor3 = Color3.fromRGB(70, 200, 245)
-end)
-
-ZombieCard.Activated:Connect(function()
-    local ok = applyZombieAnimations(LocalPlayer.Character)
-    if ok then
-        AnimationStatus.Text = "Zombie • Active"
-        AnimationStatus.TextColor3 = Color3.fromRGB(70, 200, 245)
-    else
-        AnimationStatus.Text = "Zombie animation could not load"
-        AnimationStatus.TextColor3 = Color3.fromRGB(255, 120, 120)
-    end
+    AdidasStatus.Text = "Adidas Community • Active"
+    AdidasStatus.TextColor3 = Color3.fromRGB(70, 200, 245)
 end)
 
 RestoreAnimation.Activated:Connect(function()
-    disableCurrentAnimation()
-    AnimationStatus.Text = "Restored • Default Animation"
-    AnimationStatus.TextColor3 = Color3.fromRGB(170, 175, 190)
+    disableAdidas()
+    AdidasStatus.Text = "Restored • Default Animation"
+    AdidasStatus.TextColor3 = Color3.fromRGB(170, 175, 190)
 end)
+
 
 -- PAGE 3: PLAYER PAGE (UPDATED UI)
 -- ==========================================
@@ -1738,7 +1524,7 @@ local function updatePlayerList(searchText)
                 gCorner.CornerRadius = UDim.new(0, 6)
                 gCorner.Parent = gotoBtn
 
-                gotoBtn.Activated:Connect(function()
+                gotoBtn.MouseButton1Click:Connect(function()
                     local targetCharacter = targetPlayer.Character
                     local localCharacter = LocalPlayer.Character
                     local targetRoot = targetCharacter and targetCharacter:FindFirstChild("HumanoidRootPart")
@@ -1830,7 +1616,7 @@ local function createExtraButton(text, callback)
     corner.CornerRadius = UDim.new(0, 6)
     corner.Parent = btn
 
-    btn.Activated:Connect(function()
+    btn.MouseButton1Click:Connect(function()
         callback(btn)
     end)
     return btn
