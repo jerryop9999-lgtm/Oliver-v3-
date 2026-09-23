@@ -958,7 +958,7 @@ LocalPlayer.CharacterAdded:Connect(function(char)
 end)
 
 -- ==========================================
--- PAGE 2: ANIMATIONS PAGE - ADIDAS COMMUNITY
+-- PAGE 2: ANIMATIONS PAGE - ADIDAS COMMUNITY (REAL CONTROLLER)
 local PageAnimations = Instance.new("Frame")
 PageAnimations.Name = "PageAnimations"
 PageAnimations.Size = UDim2.new(1, 0, 1, 0)
@@ -966,21 +966,245 @@ PageAnimations.BackgroundTransparency = 1
 PageAnimations.Visible = false
 PageAnimations.Parent = PagesFolder
 
+-- Adidas Community animation assets used by the controller.
 local AdidasAnimationLogoId = "rbxassetid://105863394969753"
 
+local AdidasCommunity = {
+    Idle     = "rbxassetid://122257458498464",
+    Idle2    = "rbxassetid://122257458498464",
+    Walk     = "rbxassetid://122150855457006",
+    Run      = "rbxassetid://82598234841035",
+    Jump     = "rbxassetid://75290611992385",
+    Fall     = "rbxassetid://98600215928904",
+    Climb    = "rbxassetid://88763136693023",
+    Swim     = "rbxassetid://133308483266208",
+    SwimIdle = "rbxassetid://133308483266208",
+}
+
+local animationEnabled = false
+local animationCleanup = nil
+local animationRespawnConnection = nil
+
+local function stopAdidasAnimations(character)
+    if animationCleanup then
+        pcall(animationCleanup)
+        animationCleanup = nil
+    end
+
+    if not character then return end
+
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    local animate = character:FindFirstChild("Animate")
+    local folder = character:FindFirstChild("__OLIVER_AdidasAnimation")
+
+    if humanoid then
+        local animator = humanoid:FindFirstChildOfClass("Animator")
+        if animator then
+            for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
+                pcall(function()
+                    track:Stop(0.08)
+                end)
+            end
+        end
+    end
+
+    if folder then
+        folder:Destroy()
+    end
+
+    if animate then
+        animate.Enabled = false
+        task.wait(0.08)
+        animate.Enabled = true
+    end
+end
+
+local function applyAdidasAnimations(character)
+    if not animationEnabled or not character or not character.Parent then
+        return false
+    end
+
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    local animate = character:FindFirstChild("Animate")
+    local animator = humanoid and humanoid:FindFirstChildOfClass("Animator")
+
+    if not humanoid or not animator then
+        return false
+    end
+
+    local oldFolder = character:FindFirstChild("__OLIVER_AdidasAnimation")
+    if oldFolder then
+        oldFolder:Destroy()
+    end
+
+    if animate then
+        animate.Enabled = false
+    end
+
+    local folder = Instance.new("Folder")
+    folder.Name = "__OLIVER_AdidasAnimation"
+    folder.Parent = character
+
+    local tracks = {}
+
+    local function loadTrack(name, id, priority, looped)
+        local anim = Instance.new("Animation")
+        anim.Name = name
+        anim.AnimationId = id
+        anim.Parent = folder
+
+        local ok, track = pcall(function()
+            return animator:LoadAnimation(anim)
+        end)
+
+        if ok and track then
+            track.Priority = priority
+            track.Looped = looped
+            tracks[name] = track
+        end
+    end
+
+    loadTrack("Idle", AdidasCommunity.Idle, Enum.AnimationPriority.Idle, true)
+    loadTrack("Walk", AdidasCommunity.Walk, Enum.AnimationPriority.Movement, true)
+    loadTrack("Run", AdidasCommunity.Run, Enum.AnimationPriority.Movement, true)
+    loadTrack("Jump", AdidasCommunity.Jump, Enum.AnimationPriority.Movement, false)
+    loadTrack("Fall", AdidasCommunity.Fall, Enum.AnimationPriority.Movement, true)
+    loadTrack("Climb", AdidasCommunity.Climb, Enum.AnimationPriority.Movement, true)
+    loadTrack("Swim", AdidasCommunity.Swim, Enum.AnimationPriority.Movement, true)
+    loadTrack("SwimIdle", AdidasCommunity.SwimIdle, Enum.AnimationPriority.Movement, true)
+
+    local currentTrack = nil
+    local stateConnection
+    local moveConnection
+    local ancestryConnection
+
+    local function stopAll(fade)
+        for _, track in pairs(tracks) do
+            if track.IsPlaying then
+                track:Stop(fade or 0.1)
+            end
+        end
+    end
+
+    local function play(name, speed)
+        local track = tracks[name]
+        if not track then return end
+
+        if currentTrack ~= track then
+            stopAll(0.1)
+            currentTrack = track
+            track:Play(0.1, 1, speed or 1)
+        elseif speed then
+            track:AdjustSpeed(speed)
+        end
+    end
+
+    local function update()
+        if not animationEnabled or not humanoid.Parent then
+            return
+        end
+
+        local state = humanoid:GetState()
+        local moving = humanoid.MoveDirection.Magnitude > 0.05
+        local speed = humanoid.WalkSpeed
+
+        if state == Enum.HumanoidStateType.Jumping then
+            play("Jump", 1)
+        elseif state == Enum.HumanoidStateType.Freefall then
+            play("Fall", 1)
+        elseif state == Enum.HumanoidStateType.Climbing then
+            play("Climb", math.max(speed / 8, 0.5))
+        elseif state == Enum.HumanoidStateType.Swimming then
+            if moving then
+                play("Swim", math.max(speed / 8, 0.5))
+            else
+                play("SwimIdle", 1)
+            end
+        elseif moving then
+            if speed >= 14 and tracks.Run then
+                play("Run", math.max(speed / 16, 0.5))
+            else
+                play("Walk", math.max(speed / 8, 0.5))
+            end
+        else
+            play("Idle", 1)
+        end
+    end
+
+    stateConnection = humanoid.StateChanged:Connect(function()
+        task.defer(update)
+    end)
+
+    moveConnection = humanoid:GetPropertyChangedSignal("MoveDirection"):Connect(function()
+        task.defer(update)
+    end)
+
+    ancestryConnection = character.AncestryChanged:Connect(function(_, parent)
+        if parent then return end
+        if animationCleanup then
+            pcall(animationCleanup)
+            animationCleanup = nil
+        end
+    end)
+
+    animationCleanup = function()
+        if stateConnection then stateConnection:Disconnect(); stateConnection = nil end
+        if moveConnection then moveConnection:Disconnect(); moveConnection = nil end
+        if ancestryConnection then ancestryConnection:Disconnect(); ancestryConnection = nil end
+
+        for _, track in pairs(tracks) do
+            pcall(function()
+                track:Stop(0.08)
+                track:Destroy()
+            end)
+        end
+        currentTrack = nil
+    end
+
+    update()
+    return next(tracks) ~= nil
+end
+
+local function enableAdidas()
+    animationEnabled = true
+
+    local character = LocalPlayer.Character
+    if character then
+        applyAdidasAnimations(character)
+    end
+end
+
+local function disableAdidas()
+    animationEnabled = false
+
+    local character = LocalPlayer.Character
+    if character then
+        stopAdidasAnimations(character)
+    end
+end
+
+if animationRespawnConnection then
+    animationRespawnConnection:Disconnect()
+end
+
+animationRespawnConnection = LocalPlayer.CharacterAdded:Connect(function(character)
+    if not animationEnabled then return end
+    task.wait(0.5)
+    if animationEnabled then
+        applyAdidasAnimations(character)
+    end
+end)
+
+-- UI
 local AdidasHeader = Instance.new("Frame")
 AdidasHeader.Size = UDim2.new(0.95, 0, 0, 64)
 AdidasHeader.Position = UDim2.new(0.025, 0, 0, 8)
 AdidasHeader.BackgroundColor3 = Color3.fromRGB(28, 28, 40)
 AdidasHeader.BorderSizePixel = 0
 AdidasHeader.Parent = PageAnimations
-
-local AdidasHeaderCorner = Instance.new("UICorner")
-AdidasHeaderCorner.CornerRadius = UDim.new(0, 8)
-AdidasHeaderCorner.Parent = AdidasHeader
+Instance.new("UICorner", AdidasHeader).CornerRadius = UDim.new(0, 8)
 
 local AdidasLogo = Instance.new("ImageLabel")
-AdidasLogo.Name = "AdidasCommunityLogo"
 AdidasLogo.Size = UDim2.new(0, 46, 0, 46)
 AdidasLogo.Position = UDim2.new(0, 9, 0.5, -23)
 AdidasLogo.BackgroundTransparency = 1
@@ -1002,23 +1226,56 @@ local AdidasSubtitle = Instance.new("TextLabel")
 AdidasSubtitle.Size = UDim2.new(1, -70, 0, 20)
 AdidasSubtitle.Position = UDim2.new(0, 65, 0, 34)
 AdidasSubtitle.BackgroundTransparency = 1
-AdidasSubtitle.Text = "Animations"
+AdidasSubtitle.Text = "Real Animation Pack"
 AdidasSubtitle.TextColor3 = Color3.fromRGB(150, 155, 170)
 AdidasSubtitle.Font = Enum.Font.SourceSans
 AdidasSubtitle.TextSize = 13
 AdidasSubtitle.TextXAlignment = Enum.TextXAlignment.Left
 AdidasSubtitle.Parent = AdidasHeader
 
-local AdidasStatus = Instance.new("TextLabel")
-AdidasStatus.Size = UDim2.new(0.95, 0, 0, 30)
-AdidasStatus.Position = UDim2.new(0.025, 0, 0, 84)
-AdidasStatus.BackgroundTransparency = 1
-AdidasStatus.Text = "Adidas Community Animations"
-AdidasStatus.Font = Enum.Font.GothamBold
-AdidasStatus.TextSize = 18
-AdidasStatus.TextColor3 = Color3.fromRGB(70, 200, 245)
-AdidasStatus.TextXAlignment = Enum.TextXAlignment.Center
-AdidasStatus.Parent = PageAnimations
+local AdidasToggle = Instance.new("TextButton")
+AdidasToggle.Size = UDim2.new(0.95, 0, 0, 42)
+AdidasToggle.Position = UDim2.new(0.025, 0, 0, 82)
+AdidasToggle.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
+AdidasToggle.BorderSizePixel = 0
+AdidasToggle.Font = Enum.Font.GothamBold
+AdidasToggle.Text = "Adidas Community: OFF"
+AdidasToggle.TextSize = 14
+AdidasToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+AdidasToggle.Parent = PageAnimations
+Instance.new("UICorner", AdidasToggle).CornerRadius = UDim.new(0, 7)
+
+AdidasToggle.MouseButton1Click:Connect(function()
+    animationEnabled = not animationEnabled
+
+    if animationEnabled then
+        AdidasToggle.Text = "Adidas Community: ON"
+        AdidasToggle.BackgroundColor3 = Color3.fromRGB(0, 170, 100)
+        enableAdidas()
+    else
+        AdidasToggle.Text = "Adidas Community: OFF"
+        AdidasToggle.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
+        disableAdidas()
+    end
+end)
+
+local AdidasReset = Instance.new("TextButton")
+AdidasReset.Size = UDim2.new(0.95, 0, 0, 38)
+AdidasReset.Position = UDim2.new(0.025, 0, 0, 132)
+AdidasReset.BackgroundColor3 = Color3.fromRGB(150, 55, 55)
+AdidasReset.BorderSizePixel = 0
+AdidasReset.Font = Enum.Font.GothamBold
+AdidasReset.Text = "Reset Animation"
+AdidasReset.TextSize = 13
+AdidasReset.TextColor3 = Color3.fromRGB(255, 255, 255)
+AdidasReset.Parent = PageAnimations
+Instance.new("UICorner", AdidasReset).CornerRadius = UDim.new(0, 7)
+
+AdidasReset.MouseButton1Click:Connect(function()
+    disableAdidas()
+    AdidasToggle.Text = "Adidas Community: OFF"
+    AdidasToggle.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
+end)
 
 -- PAGE 3: PLAYER PAGE (UPDATED UI)
 -- ==========================================
