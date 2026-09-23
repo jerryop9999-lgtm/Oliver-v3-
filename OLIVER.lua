@@ -1044,8 +1044,11 @@ local function applyAdidasAnimations(character)
         oldFolder:Destroy()
     end
 
+    -- Keep Roblox's Animate controller enabled so walking/jumping input
+    -- never gets stuck. Our tracks use Action priority below to override
+    -- the visual animation without disabling character movement.
     if animate then
-        animate.Enabled = false
+        animate.Enabled = true
     end
 
     local folder = Instance.new("Folder")
@@ -1321,14 +1324,14 @@ applyAngelAnimations = function(character)
         end
     end
 
-    loadTrack("Idle", AngelFloating.Idle, Enum.AnimationPriority.Idle, true)
-    loadTrack("Walk", AngelFloating.Walk, Enum.AnimationPriority.Movement, true)
-    loadTrack("Run", AngelFloating.Run, Enum.AnimationPriority.Movement, true)
-    loadTrack("Jump", AngelFloating.Jump, Enum.AnimationPriority.Movement, false)
-    loadTrack("Fall", AngelFloating.Fall, Enum.AnimationPriority.Movement, true)
-    loadTrack("Climb", AngelFloating.Climb, Enum.AnimationPriority.Movement, true)
-    loadTrack("Swim", AngelFloating.Swim, Enum.AnimationPriority.Movement, true)
-    loadTrack("SwimIdle", AngelFloating.SwimIdle, Enum.AnimationPriority.Movement, true)
+    loadTrack("Idle", AngelFloating.Idle, Enum.AnimationPriority.Action, true)
+    loadTrack("Walk", AngelFloating.Walk, Enum.AnimationPriority.Action, true)
+    loadTrack("Run", AngelFloating.Run, Enum.AnimationPriority.Action, true)
+    loadTrack("Jump", AngelFloating.Jump, Enum.AnimationPriority.Action, false)
+    loadTrack("Fall", AngelFloating.Fall, Enum.AnimationPriority.Action, true)
+    loadTrack("Climb", AngelFloating.Climb, Enum.AnimationPriority.Action, true)
+    loadTrack("Swim", AngelFloating.Swim, Enum.AnimationPriority.Action, true)
+    loadTrack("SwimIdle", AngelFloating.SwimIdle, Enum.AnimationPriority.Action, true)
 
     local currentTrack = nil
     local stateConnection
@@ -1427,11 +1430,25 @@ applyAngelAnimations = function(character)
             folder:Destroy()
         end
 
+        local currentAnimate = character and character:FindFirstChild("Animate")
+        if currentAnimate then
+            currentAnimate.Enabled = true
+        end
+
         currentTrack = nil
     end
 
+    if not next(tracks) then
+        if animationCleanup then
+            pcall(animationCleanup)
+            animationCleanup = nil
+        end
+        if animate then animate.Enabled = true end
+        return false
+    end
+
     update()
-    return next(tracks) ~= nil
+    return true
 end
 
 local function enableAngel()
@@ -1549,8 +1566,16 @@ AnimationStatus.Parent = PageAnimations
 
 AngelCard.Activated:Connect(function()
     enableAngel()
-    AnimationStatus.Text = "Angel (Floating) • Active"
-    AnimationStatus.TextColor3 = Color3.fromRGB(70, 200, 245)
+    local ok = applyAngelAnimations(LocalPlayer.Character)
+    if ok then
+        AnimationStatus.Text = "Angel (Floating) • Active"
+        AnimationStatus.TextColor3 = Color3.fromRGB(70, 200, 245)
+    else
+        animationEnabled = false
+        activeAnimationPack = nil
+        AnimationStatus.Text = "Angel animation could not load"
+        AnimationStatus.TextColor3 = Color3.fromRGB(255, 120, 120)
+    end
 end)
 
 AdidasCard.Activated:Connect(function()
