@@ -1246,16 +1246,13 @@ animationRespawnConnection = LocalPlayer.CharacterAdded:Connect(function(charact
     if activeAnimationPack == "Adidas" then
         applyAdidasAnimations(character)
     elseif activeAnimationPack == "Angel" then
-        -- Angel function is defined below; wait briefly if needed.
-        if applyAngelAnimations then
-            applyAngelAnimations(character)
-        end
+        applyAngelAnimations(character)
     end
 end)
 
 
 -- ==========================================
--- ANGEL (FLOATING) - JUNO'S ANIMATIONS
+-- ANGEL (FLOATING) - SAFE CONTROLLER
 -- ==========================================
 local AngelFloating = {
     Idle     = "rbxassetid://138791542100078",
@@ -1268,37 +1265,65 @@ local AngelFloating = {
     SwimIdle = "rbxassetid://133193009842625",
 }
 
-applyAngelAnimations = function(character)
-    if not animationEnabled or activeAnimationPack ~= "Angel" then
-        return false
+local applyAngelAnimations
+local angelCleanup = nil
+local angelConnections = {}
+
+local function clearAngel()
+    for _, c in ipairs(angelConnections) do
+        pcall(function() c:Disconnect() end)
+    end
+    table.clear(angelConnections)
+
+    if angelCleanup then
+        pcall(angelCleanup)
+        angelCleanup = nil
     end
 
-    if not character or not character.Parent then
-        return false
-    end
+    local character = LocalPlayer.Character
+    if not character then return end
+
+    local folder = character:FindFirstChild("__OLIVER_AngelAnimation")
+    if folder then folder:Destroy() end
 
     local humanoid = character:FindFirstChildOfClass("Humanoid")
-    local animator = humanoid and humanoid:FindFirstChildOfClass("Animator")
+    if humanoid then
+        local animator = humanoid:FindFirstChildOfClass("Animator")
+        if animator then
+            for _, tr in ipairs(animator:GetPlayingAnimationTracks()) do
+                if tr.Name:sub(1, 13) == "OLIVER_Angel_" then
+                    pcall(function() tr:Stop(0.08) end)
+                end
+            end
+        end
+    end
+
+    -- IMPORTANT: never leave Roblox Animate disabled.
     local animate = character:FindFirstChild("Animate")
-
-    if not humanoid or not animator then
-        return false
-    end
-
-    -- Stop/clean the previous pack first.
-    if animationCleanup then
-        pcall(animationCleanup)
-        animationCleanup = nil
-    end
-
-    local oldAdidas = character:FindFirstChild("__OLIVER_AdidasAnimation")
-    if oldAdidas then oldAdidas:Destroy() end
-
-    local oldAngel = character:FindFirstChild("__OLIVER_AngelAnimation")
-    if oldAngel then oldAngel:Destroy() end
-
     if animate then
-        animate.Enabled = false
+        animate.Enabled = true
+    end
+end
+
+applyAngelAnimations = function(character)
+    if not character or not character.Parent then return false end
+    if not animationEnabled or activeAnimationPack ~= "Angel" then return false end
+
+    clearAngel()
+
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    if not humanoid then return false end
+
+    local animator = humanoid:FindFirstChildOfClass("Animator")
+    if not animator then
+        animator = Instance.new("Animator")
+        animator.Parent = humanoid
+    end
+
+    local animate = character:FindFirstChild("Animate")
+    if animate then
+        -- Keep default controller alive; custom tracks override visually.
+        animate.Enabled = true
     end
 
     local folder = Instance.new("Folder")
@@ -1307,70 +1332,66 @@ applyAngelAnimations = function(character)
 
     local tracks = {}
 
-    local function loadTrack(name, id, priority, looped)
+    local function load(name, id, priority, looped)
         local anim = Instance.new("Animation")
-        anim.Name = name
+        anim.Name = "OLIVER_Angel_" .. name
         anim.AnimationId = id
         anim.Parent = folder
 
-        local ok, track = pcall(function()
+        local ok, tr = pcall(function()
             return animator:LoadAnimation(anim)
         end)
 
-        if ok and track then
-            track.Priority = priority
-            track.Looped = looped
-            tracks[name] = track
+        if ok and tr then
+            tr.Name = "OLIVER_Angel_" .. name
+            tr.Priority = priority
+            tr.Looped = looped
+            tracks[name] = tr
+            return tr
         end
     end
 
-    loadTrack("Idle", AngelFloating.Idle, Enum.AnimationPriority.Action, true)
-    loadTrack("Walk", AngelFloating.Walk, Enum.AnimationPriority.Action, true)
-    loadTrack("Run", AngelFloating.Run, Enum.AnimationPriority.Action, true)
-    loadTrack("Jump", AngelFloating.Jump, Enum.AnimationPriority.Action, false)
-    loadTrack("Fall", AngelFloating.Fall, Enum.AnimationPriority.Action, true)
-    loadTrack("Climb", AngelFloating.Climb, Enum.AnimationPriority.Action, true)
-    loadTrack("Swim", AngelFloating.Swim, Enum.AnimationPriority.Action, true)
-    loadTrack("SwimIdle", AngelFloating.SwimIdle, Enum.AnimationPriority.Action, true)
+    -- Action priority reliably overlays Roblox's default movement tracks.
+    load("Idle", AngelFloating.Idle, Enum.AnimationPriority.Action, true)
+    load("Walk", AngelFloating.Walk, Enum.AnimationPriority.Action, true)
+    load("Run", AngelFloating.Run, Enum.AnimationPriority.Action, true)
+    load("Jump", AngelFloating.Jump, Enum.AnimationPriority.Action, false)
+    load("Fall", AngelFloating.Fall, Enum.AnimationPriority.Action, true)
+    load("Climb", AngelFloating.Climb, Enum.AnimationPriority.Action, true)
+    load("Swim", AngelFloating.Swim, Enum.AnimationPriority.Action, true)
+    load("SwimIdle", AngelFloating.SwimIdle, Enum.AnimationPriority.Action, true)
 
-    local currentTrack = nil
-    local stateConnection
-    local moveConnection
-    local diedConnection
+    if not next(tracks) then
+        folder:Destroy()
+        return false
+    end
 
-    local function stopAll(fade)
-        for _, track in pairs(tracks) do
-            if track.IsPlaying then
-                pcall(function()
-                    track:Stop(fade or 0.08)
-                end)
+    local current
+
+    local function stopOthers(except)
+        for _, tr in pairs(tracks) do
+            if tr ~= except and tr.IsPlaying then
+                pcall(function() tr:Stop(0.08) end)
             end
         end
     end
 
     local function play(name, speed)
-        local track = tracks[name]
-        if not track then return end
+        local tr = tracks[name]
+        if not tr then return end
 
-        if currentTrack ~= track then
-            stopAll(0.08)
-            currentTrack = track
-            pcall(function()
-                track:Play(0.08, 1, speed or 1)
-            end)
+        if current ~= tr then
+            stopOthers(tr)
+            current = tr
+            pcall(function() tr:Play(0.08, 1, speed or 1) end)
         elseif speed then
-            pcall(function()
-                track:AdjustSpeed(speed)
-            end)
+            pcall(function() tr:AdjustSpeed(speed) end)
         end
     end
 
     local function update()
-        if not animationEnabled
-            or activeAnimationPack ~= "Angel"
-            or not humanoid.Parent then
-            return
-        end
+        if not animationEnabled or activeAnimationPack ~= "Angel" then return end
+        if humanoid.Health <= 0 then return end
 
         local state = humanoid:GetState()
         local moving = humanoid.MoveDirection.Magnitude > 0.05
@@ -1383,11 +1404,7 @@ applyAngelAnimations = function(character)
         elseif state == Enum.HumanoidStateType.Climbing then
             play("Climb", math.max(speed / 8, 0.5))
         elseif state == Enum.HumanoidStateType.Swimming then
-            if moving then
-                play("Swim", math.max(speed / 8, 0.5))
-            else
-                play("SwimIdle", 1)
-            end
+            play(moving and "Swim" or "SwimIdle", math.max(speed / 8, 0.5))
         elseif moving then
             if speed >= 14 and tracks.Run then
                 play("Run", math.max(speed / 16, 0.5))
@@ -1399,52 +1416,29 @@ applyAngelAnimations = function(character)
         end
     end
 
-    stateConnection = humanoid.StateChanged:Connect(function()
+    table.insert(angelConnections, humanoid.StateChanged:Connect(function()
         task.defer(update)
-    end)
+    end))
 
-    moveConnection = humanoid:GetPropertyChangedSignal("MoveDirection"):Connect(function()
+    table.insert(angelConnections, humanoid:GetPropertyChangedSignal("MoveDirection"):Connect(function()
         task.defer(update)
-    end)
+    end))
 
-    diedConnection = humanoid.Died:Connect(function()
-        if animationCleanup then
-            pcall(animationCleanup)
-            animationCleanup = nil
+    table.insert(angelConnections, humanoid:GetPropertyChangedSignal("WalkSpeed"):Connect(function()
+        task.defer(update)
+    end))
+
+    table.insert(angelConnections, humanoid.Died:Connect(function()
+        clearAngel()
+    end))
+
+    angelCleanup = function()
+        for _, tr in pairs(tracks) do
+            pcall(function() tr:Stop(0.08) end)
         end
-    end)
-
-    animationCleanup = function()
-        if stateConnection then stateConnection:Disconnect(); stateConnection = nil end
-        if moveConnection then moveConnection:Disconnect(); moveConnection = nil end
-        if diedConnection then diedConnection:Disconnect(); diedConnection = nil end
-
-        for _, track in pairs(tracks) do
-            pcall(function()
-                track:Stop(0.08)
-                track:Destroy()
-            end)
-        end
-
         if folder and folder.Parent then
             folder:Destroy()
         end
-
-        local currentAnimate = character and character:FindFirstChild("Animate")
-        if currentAnimate then
-            currentAnimate.Enabled = true
-        end
-
-        currentTrack = nil
-    end
-
-    if not next(tracks) then
-        if animationCleanup then
-            pcall(animationCleanup)
-            animationCleanup = nil
-        end
-        if animate then animate.Enabled = true end
-        return false
     end
 
     update()
@@ -1456,14 +1450,17 @@ local function enableAngel()
     activeAnimationPack = "Angel"
 
     local character = LocalPlayer.Character
-    if character then
-        stopCurrentAnimation(character)
-        animationEnabled = true
-        activeAnimationPack = "Angel"
-        applyAngelAnimations(character)
-    end
-end
+    if not character then return false end
 
+    local ok = applyAngelAnimations(character)
+    if not ok then
+        animationEnabled = false
+        activeAnimationPack = nil
+        local animate = character:FindFirstChild("Animate")
+        if animate then animate.Enabled = true end
+    end
+    return ok
+end
 
 -- UI
 local function makeAnimationCard(parent, name, subtitle, logoId, y)
@@ -1565,14 +1562,11 @@ AnimationStatus.ZIndex = 30
 AnimationStatus.Parent = PageAnimations
 
 AngelCard.Activated:Connect(function()
-    enableAngel()
-    local ok = applyAngelAnimations(LocalPlayer.Character)
+    local ok = enableAngel()
     if ok then
         AnimationStatus.Text = "Angel (Floating) • Active"
         AnimationStatus.TextColor3 = Color3.fromRGB(70, 200, 245)
     else
-        animationEnabled = false
-        activeAnimationPack = nil
         AnimationStatus.Text = "Angel animation could not load"
         AnimationStatus.TextColor3 = Color3.fromRGB(255, 120, 120)
     end
