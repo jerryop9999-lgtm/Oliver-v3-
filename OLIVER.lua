@@ -1165,6 +1165,110 @@ local function applyAdidasAnimations(character)
     return next(tracks) ~= nil
 end
 
+
+-- ==========================================
+-- ZOMBIE ANIMATIONS
+-- ==========================================
+local ZombieAnimations = {
+    Run      = "rbxassetid://616163682",
+    Walk     = "rbxassetid://616168032",
+    Jump     = "rbxassetid://616161997",
+    Idle1    = "rbxassetid://616158929",
+    Idle2    = "rbxassetid://616160636",
+    Fall     = "rbxassetid://616157476",
+    Swim     = "rbxassetid://616165109",
+    SwimIdle = "rbxassetid://616166655",
+    Climb    = "rbxassetid://616156119",
+}
+
+local function applyZombieAnimations(character)
+    if not character or not character.Parent then return false end
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    if not humanoid then return false end
+    local animator = humanoid:FindFirstChildOfClass("Animator") or Instance.new("Animator", humanoid)
+
+    if animationCleanup then pcall(animationCleanup); animationCleanup = nil end
+    animationEnabled = true
+    activeAnimationPack = "Zombie"
+
+    local folder = Instance.new("Folder")
+    folder.Name = "__OLIVER_ZombieAnimation"
+    folder.Parent = character
+
+    local tracks = {}
+    local function load(name, id, looped)
+        local a = Instance.new("Animation")
+        a.Name = "Zombie_" .. name
+        a.AnimationId = id
+        a.Parent = folder
+        local ok, tr = pcall(function() return animator:LoadAnimation(a) end)
+        if ok and tr then
+            tr.Priority = Enum.AnimationPriority.Action
+            tr.Looped = looped
+            tracks[name] = tr
+        end
+    end
+
+    load("Idle1", ZombieAnimations.Idle1, true)
+    load("Idle2", ZombieAnimations.Idle2, true)
+    load("Walk", ZombieAnimations.Walk, true)
+    load("Run", ZombieAnimations.Run, true)
+    load("Jump", ZombieAnimations.Jump, false)
+    load("Fall", ZombieAnimations.Fall, true)
+    load("Climb", ZombieAnimations.Climb, true)
+    load("Swim", ZombieAnimations.Swim, true)
+    load("SwimIdle", ZombieAnimations.SwimIdle, true)
+
+    local current
+    local function stopAll()
+        for _, tr in pairs(tracks) do
+            if tr.IsPlaying then pcall(function() tr:Stop(0.08) end) end
+        end
+    end
+    local function play(name, speed)
+        local tr = tracks[name]
+        if not tr then return end
+        if current ~= tr then
+            stopAll()
+            current = tr
+            tr:Play(0.08, 1, speed or 1)
+        elseif speed then
+            tr:AdjustSpeed(speed)
+        end
+    end
+    local function update()
+        if not animationEnabled or activeAnimationPack ~= "Zombie" then return end
+        local s = humanoid:GetState()
+        local moving = humanoid.MoveDirection.Magnitude > 0.05
+        local speed = humanoid.WalkSpeed
+        if s == Enum.HumanoidStateType.Jumping then
+            play("Jump", 1)
+        elseif s == Enum.HumanoidStateType.Freefall then
+            play("Fall", 1)
+        elseif s == Enum.HumanoidStateType.Climbing then
+            play("Climb", math.max(speed / 8, .5))
+        elseif s == Enum.HumanoidStateType.Swimming then
+            play(moving and "Swim" or "SwimIdle", math.max(speed / 8, .5))
+        elseif moving then
+            play(speed >= 14 and "Run" or "Walk", math.max(speed / (speed >= 14 and 16 or 8), .5))
+        else
+            play("Idle1", 1)
+        end
+    end
+
+    local c1 = humanoid.StateChanged:Connect(function() task.defer(update) end)
+    local c2 = humanoid:GetPropertyChangedSignal("MoveDirection"):Connect(function() task.defer(update) end)
+    animationCleanup = function()
+        pcall(function() c1:Disconnect() end)
+        pcall(function() c2:Disconnect() end)
+        for _, tr in pairs(tracks) do pcall(function() tr:Stop(.08); tr:Destroy() end) end
+        if folder.Parent then folder:Destroy() end
+    end
+    update()
+    return next(tracks) ~= nil
+end
+
+
 local function enableAdidas()
     animationEnabled = true
 
@@ -1283,6 +1387,25 @@ AdidasButtonSubtitle.TextSize = 13
 AdidasButtonSubtitle.TextXAlignment = Enum.TextXAlignment.Left
 AdidasButtonSubtitle.ZIndex = 31
 AdidasButtonSubtitle.Parent = AdidasCommunityButton
+
+local ZombieCard = makeAnimationCard(
+    PageAnimations,
+    "Zombie",
+    "Zombie Animations • Tap to use",
+    AdidasAnimationLogoId,
+    80
+)
+
+ZombieCard.Activated:Connect(function()
+    local ok = applyZombieAnimations(LocalPlayer.Character)
+    if ok then
+        AnimationStatus.Text = "Zombie • Active"
+        AnimationStatus.TextColor3 = Color3.fromRGB(70, 200, 245)
+    else
+        AnimationStatus.Text = "Zombie animation could not load"
+        AnimationStatus.TextColor3 = Color3.fromRGB(255, 120, 120)
+    end
+end)
 
 local RestoreAnimation = Instance.new("TextButton")
 RestoreAnimation.Name = "RestoreAnimation"
