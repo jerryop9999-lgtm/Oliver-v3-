@@ -91,7 +91,7 @@ local MainCorner = Instance.new("UICorner")
 MainCorner.CornerRadius = UDim.new(0, 10)
 MainCorner.Parent = MainFrame
 
-makeSmoothDraggable(MainFrame)
+-- MainFrame dragging is attached to TopBar below, so page buttons remain clickable.
 
 -- 4. Top Header
 local TopBar = Instance.new("Frame")
@@ -128,7 +128,9 @@ HeaderStats.TextSize = 14
 HeaderStats.BackgroundTransparency = 1
 HeaderStats.Parent = TopBar
 
-ToggleBtn.MouseButton1Click:Connect(function()
+makeSmoothDraggable(MainFrame, TopBar)
+
+ToggleBtn.Activated:Connect(function()
     MainFrame.Visible = not MainFrame.Visible
 end)
 
@@ -146,6 +148,7 @@ TabMainBtn.Text = ""
 TabMainBtn.BackgroundColor3 = Color3.fromRGB(0, 140, 255)
 TabMainBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 TabMainBtn.Font = Enum.Font.SourceSansBold
+TabMainBtn.Active = true
 TabMainBtn.TextSize = 14
 TabMainBtn.Parent = TabBar
 
@@ -156,6 +159,7 @@ TabPlayerBtn.Text = ""
 TabPlayerBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
 TabPlayerBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
 TabPlayerBtn.Font = Enum.Font.SourceSansBold
+TabPlayerBtn.Active = true
 TabPlayerBtn.TextSize = 14
 TabPlayerBtn.Parent = TabBar
 
@@ -167,6 +171,7 @@ TabAnimationsBtn.Text = ""
 TabAnimationsBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
 TabAnimationsBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
 TabAnimationsBtn.Font = Enum.Font.SourceSansBold
+TabAnimationsBtn.Active = true
 TabAnimationsBtn.TextSize = 14
 TabAnimationsBtn.Parent = TabBar
 
@@ -984,6 +989,8 @@ local AngelFloating = {
 local animationEnabled = false
 local animationCleanup = nil
 local animationRespawnConnection = nil
+local activeAnimationPack = nil
+local applyAnimationPack
 
 local function stopAdidasAnimations(character)
     if animationCleanup then
@@ -1188,11 +1195,10 @@ if animationRespawnConnection then
 end
 
 animationRespawnConnection = LocalPlayer.CharacterAdded:Connect(function(character)
-    if not animationEnabled then return end
+    if not animationEnabled or not activeAnimationPack then return end
     task.wait(0.5)
-    if animationEnabled then
-        applyAdidasAnimations(character)
-    end
+    if not animationEnabled or not activeAnimationPack then return end
+    applyAnimationPack(character, activeAnimationPack)
 end)
 
 -- UI
@@ -1202,8 +1208,9 @@ AngelHeader.Position = UDim2.new(0.025, 0, 0, 8)
 AngelHeader.BackgroundColor3 = Color3.fromRGB(28, 28, 40)
 AngelHeader.BorderSizePixel = 0
 AngelHeader.Parent = PageAnimations
-AdidasHeader.Visible = false
-Instance.new("UICorner", AdidasHeader).CornerRadius = UDim.new(0, 8)
+local AngelHeaderCorner = Instance.new("UICorner")
+AngelHeaderCorner.CornerRadius = UDim.new(0, 8)
+AngelHeaderCorner.Parent = AngelHeader
 
 local AdidasLogo = Instance.new("ImageLabel")
 AdidasLogo.Size = UDim2.new(0, 46, 0, 46)
@@ -1314,13 +1321,16 @@ AdidasStatus.Parent = PageAnimations
 
 AdidasCommunityButton.Activated:Connect(function()
     animationEnabled = true
+    activeAnimationPack = AngelFloating
     enableAdidas()
     AdidasStatus.Text = "Angel (Floating) • Active"
     AdidasStatus.TextColor3 = Color3.fromRGB(70, 200, 245)
 end)
 
 RestoreAnimation.Activated:Connect(function()
+    activeAnimationPack = nil
     disableAdidas()
+    restoreAnimationPack()
     AdidasStatus.Text = "Restored • Default Animation"
     AdidasStatus.TextColor3 = Color3.fromRGB(170, 175, 190)
 end)
@@ -1580,6 +1590,9 @@ TabAnimationsBtn.Activated:Connect(function()
     selectTab("Animations")
 end)
 
+-- Initial page
+selectTab("Main")
+
 -- ============================================================
 -- OLIVER V3 - UPDATED EXTRAS
 -- Infinite Jump: removed
@@ -1616,7 +1629,7 @@ local function createExtraButton(text, callback)
     corner.CornerRadius = UDim.new(0, 6)
     corner.Parent = btn
 
-    btn.MouseButton1Click:Connect(function()
+    btn.Activated:Connect(function()
         callback(btn)
     end)
     return btn
@@ -1755,11 +1768,14 @@ AdidasRestore.Parent = PageAnimations
 Instance.new("UICorner", AdidasRestore).CornerRadius = UDim.new(0, 7)
 
 AdidasCommunityCard.Activated:Connect(function()
-    animationEnabled = false
+    animationEnabled = true
+    activeAnimationPack = AdidasCommunity
     applyAnimationPack(LocalPlayer.Character, AdidasCommunity)
 end)
 
 AdidasRestore.Activated:Connect(function()
+    animationEnabled = false
+    activeAnimationPack = nil
     restoreAnimationPack()
 end)
 
