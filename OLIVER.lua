@@ -958,7 +958,7 @@ LocalPlayer.CharacterAdded:Connect(function(char)
 end)
 
 -- ==========================================
--- PAGE 2: ANIMATIONS PAGE - ADIDAS COMMUNITY (REAL CONTROLLER)
+-- PAGE 2: ANIMATIONS PAGE - ANGEL (FLOATING) (REAL CONTROLLER)
 local PageAnimations = Instance.new("Frame")
 PageAnimations.Name = "PageAnimations"
 PageAnimations.Size = UDim2.new(1, 0, 1, 0)
@@ -966,19 +966,19 @@ PageAnimations.BackgroundTransparency = 1
 PageAnimations.Visible = false
 PageAnimations.Parent = PagesFolder
 
--- Adidas Community animation assets used by the controller.
-local AdidasAnimationLogoId = "rbxassetid://105863394969753"
+-- Angel (Floating) animation assets used by the controller.
+local AngelAnimationLogoId = "rbxassetid://105863394969753"
 
-local AdidasCommunity = {
-    Idle     = "rbxassetid://122257458498464",
-    Idle2    = "rbxassetid://122257458498464",
-    Walk     = "rbxassetid://122150855457006",
-    Run      = "rbxassetid://82598234841035",
-    Jump     = "rbxassetid://75290611992385",
-    Fall     = "rbxassetid://98600215928904",
-    Climb    = "rbxassetid://88763136693023",
-    Swim     = "rbxassetid://133308483266208",
-    SwimIdle = "rbxassetid://133308483266208",
+-- Angel (Floating) - Juno's Animations
+local AngelFloating = {
+    Idle     = "rbxassetid://138791542100078",
+    Walk     = "rbxassetid://98178584535094",
+    Run      = "rbxassetid://120880326870608",
+    Jump     = "rbxassetid://140709061221147",
+    Fall     = "rbxassetid://98791635084597",
+    Climb    = "rbxassetid://132683235998205",
+    Swim     = "rbxassetid://133193009842625",
+    SwimIdle = "rbxassetid://133193009842625",
 }
 
 local animationEnabled = false
@@ -1064,14 +1064,14 @@ local function applyAdidasAnimations(character)
         end
     end
 
-    loadTrack("Idle", AdidasCommunity.Idle, Enum.AnimationPriority.Idle, true)
-    loadTrack("Walk", AdidasCommunity.Walk, Enum.AnimationPriority.Movement, true)
-    loadTrack("Run", AdidasCommunity.Run, Enum.AnimationPriority.Movement, true)
-    loadTrack("Jump", AdidasCommunity.Jump, Enum.AnimationPriority.Movement, false)
-    loadTrack("Fall", AdidasCommunity.Fall, Enum.AnimationPriority.Movement, true)
-    loadTrack("Climb", AdidasCommunity.Climb, Enum.AnimationPriority.Movement, true)
-    loadTrack("Swim", AdidasCommunity.Swim, Enum.AnimationPriority.Movement, true)
-    loadTrack("SwimIdle", AdidasCommunity.SwimIdle, Enum.AnimationPriority.Movement, true)
+    loadTrack("Idle", AngelFloating.Idle, Enum.AnimationPriority.Idle, true)
+    loadTrack("Walk", AngelFloating.Walk, Enum.AnimationPriority.Movement, true)
+    loadTrack("Run", AngelFloating.Run, Enum.AnimationPriority.Movement, true)
+    loadTrack("Jump", AngelFloating.Jump, Enum.AnimationPriority.Movement, false)
+    loadTrack("Fall", AngelFloating.Fall, Enum.AnimationPriority.Movement, true)
+    loadTrack("Climb", AngelFloating.Climb, Enum.AnimationPriority.Movement, true)
+    loadTrack("Swim", AngelFloating.Swim, Enum.AnimationPriority.Movement, true)
+    loadTrack("SwimIdle", AngelFloating.SwimIdle, Enum.AnimationPriority.Movement, true)
 
     local currentTrack = nil
     local stateConnection
@@ -1196,12 +1196,12 @@ animationRespawnConnection = LocalPlayer.CharacterAdded:Connect(function(charact
 end)
 
 -- UI
-local AdidasHeader = Instance.new("Frame")
-AdidasHeader.Size = UDim2.new(0.95, 0, 0, 64)
-AdidasHeader.Position = UDim2.new(0.025, 0, 0, 8)
-AdidasHeader.BackgroundColor3 = Color3.fromRGB(28, 28, 40)
-AdidasHeader.BorderSizePixel = 0
-AdidasHeader.Parent = PageAnimations
+local AngelHeader = Instance.new("Frame")
+AngelHeader.Size = UDim2.new(0.95, 0, 0, 64)
+AngelHeader.Position = UDim2.new(0.025, 0, 0, 8)
+AngelHeader.BackgroundColor3 = Color3.fromRGB(28, 28, 40)
+AngelHeader.BorderSizePixel = 0
+AngelHeader.Parent = PageAnimations
 AdidasHeader.Visible = false
 Instance.new("UICorner", AdidasHeader).CornerRadius = UDim.new(0, 8)
 
@@ -1210,18 +1210,18 @@ AdidasLogo.Size = UDim2.new(0, 46, 0, 46)
 AdidasLogo.Position = UDim2.new(0, 9, 0.5, -23)
 AdidasLogo.BackgroundTransparency = 1
 AdidasLogo.Image = AdidasAnimationLogoId
-AdidasLogo.Parent = AdidasHeader
+AdidasLogo.Parent = AngelHeader
 
 local AdidasTitle = Instance.new("TextLabel")
 AdidasTitle.Size = UDim2.new(1, -70, 0, 25)
 AdidasTitle.Position = UDim2.new(0, 65, 0, 8)
 AdidasTitle.BackgroundTransparency = 1
-AdidasTitle.Text = "Adidas Community"
+AdidasTitle.Text = "Angel (Floating)"
 AdidasTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
 AdidasTitle.Font = Enum.Font.GothamBold
 AdidasTitle.TextSize = 17
 AdidasTitle.TextXAlignment = Enum.TextXAlignment.Left
-AdidasTitle.Parent = AdidasHeader
+AdidasTitle.Parent = AngelHeader
 
 local AdidasSubtitle = Instance.new("TextLabel")
 AdidasSubtitle.Size = UDim2.new(1, -70, 0, 20)
@@ -1232,9 +1232,9 @@ AdidasSubtitle.TextColor3 = Color3.fromRGB(150, 155, 170)
 AdidasSubtitle.Font = Enum.Font.SourceSans
 AdidasSubtitle.TextSize = 13
 AdidasSubtitle.TextXAlignment = Enum.TextXAlignment.Left
-AdidasSubtitle.Parent = AdidasHeader
+AdidasSubtitle.Parent = AngelHeader
 
--- Click the Adidas Community card itself to enable the animation.
+-- Click the Angel (Floating) card itself to enable the animation.
 local AdidasCommunityButton = Instance.new("TextButton")
 AdidasCommunityButton.Name = "AdidasCommunityButton"
 AdidasCommunityButton.Size = UDim2.new(0.95, 0, 0, 64)
@@ -1264,7 +1264,7 @@ local AdidasButtonTitle = Instance.new("TextLabel")
 AdidasButtonTitle.Size = UDim2.new(1, -70, 0, 25)
 AdidasButtonTitle.Position = UDim2.new(0, 65, 0, 8)
 AdidasButtonTitle.BackgroundTransparency = 1
-AdidasButtonTitle.Text = "Adidas Community"
+AdidasButtonTitle.Text = "Angel (Floating)"
 AdidasButtonTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
 AdidasButtonTitle.Font = Enum.Font.GothamBold
 AdidasButtonTitle.TextSize = 17
@@ -1304,7 +1304,7 @@ local AdidasStatus = Instance.new("TextLabel")
 AdidasStatus.Size = UDim2.new(0.95, 0, 0, 25)
 AdidasStatus.Position = UDim2.new(0.025, 0, 0, 132)
 AdidasStatus.BackgroundTransparency = 1
-AdidasStatus.Text = "Adidas Community Animations"
+AdidasStatus.Text = "Angel (Floating) Animations"
 AdidasStatus.Font = Enum.Font.SourceSans
 AdidasStatus.TextSize = 13
 AdidasStatus.TextColor3 = Color3.fromRGB(150, 155, 170)
@@ -1315,7 +1315,7 @@ AdidasStatus.Parent = PageAnimations
 AdidasCommunityButton.Activated:Connect(function()
     animationEnabled = true
     enableAdidas()
-    AdidasStatus.Text = "Adidas Community • Active"
+    AdidasStatus.Text = "Angel (Floating) • Active"
     AdidasStatus.TextColor3 = Color3.fromRGB(70, 200, 245)
 end)
 
@@ -1690,4 +1690,76 @@ local function setOliverOrder()
     end
 end
 setOliverOrder()
+
+
+-- Second pack card: Adidas Community
+local AdidasCommunityCard = Instance.new("TextButton")
+AdidasCommunityCard.Name = "AdidasCommunityCard"
+AdidasCommunityCard.Size = UDim2.new(0.95, 0, 0, 64)
+AdidasCommunityCard.Position = UDim2.new(0.025, 0, 0, 162)
+AdidasCommunityCard.BackgroundColor3 = Color3.fromRGB(28, 28, 40)
+AdidasCommunityCard.BorderSizePixel = 0
+AdidasCommunityCard.Text = ""
+AdidasCommunityCard.AutoButtonColor = true
+AdidasCommunityCard.Active = true
+AdidasCommunityCard.ZIndex = 30
+AdidasCommunityCard.Parent = PageAnimations
+Instance.new("UICorner", AdidasCommunityCard).CornerRadius = UDim.new(0, 8)
+
+local AdidasCommunityCardLogo = Instance.new("ImageLabel")
+AdidasCommunityCardLogo.Size = UDim2.new(0, 46, 0, 46)
+AdidasCommunityCardLogo.Position = UDim2.new(0, 9, 0.5, -23)
+AdidasCommunityCardLogo.BackgroundTransparency = 1
+AdidasCommunityCardLogo.Image = AdidasAnimationLogoId
+AdidasCommunityCardLogo.ZIndex = 31
+AdidasCommunityCardLogo.Parent = AdidasCommunityCard
+
+local AdidasCommunityCardTitle = Instance.new("TextLabel")
+AdidasCommunityCardTitle.Size = UDim2.new(1, -70, 0, 25)
+AdidasCommunityCardTitle.Position = UDim2.new(0, 65, 0, 8)
+AdidasCommunityCardTitle.BackgroundTransparency = 1
+AdidasCommunityCardTitle.Text = "Adidas Community"
+AdidasCommunityCardTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+AdidasCommunityCardTitle.Font = Enum.Font.GothamBold
+AdidasCommunityCardTitle.TextSize = 17
+AdidasCommunityCardTitle.TextXAlignment = Enum.TextXAlignment.Left
+AdidasCommunityCardTitle.ZIndex = 31
+AdidasCommunityCardTitle.Parent = AdidasCommunityCard
+
+local AdidasCommunityCardSub = Instance.new("TextLabel")
+AdidasCommunityCardSub.Size = UDim2.new(1, -70, 0, 20)
+AdidasCommunityCardSub.Position = UDim2.new(0, 65, 0, 34)
+AdidasCommunityCardSub.BackgroundTransparency = 1
+AdidasCommunityCardSub.Text = "Animations • Tap to use"
+AdidasCommunityCardSub.TextColor3 = Color3.fromRGB(150, 155, 170)
+AdidasCommunityCardSub.Font = Enum.Font.SourceSans
+AdidasCommunityCardSub.TextSize = 13
+AdidasCommunityCardSub.TextXAlignment = Enum.TextXAlignment.Left
+AdidasCommunityCardSub.ZIndex = 31
+AdidasCommunityCardSub.Parent = AdidasCommunityCard
+
+local AdidasRestore = Instance.new("TextButton")
+AdidasRestore.Name = "AdidasRestore"
+AdidasRestore.Size = UDim2.new(0.95, 0, 0, 40)
+AdidasRestore.Position = UDim2.new(0.025, 0, 0, 232)
+AdidasRestore.BackgroundColor3 = Color3.fromRGB(55, 55, 70)
+AdidasRestore.BorderSizePixel = 0
+AdidasRestore.Font = Enum.Font.GothamBold
+AdidasRestore.Text = "Restore"
+AdidasRestore.TextSize = 14
+AdidasRestore.TextColor3 = Color3.fromRGB(255, 255, 255)
+AdidasRestore.AutoButtonColor = true
+AdidasRestore.Active = true
+AdidasRestore.ZIndex = 30
+AdidasRestore.Parent = PageAnimations
+Instance.new("UICorner", AdidasRestore).CornerRadius = UDim.new(0, 7)
+
+AdidasCommunityCard.Activated:Connect(function()
+    animationEnabled = false
+    applyAnimationPack(LocalPlayer.Character, AdidasCommunity)
+end)
+
+AdidasRestore.Activated:Connect(function()
+    restoreAnimationPack()
+end)
 
