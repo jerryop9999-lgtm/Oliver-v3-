@@ -91,7 +91,7 @@ local MainCorner = Instance.new("UICorner")
 MainCorner.CornerRadius = UDim.new(0, 10)
 MainCorner.Parent = MainFrame
 
--- MainFrame dragging is attached to TopBar below, so page buttons remain clickable.
+makeSmoothDraggable(MainFrame)
 
 -- 4. Top Header
 local TopBar = Instance.new("Frame")
@@ -128,9 +128,7 @@ HeaderStats.TextSize = 14
 HeaderStats.BackgroundTransparency = 1
 HeaderStats.Parent = TopBar
 
-makeSmoothDraggable(MainFrame, TopBar)
-
-ToggleBtn.Activated:Connect(function()
+ToggleBtn.MouseButton1Click:Connect(function()
     MainFrame.Visible = not MainFrame.Visible
 end)
 
@@ -148,7 +146,6 @@ TabMainBtn.Text = ""
 TabMainBtn.BackgroundColor3 = Color3.fromRGB(0, 140, 255)
 TabMainBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 TabMainBtn.Font = Enum.Font.SourceSansBold
-TabMainBtn.Active = true
 TabMainBtn.TextSize = 14
 TabMainBtn.Parent = TabBar
 
@@ -159,7 +156,6 @@ TabPlayerBtn.Text = ""
 TabPlayerBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
 TabPlayerBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
 TabPlayerBtn.Font = Enum.Font.SourceSansBold
-TabPlayerBtn.Active = true
 TabPlayerBtn.TextSize = 14
 TabPlayerBtn.Parent = TabBar
 
@@ -171,7 +167,6 @@ TabAnimationsBtn.Text = ""
 TabAnimationsBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
 TabAnimationsBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
 TabAnimationsBtn.Font = Enum.Font.SourceSansBold
-TabAnimationsBtn.Active = true
 TabAnimationsBtn.TextSize = 14
 TabAnimationsBtn.Parent = TabBar
 
@@ -963,7 +958,9 @@ LocalPlayer.CharacterAdded:Connect(function(char)
 end)
 
 -- ==========================================
--- PAGE 2: ANIMATIONS PAGE - ANGEL (FLOATING) (REAL CONTROLLER)
+-- PAGE 2: ANIMATIONS PAGE - ANGEL (FLOATING)
+-- Juno's Animations
+-- ==========================================
 local PageAnimations = Instance.new("Frame")
 PageAnimations.Name = "PageAnimations"
 PageAnimations.Size = UDim2.new(1, 0, 1, 0)
@@ -971,10 +968,6 @@ PageAnimations.BackgroundTransparency = 1
 PageAnimations.Visible = false
 PageAnimations.Parent = PagesFolder
 
--- Angel (Floating) animation assets used by the controller.
-local AngelAnimationLogoId = "rbxassetid://105863394969753"
-
--- Angel (Floating) - Juno's Animations
 local AngelFloating = {
     Idle     = "rbxassetid://138791542100078",
     Walk     = "rbxassetid://98178584535094",
@@ -986,37 +979,51 @@ local AngelFloating = {
     SwimIdle = "rbxassetid://133193009842625",
 }
 
-local animationEnabled = false
-local animationCleanup = nil
-local animationRespawnConnection = nil
-local activeAnimationPack = nil
-local applyAnimationPack
+local AngelLogoId = "rbxassetid://105863394969753"
 
-local function stopAdidasAnimations(character)
-    if animationCleanup then
-        pcall(animationCleanup)
-        animationCleanup = nil
+local angelEnabled = false
+local angelTracks = {}
+local angelConnections = {}
+local angelCharacterConnection
+
+local function disconnectAngelConnections()
+    for _, connection in ipairs(angelConnections) do
+        pcall(function() connection:Disconnect() end)
     end
+    table.clear(angelConnections)
+end
 
+local function stopAngelTracks()
+    for _, track in pairs(angelTracks) do
+        pcall(function()
+            track:Stop(0.08)
+            track:Destroy()
+        end)
+    end
+    table.clear(angelTracks)
+end
+
+local function restoreDefaultAnimations()
+    angelEnabled = false
+    disconnectAngelConnections()
+    stopAngelTracks()
+
+    local character = LocalPlayer.Character
     if not character then return end
+
+    local folder = character:FindFirstChild("__OLIVER_AngelFloating")
+    if folder then folder:Destroy() end
 
     local humanoid = character:FindFirstChildOfClass("Humanoid")
     local animate = character:FindFirstChild("Animate")
-    local folder = character:FindFirstChild("__OLIVER_AdidasAnimation")
 
     if humanoid then
         local animator = humanoid:FindFirstChildOfClass("Animator")
         if animator then
             for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
-                pcall(function()
-                    track:Stop(0.08)
-                end)
+                pcall(function() track:Stop(0.08) end)
             end
         end
-    end
-
-    if folder then
-        folder:Destroy()
     end
 
     if animate then
@@ -1026,48 +1033,47 @@ local function stopAdidasAnimations(character)
     end
 end
 
-local function applyAdidasAnimations(character)
-    if not animationEnabled or not character or not character.Parent then
+local function applyAngelFloating(character)
+    if not angelEnabled or not character or not character.Parent then
         return false
     end
+
+    disconnectAngelConnections()
+    stopAngelTracks()
 
     local humanoid = character:FindFirstChildOfClass("Humanoid")
+    if not humanoid then return false end
+
+    local animator = humanoid:FindFirstChildOfClass("Animator")
+    if not animator then
+        animator = Instance.new("Animator")
+        animator.Parent = humanoid
+    end
+
     local animate = character:FindFirstChild("Animate")
-    local animator = humanoid and humanoid:FindFirstChildOfClass("Animator")
+    if animate then animate.Enabled = false end
 
-    if not humanoid or not animator then
-        return false
-    end
-
-    local oldFolder = character:FindFirstChild("__OLIVER_AdidasAnimation")
-    if oldFolder then
-        oldFolder:Destroy()
-    end
-
-    if animate then
-        animate.Enabled = false
-    end
+    local oldFolder = character:FindFirstChild("__OLIVER_AngelFloating")
+    if oldFolder then oldFolder:Destroy() end
 
     local folder = Instance.new("Folder")
-    folder.Name = "__OLIVER_AdidasAnimation"
+    folder.Name = "__OLIVER_AngelFloating"
     folder.Parent = character
 
-    local tracks = {}
-
     local function loadTrack(name, id, priority, looped)
-        local anim = Instance.new("Animation")
-        anim.Name = name
-        anim.AnimationId = id
-        anim.Parent = folder
+        local animation = Instance.new("Animation")
+        animation.Name = name
+        animation.AnimationId = id
+        animation.Parent = folder
 
         local ok, track = pcall(function()
-            return animator:LoadAnimation(anim)
+            return animator:LoadAnimation(animation)
         end)
 
         if ok and track then
             track.Priority = priority
             track.Looped = looped
-            tracks[name] = track
+            angelTracks[name] = track
         end
     end
 
@@ -1080,261 +1086,172 @@ local function applyAdidasAnimations(character)
     loadTrack("Swim", AngelFloating.Swim, Enum.AnimationPriority.Movement, true)
     loadTrack("SwimIdle", AngelFloating.SwimIdle, Enum.AnimationPriority.Movement, true)
 
-    local currentTrack = nil
-    local stateConnection
-    local moveConnection
-    local ancestryConnection
+    local currentTrack
 
     local function stopAll(fade)
-        for _, track in pairs(tracks) do
-            if track.IsPlaying then
-                track:Stop(fade or 0.1)
-            end
+        for _, track in pairs(angelTracks) do
+            if track.IsPlaying then track:Stop(fade or 0.08) end
         end
     end
 
     local function play(name, speed)
-        local track = tracks[name]
+        local track = angelTracks[name]
         if not track then return end
 
         if currentTrack ~= track then
-            stopAll(0.1)
+            stopAll(0.08)
             currentTrack = track
-            track:Play(0.1, 1, speed or 1)
+            track:Play(0.08, 1, speed or 1)
         elseif speed then
             track:AdjustSpeed(speed)
         end
     end
 
-    local function update()
-        if not animationEnabled or not humanoid.Parent then
-            return
-        end
+    local function updateAnimation()
+        if not angelEnabled or humanoid.Health <= 0 then return end
 
         local state = humanoid:GetState()
         local moving = humanoid.MoveDirection.Magnitude > 0.05
-        local speed = humanoid.WalkSpeed
+        local walkSpeed = humanoid.WalkSpeed
 
         if state == Enum.HumanoidStateType.Jumping then
             play("Jump", 1)
         elseif state == Enum.HumanoidStateType.Freefall then
             play("Fall", 1)
         elseif state == Enum.HumanoidStateType.Climbing then
-            play("Climb", math.max(speed / 8, 0.5))
+            play("Climb", math.max(walkSpeed / 8, 0.5))
         elseif state == Enum.HumanoidStateType.Swimming then
-            if moving then
-                play("Swim", math.max(speed / 8, 0.5))
-            else
-                play("SwimIdle", 1)
-            end
+            play(moving and "Swim" or "SwimIdle", math.max(walkSpeed / 8, 0.5))
         elseif moving then
-            if speed >= 14 and tracks.Run then
-                play("Run", math.max(speed / 16, 0.5))
+            if walkSpeed >= 14 then
+                play("Run", math.max(walkSpeed / 16, 0.5))
             else
-                play("Walk", math.max(speed / 8, 0.5))
+                play("Walk", math.max(walkSpeed / 8, 0.5))
             end
         else
             play("Idle", 1)
         end
     end
 
-    stateConnection = humanoid.StateChanged:Connect(function()
-        task.defer(update)
-    end)
+    table.insert(angelConnections, humanoid.StateChanged:Connect(function()
+        task.defer(updateAnimation)
+    end))
 
-    moveConnection = humanoid:GetPropertyChangedSignal("MoveDirection"):Connect(function()
-        task.defer(update)
-    end)
+    table.insert(angelConnections, humanoid:GetPropertyChangedSignal("MoveDirection"):Connect(function()
+        task.defer(updateAnimation)
+    end))
 
-    ancestryConnection = character.AncestryChanged:Connect(function(_, parent)
-        if parent then return end
-        if animationCleanup then
-            pcall(animationCleanup)
-            animationCleanup = nil
-        end
-    end)
+    table.insert(angelConnections, humanoid:GetPropertyChangedSignal("WalkSpeed"):Connect(function()
+        task.defer(updateAnimation)
+    end))
 
-    animationCleanup = function()
-        if stateConnection then stateConnection:Disconnect(); stateConnection = nil end
-        if moveConnection then moveConnection:Disconnect(); moveConnection = nil end
-        if ancestryConnection then ancestryConnection:Disconnect(); ancestryConnection = nil end
-
-        for _, track in pairs(tracks) do
-            pcall(function()
-                track:Stop(0.08)
-                track:Destroy()
-            end)
-        end
-        currentTrack = nil
-    end
-
-    update()
-    return next(tracks) ~= nil
+    updateAnimation()
+    return next(angelTracks) ~= nil
 end
 
-local function enableAdidas()
-    animationEnabled = true
-
-    local character = LocalPlayer.Character
-    if character then
-        applyAdidasAnimations(character)
-    end
-end
-
-local function disableAdidas()
-    animationEnabled = false
-
-    local character = LocalPlayer.Character
-    if character then
-        stopAdidasAnimations(character)
-    end
-end
-
-if animationRespawnConnection then
-    animationRespawnConnection:Disconnect()
-end
-
-animationRespawnConnection = LocalPlayer.CharacterAdded:Connect(function(character)
-    if not animationEnabled or not activeAnimationPack then return end
+angelCharacterConnection = LocalPlayer.CharacterAdded:Connect(function(character)
+    if not angelEnabled then return end
     task.wait(0.5)
-    if not animationEnabled or not activeAnimationPack then return end
-    applyAnimationPack(character, activeAnimationPack)
+    if angelEnabled then applyAngelFloating(character) end
 end)
 
--- UI
-local AngelHeader = Instance.new("Frame")
-AngelHeader.Size = UDim2.new(0.95, 0, 0, 64)
-AngelHeader.Position = UDim2.new(0.025, 0, 0, 8)
-AngelHeader.BackgroundColor3 = Color3.fromRGB(28, 28, 40)
-AngelHeader.BorderSizePixel = 0
-AngelHeader.Parent = PageAnimations
-local AngelHeaderCorner = Instance.new("UICorner")
-AngelHeaderCorner.CornerRadius = UDim.new(0, 8)
-AngelHeaderCorner.Parent = AngelHeader
+local AngelCard = Instance.new("TextButton")
+AngelCard.Name = "AngelFloatingCard"
+AngelCard.Size = UDim2.new(0.95, 0, 0, 72)
+AngelCard.Position = UDim2.new(0.025, 0, 0, 10)
+AngelCard.BackgroundColor3 = Color3.fromRGB(28, 28, 40)
+AngelCard.BorderSizePixel = 0
+AngelCard.Text = ""
+AngelCard.AutoButtonColor = true
+AngelCard.Active = true
+AngelCard.ZIndex = 20
+AngelCard.Parent = PageAnimations
 
-local AdidasLogo = Instance.new("ImageLabel")
-AdidasLogo.Size = UDim2.new(0, 46, 0, 46)
-AdidasLogo.Position = UDim2.new(0, 9, 0.5, -23)
-AdidasLogo.BackgroundTransparency = 1
-AdidasLogo.Image = AdidasAnimationLogoId
-AdidasLogo.Parent = AngelHeader
+local AngelCorner = Instance.new("UICorner")
+AngelCorner.CornerRadius = UDim.new(0, 8)
+AngelCorner.Parent = AngelCard
 
-local AdidasTitle = Instance.new("TextLabel")
-AdidasTitle.Size = UDim2.new(1, -70, 0, 25)
-AdidasTitle.Position = UDim2.new(0, 65, 0, 8)
-AdidasTitle.BackgroundTransparency = 1
-AdidasTitle.Text = "Angel (Floating)"
-AdidasTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-AdidasTitle.Font = Enum.Font.GothamBold
-AdidasTitle.TextSize = 17
-AdidasTitle.TextXAlignment = Enum.TextXAlignment.Left
-AdidasTitle.Parent = AngelHeader
+local AngelLogo = Instance.new("ImageLabel")
+AngelLogo.Name = "Logo"
+AngelLogo.Size = UDim2.new(0, 48, 0, 48)
+AngelLogo.Position = UDim2.new(0, 10, 0.5, -24)
+AngelLogo.BackgroundTransparency = 1
+AngelLogo.Image = AngelLogoId
+AngelLogo.ZIndex = 21
+AngelLogo.Parent = AngelCard
 
-local AdidasSubtitle = Instance.new("TextLabel")
-AdidasSubtitle.Size = UDim2.new(1, -70, 0, 20)
-AdidasSubtitle.Position = UDim2.new(0, 65, 0, 34)
-AdidasSubtitle.BackgroundTransparency = 1
-AdidasSubtitle.Text = "Real Animation Pack"
-AdidasSubtitle.TextColor3 = Color3.fromRGB(150, 155, 170)
-AdidasSubtitle.Font = Enum.Font.SourceSans
-AdidasSubtitle.TextSize = 13
-AdidasSubtitle.TextXAlignment = Enum.TextXAlignment.Left
-AdidasSubtitle.Parent = AngelHeader
+local AngelTitle = Instance.new("TextLabel")
+AngelTitle.Size = UDim2.new(1, -75, 0, 28)
+AngelTitle.Position = UDim2.new(0, 68, 0, 8)
+AngelTitle.BackgroundTransparency = 1
+AngelTitle.Text = "Angel (Floating)"
+AngelTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+AngelTitle.Font = Enum.Font.GothamBold
+AngelTitle.TextSize = 17
+AngelTitle.TextXAlignment = Enum.TextXAlignment.Left
+AngelTitle.ZIndex = 21
+AngelTitle.Parent = AngelCard
 
--- Click the Angel (Floating) card itself to enable the animation.
-local AdidasCommunityButton = Instance.new("TextButton")
-AdidasCommunityButton.Name = "AdidasCommunityButton"
-AdidasCommunityButton.Size = UDim2.new(0.95, 0, 0, 64)
-AdidasCommunityButton.Position = UDim2.new(0.025, 0, 0, 8)
-AdidasCommunityButton.BackgroundColor3 = Color3.fromRGB(28, 28, 40)
-AdidasCommunityButton.BackgroundTransparency = 0
-AdidasCommunityButton.BorderSizePixel = 0
-AdidasCommunityButton.Text = ""
-AdidasCommunityButton.AutoButtonColor = true
-AdidasCommunityButton.Active = true
-AdidasCommunityButton.ZIndex = 30
-AdidasCommunityButton.Parent = PageAnimations
+local AngelSubtitle = Instance.new("TextLabel")
+AngelSubtitle.Size = UDim2.new(1, -75, 0, 22)
+AngelSubtitle.Position = UDim2.new(0, 68, 0, 38)
+AngelSubtitle.BackgroundTransparency = 1
+AngelSubtitle.Text = "Juno's Animations • Tap to use"
+AngelSubtitle.TextColor3 = Color3.fromRGB(150, 155, 170)
+AngelSubtitle.Font = Enum.Font.SourceSans
+AngelSubtitle.TextSize = 13
+AngelSubtitle.TextXAlignment = Enum.TextXAlignment.Left
+AngelSubtitle.ZIndex = 21
+AngelSubtitle.Parent = AngelCard
 
-local AdidasButtonCorner = Instance.new("UICorner")
-AdidasButtonCorner.CornerRadius = UDim.new(0, 8)
-AdidasButtonCorner.Parent = AdidasCommunityButton
+local AngelRestore = Instance.new("TextButton")
+AngelRestore.Name = "AngelRestore"
+AngelRestore.Size = UDim2.new(0.95, 0, 0, 42)
+AngelRestore.Position = UDim2.new(0.025, 0, 0, 92)
+AngelRestore.BackgroundColor3 = Color3.fromRGB(55, 55, 70)
+AngelRestore.BorderSizePixel = 0
+AngelRestore.Text = "Restore"
+AngelRestore.TextColor3 = Color3.fromRGB(255, 255, 255)
+AngelRestore.Font = Enum.Font.GothamBold
+AngelRestore.TextSize = 14
+AngelRestore.AutoButtonColor = true
+AngelRestore.Active = true
+AngelRestore.ZIndex = 20
+AngelRestore.Parent = PageAnimations
 
-local AdidasButtonLogo = Instance.new("ImageLabel")
-AdidasButtonLogo.Size = UDim2.new(0, 46, 0, 46)
-AdidasButtonLogo.Position = UDim2.new(0, 9, 0.5, -23)
-AdidasButtonLogo.BackgroundTransparency = 1
-AdidasButtonLogo.Image = AdidasAnimationLogoId
-AdidasButtonLogo.ZIndex = 31
-AdidasButtonLogo.Parent = AdidasCommunityButton
+local AngelRestoreCorner = Instance.new("UICorner")
+AngelRestoreCorner.CornerRadius = UDim.new(0, 7)
+AngelRestoreCorner.Parent = AngelRestore
 
-local AdidasButtonTitle = Instance.new("TextLabel")
-AdidasButtonTitle.Size = UDim2.new(1, -70, 0, 25)
-AdidasButtonTitle.Position = UDim2.new(0, 65, 0, 8)
-AdidasButtonTitle.BackgroundTransparency = 1
-AdidasButtonTitle.Text = "Angel (Floating)"
-AdidasButtonTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-AdidasButtonTitle.Font = Enum.Font.GothamBold
-AdidasButtonTitle.TextSize = 17
-AdidasButtonTitle.TextXAlignment = Enum.TextXAlignment.Left
-AdidasButtonTitle.ZIndex = 31
-AdidasButtonTitle.Parent = AdidasCommunityButton
+local AngelStatus = Instance.new("TextLabel")
+AngelStatus.Size = UDim2.new(0.95, 0, 0, 24)
+AngelStatus.Position = UDim2.new(0.025, 0, 0, 142)
+AngelStatus.BackgroundTransparency = 1
+AngelStatus.Text = "Angel (Floating) • Ready"
+AngelStatus.TextColor3 = Color3.fromRGB(150, 155, 170)
+AngelStatus.Font = Enum.Font.SourceSans
+AngelStatus.TextSize = 13
+AngelStatus.TextXAlignment = Enum.TextXAlignment.Center
+AngelStatus.ZIndex = 20
+AngelStatus.Parent = PageAnimations
 
-local AdidasButtonSubtitle = Instance.new("TextLabel")
-AdidasButtonSubtitle.Size = UDim2.new(1, -70, 0, 20)
-AdidasButtonSubtitle.Position = UDim2.new(0, 65, 0, 34)
-AdidasButtonSubtitle.BackgroundTransparency = 1
-AdidasButtonSubtitle.Text = "Animations • Tap to use"
-AdidasButtonSubtitle.TextColor3 = Color3.fromRGB(150, 155, 170)
-AdidasButtonSubtitle.Font = Enum.Font.SourceSans
-AdidasButtonSubtitle.TextSize = 13
-AdidasButtonSubtitle.TextXAlignment = Enum.TextXAlignment.Left
-AdidasButtonSubtitle.ZIndex = 31
-AdidasButtonSubtitle.Parent = AdidasCommunityButton
+AngelCard.Activated:Connect(function()
+    angelEnabled = true
+    local success = applyAngelFloating(LocalPlayer.Character)
 
-local RestoreAnimation = Instance.new("TextButton")
-RestoreAnimation.Name = "RestoreAnimation"
-RestoreAnimation.Size = UDim2.new(0.95, 0, 0, 42)
-RestoreAnimation.Position = UDim2.new(0.025, 0, 0, 82)
-RestoreAnimation.BackgroundColor3 = Color3.fromRGB(55, 55, 70)
-RestoreAnimation.BorderSizePixel = 0
-RestoreAnimation.Font = Enum.Font.GothamBold
-RestoreAnimation.Text = "Restore"
-RestoreAnimation.TextSize = 14
-RestoreAnimation.TextColor3 = Color3.fromRGB(255, 255, 255)
-RestoreAnimation.AutoButtonColor = true
-RestoreAnimation.Active = true
-RestoreAnimation.ZIndex = 30
-RestoreAnimation.Parent = PageAnimations
-Instance.new("UICorner", RestoreAnimation).CornerRadius = UDim.new(0, 7)
-
-local AdidasStatus = Instance.new("TextLabel")
-AdidasStatus.Size = UDim2.new(0.95, 0, 0, 25)
-AdidasStatus.Position = UDim2.new(0.025, 0, 0, 132)
-AdidasStatus.BackgroundTransparency = 1
-AdidasStatus.Text = "Angel (Floating) Animations"
-AdidasStatus.Font = Enum.Font.SourceSans
-AdidasStatus.TextSize = 13
-AdidasStatus.TextColor3 = Color3.fromRGB(150, 155, 170)
-AdidasStatus.TextXAlignment = Enum.TextXAlignment.Center
-AdidasStatus.ZIndex = 30
-AdidasStatus.Parent = PageAnimations
-
-AdidasCommunityButton.Activated:Connect(function()
-    animationEnabled = true
-    activeAnimationPack = AngelFloating
-    enableAdidas()
-    AdidasStatus.Text = "Angel (Floating) • Active"
-    AdidasStatus.TextColor3 = Color3.fromRGB(70, 200, 245)
+    if success then
+        AngelStatus.Text = "Angel (Floating) • Active"
+        AngelStatus.TextColor3 = Color3.fromRGB(70, 200, 245)
+    else
+        AngelStatus.Text = "Angel (Floating) • Waiting for character"
+    end
 end)
 
-RestoreAnimation.Activated:Connect(function()
-    activeAnimationPack = nil
-    disableAdidas()
-    restoreAnimationPack()
-    AdidasStatus.Text = "Restored • Default Animation"
-    AdidasStatus.TextColor3 = Color3.fromRGB(170, 175, 190)
+AngelRestore.Activated:Connect(function()
+    restoreDefaultAnimations()
+    AngelStatus.Text = "Restored • Default Animation"
+    AngelStatus.TextColor3 = Color3.fromRGB(170, 175, 190)
 end)
-
 
 -- PAGE 3: PLAYER PAGE (UPDATED UI)
 -- ==========================================
@@ -1590,9 +1507,6 @@ TabAnimationsBtn.Activated:Connect(function()
     selectTab("Animations")
 end)
 
--- Initial page
-selectTab("Main")
-
 -- ============================================================
 -- OLIVER V3 - UPDATED EXTRAS
 -- Infinite Jump: removed
@@ -1629,7 +1543,7 @@ local function createExtraButton(text, callback)
     corner.CornerRadius = UDim.new(0, 6)
     corner.Parent = btn
 
-    btn.Activated:Connect(function()
+    btn.MouseButton1Click:Connect(function()
         callback(btn)
     end)
     return btn
@@ -1703,79 +1617,4 @@ local function setOliverOrder()
     end
 end
 setOliverOrder()
-
-
--- Second pack card: Adidas Community
-local AdidasCommunityCard = Instance.new("TextButton")
-AdidasCommunityCard.Name = "AdidasCommunityCard"
-AdidasCommunityCard.Size = UDim2.new(0.95, 0, 0, 64)
-AdidasCommunityCard.Position = UDim2.new(0.025, 0, 0, 162)
-AdidasCommunityCard.BackgroundColor3 = Color3.fromRGB(28, 28, 40)
-AdidasCommunityCard.BorderSizePixel = 0
-AdidasCommunityCard.Text = ""
-AdidasCommunityCard.AutoButtonColor = true
-AdidasCommunityCard.Active = true
-AdidasCommunityCard.ZIndex = 30
-AdidasCommunityCard.Parent = PageAnimations
-Instance.new("UICorner", AdidasCommunityCard).CornerRadius = UDim.new(0, 8)
-
-local AdidasCommunityCardLogo = Instance.new("ImageLabel")
-AdidasCommunityCardLogo.Size = UDim2.new(0, 46, 0, 46)
-AdidasCommunityCardLogo.Position = UDim2.new(0, 9, 0.5, -23)
-AdidasCommunityCardLogo.BackgroundTransparency = 1
-AdidasCommunityCardLogo.Image = AdidasAnimationLogoId
-AdidasCommunityCardLogo.ZIndex = 31
-AdidasCommunityCardLogo.Parent = AdidasCommunityCard
-
-local AdidasCommunityCardTitle = Instance.new("TextLabel")
-AdidasCommunityCardTitle.Size = UDim2.new(1, -70, 0, 25)
-AdidasCommunityCardTitle.Position = UDim2.new(0, 65, 0, 8)
-AdidasCommunityCardTitle.BackgroundTransparency = 1
-AdidasCommunityCardTitle.Text = "Adidas Community"
-AdidasCommunityCardTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-AdidasCommunityCardTitle.Font = Enum.Font.GothamBold
-AdidasCommunityCardTitle.TextSize = 17
-AdidasCommunityCardTitle.TextXAlignment = Enum.TextXAlignment.Left
-AdidasCommunityCardTitle.ZIndex = 31
-AdidasCommunityCardTitle.Parent = AdidasCommunityCard
-
-local AdidasCommunityCardSub = Instance.new("TextLabel")
-AdidasCommunityCardSub.Size = UDim2.new(1, -70, 0, 20)
-AdidasCommunityCardSub.Position = UDim2.new(0, 65, 0, 34)
-AdidasCommunityCardSub.BackgroundTransparency = 1
-AdidasCommunityCardSub.Text = "Animations • Tap to use"
-AdidasCommunityCardSub.TextColor3 = Color3.fromRGB(150, 155, 170)
-AdidasCommunityCardSub.Font = Enum.Font.SourceSans
-AdidasCommunityCardSub.TextSize = 13
-AdidasCommunityCardSub.TextXAlignment = Enum.TextXAlignment.Left
-AdidasCommunityCardSub.ZIndex = 31
-AdidasCommunityCardSub.Parent = AdidasCommunityCard
-
-local AdidasRestore = Instance.new("TextButton")
-AdidasRestore.Name = "AdidasRestore"
-AdidasRestore.Size = UDim2.new(0.95, 0, 0, 40)
-AdidasRestore.Position = UDim2.new(0.025, 0, 0, 232)
-AdidasRestore.BackgroundColor3 = Color3.fromRGB(55, 55, 70)
-AdidasRestore.BorderSizePixel = 0
-AdidasRestore.Font = Enum.Font.GothamBold
-AdidasRestore.Text = "Restore"
-AdidasRestore.TextSize = 14
-AdidasRestore.TextColor3 = Color3.fromRGB(255, 255, 255)
-AdidasRestore.AutoButtonColor = true
-AdidasRestore.Active = true
-AdidasRestore.ZIndex = 30
-AdidasRestore.Parent = PageAnimations
-Instance.new("UICorner", AdidasRestore).CornerRadius = UDim.new(0, 7)
-
-AdidasCommunityCard.Activated:Connect(function()
-    animationEnabled = true
-    activeAnimationPack = AdidasCommunity
-    applyAnimationPack(LocalPlayer.Character, AdidasCommunity)
-end)
-
-AdidasRestore.Activated:Connect(function()
-    animationEnabled = false
-    activeAnimationPack = nil
-    restoreAnimationPack()
-end)
 
