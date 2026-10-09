@@ -1483,7 +1483,7 @@ end)
 -- Loads the public JSON catalogue and lets the user search/select packs.
 -- Dataset order is assumed to be: Idle, Idle2, Walk, Run, Jump, Fall, Climb.
 -- ==========================================
-local AnimationCatalogURL = "https://raw.githubusercontent.com/7yd7/sniper-Emote/refs/heads/test/AnimationSniperoffsale.json"
+local AnimationCatalogURL = "https://raw.githubusercontent.com/jerryop9999-lgtm/Oliver-v3-/refs/heads/main/Animations.json"
 
 local AnimationSearch = Instance.new("TextBox")
 AnimationSearch.Name = "AnimationSearch"
