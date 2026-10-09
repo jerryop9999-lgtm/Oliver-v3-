@@ -1351,9 +1351,7 @@ ZombieButton.ZIndex = 30
 ZombieButton.Parent = PageAnimations
 Instance.new("UICorner", ZombieButton).CornerRadius = UDim.new(0, 8)
 
-local ZombieLogoRawId = "177076760860197"
--- rbxthumb works for both Image and Decal asset IDs.
-local ZombieAnimationLogoId = "rbxthumb://type=Asset&id=" .. ZombieLogoRawId .. "&w=150&h=150"
+local ZombieAnimationLogoId = "rbxassetid://177076760860197"
 
 local ZombieIcon = Instance.new("ImageLabel")
 ZombieIcon.Size = UDim2.new(0, 46, 0, 46)
@@ -1362,18 +1360,6 @@ ZombieIcon.BackgroundTransparency = 1
 ZombieIcon.Image = ZombieAnimationLogoId
 ZombieIcon.ZIndex = 31
 ZombieIcon.Parent = ZombieButton
-
--- Fallbacks if the thumbnail does not load: raw asset ID, then Adidas logo.
-task.delay(3, function()
-    if ZombieIcon.Parent and not ZombieIcon.IsLoaded then
-        ZombieIcon.Image = "rbxassetid://" .. ZombieLogoRawId
-        task.delay(3, function()
-            if ZombieIcon.Parent and not ZombieIcon.IsLoaded then
-                ZombieIcon.Image = AdidasAnimationLogoId
-            end
-        end)
-    end
-end)
 
 local ZombieTitle = Instance.new("TextLabel")
 ZombieTitle.Size = UDim2.new(1, -70, 0, 25)
