@@ -996,12 +996,16 @@ local ZombieAnimations = {
 
 -- Sonic Marza Hedgehog has no Idle / Swim / SwimIdle; missing states fall back
 -- (Idle uses the game's default idle, others see FALLBACKS).
-local SonicAnimations = {
-    Walk  = "rbxassetid://109833924772191",
-    Run   = "rbxassetid://74953609408743",
-    Jump  = "rbxassetid://125256665045177",
-    Fall  = "rbxassetid://104179213823423",
-    Climb = "rbxassetid://84538837227208",
+local NinjaAnimations = {
+    Idle     = "rbxassetid://656117400",
+    Idle2    = "rbxassetid://656118341",
+    Walk     = "rbxassetid://656121766",
+    Run      = "rbxassetid://656118852",
+    Jump     = "rbxassetid://656117878",
+    Fall     = "rbxassetid://656115606",
+    Climb    = "rbxassetid://656114359",
+    Swim     = "rbxassetid://656119721",
+    SwimIdle = "rbxassetid://656121397",
 }
 
 local activePack = AdidasCommunity
