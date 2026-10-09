@@ -80,8 +80,8 @@ makeSmoothDraggable(ToggleBtn)
 -- 3. Main Frame
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 440, 0, 360)
-MainFrame.Position = UDim2.new(0.5, -220, 0.5, -180)
+MainFrame.Size = UDim2.new(0, 440, 0, 560)
+MainFrame.Position = UDim2.new(0.5, -220, 0.5, -280)
 MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
 MainFrame.BorderSizePixel = 0
 MainFrame.ClipsDescendants = true
@@ -1474,6 +1474,178 @@ RestoreAnimation.Activated:Connect(function()
     disableAdidas()
     AdidasStatus.Text = "Restored • Default Animation"
     AdidasStatus.TextColor3 = Color3.fromRGB(170, 175, 190)
+end)
+
+
+
+-- ==========================================
+-- REMOTE ANIMATION PACK BROWSER
+-- Loads the public JSON catalogue and lets the user search/select packs.
+-- Dataset order is assumed to be: Idle, Idle2, Walk, Run, Jump, Fall, Climb.
+-- ==========================================
+local AnimationCatalogURL = "https://raw.githubusercontent.com/7yd7/sniper-Emote/refs/heads/test/AnimationSniperoffsale.json"
+
+local AnimationSearch = Instance.new("TextBox")
+AnimationSearch.Name = "AnimationSearch"
+AnimationSearch.Size = UDim2.new(0.95, 0, 0, 30)
+AnimationSearch.Position = UDim2.new(0.025, 0, 0, 310)
+AnimationSearch.BackgroundColor3 = Color3.fromRGB(35, 35, 48)
+AnimationSearch.BorderSizePixel = 0
+AnimationSearch.PlaceholderText = "Search 6,000+ animation packs..."
+AnimationSearch.Text = ""
+AnimationSearch.ClearTextOnFocus = false
+AnimationSearch.TextColor3 = Color3.fromRGB(245, 245, 250)
+AnimationSearch.PlaceholderColor3 = Color3.fromRGB(145, 145, 160)
+AnimationSearch.Font = Enum.Font.Gotham
+AnimationSearch.TextSize = 13
+AnimationSearch.Parent = PageAnimations
+Instance.new("UICorner", AnimationSearch).CornerRadius = UDim.new(0, 6)
+
+local AnimationCatalogStatus = Instance.new("TextLabel")
+AnimationCatalogStatus.Name = "AnimationCatalogStatus"
+AnimationCatalogStatus.Size = UDim2.new(0.95, 0, 0, 18)
+AnimationCatalogStatus.Position = UDim2.new(0.025, 0, 0, 342)
+AnimationCatalogStatus.BackgroundTransparency = 1
+AnimationCatalogStatus.Text = "Loading animation catalogue..."
+AnimationCatalogStatus.TextColor3 = Color3.fromRGB(160, 165, 180)
+AnimationCatalogStatus.Font = Enum.Font.SourceSans
+AnimationCatalogStatus.TextSize = 12
+AnimationCatalogStatus.TextXAlignment = Enum.TextXAlignment.Left
+AnimationCatalogStatus.Parent = PageAnimations
+
+local AnimationCatalogList = Instance.new("ScrollingFrame")
+AnimationCatalogList.Name = "AnimationCatalogList"
+AnimationCatalogList.Size = UDim2.new(0.95, 0, 0, 185)
+AnimationCatalogList.Position = UDim2.new(0.025, 0, 0, 362)
+AnimationCatalogList.BackgroundColor3 = Color3.fromRGB(24, 24, 34)
+AnimationCatalogList.BorderSizePixel = 0
+AnimationCatalogList.ScrollBarThickness = 5
+AnimationCatalogList.CanvasSize = UDim2.new(0, 0, 0, 0)
+AnimationCatalogList.Parent = PageAnimations
+Instance.new("UICorner", AnimationCatalogList).CornerRadius = UDim.new(0, 6)
+
+local AnimationCatalogLayout = Instance.new("UIListLayout")
+AnimationCatalogLayout.Padding = UDim.new(0, 5)
+AnimationCatalogLayout.SortOrder = Enum.SortOrder.LayoutOrder
+AnimationCatalogLayout.Parent = AnimationCatalogList
+
+local AnimationCatalogPadding = Instance.new("UIPadding")
+AnimationCatalogPadding.PaddingTop = UDim.new(0, 5)
+AnimationCatalogPadding.PaddingLeft = UDim.new(0, 5)
+AnimationCatalogPadding.PaddingRight = UDim.new(0, 5)
+AnimationCatalogPadding.Parent = AnimationCatalogList
+
+local animationCatalog = {}
+local catalogButtons = {}
+
+local function clearCatalogButtons()
+    for _, button in ipairs(catalogButtons) do
+        if button and button.Parent then button:Destroy() end
+    end
+    table.clear(catalogButtons)
+end
+
+local function getPackAnimationIds(entry)
+    local bundled = entry and entry.bundledItems
+    if type(bundled) ~= "table" then return nil end
+
+    local ids = {}
+    for i = 1, 7 do
+        local value = bundled[tostring(i)]
+        if type(value) == "table" then
+            value = value[1]
+        end
+        if value ~= nil then
+            ids[i] = "rbxassetid://" .. tostring(value)
+        end
+    end
+
+    if not ids[1] then return nil end
+    return {
+        Idle = ids[1],
+        Idle2 = ids[2] or ids[1],
+        Walk = ids[3] or ids[1],
+        Run = ids[4] or ids[3] or ids[1],
+        Jump = ids[5] or ids[1],
+        Fall = ids[6] or ids[5] or ids[1],
+        Climb = ids[7] or ids[1],
+    }
+end
+
+local function renderAnimationCatalog(filterText)
+    clearCatalogButtons()
+    filterText = string.lower(filterText or "")
+    local shown = 0
+    local matches = 0
+    local MAX_VISIBLE_PACKS = 100
+
+    for _, entry in ipairs(animationCatalog) do
+        local name = tostring(entry.name or "Unnamed animation pack")
+        if filterText == "" or string.find(string.lower(name), filterText, 1, true) then
+            matches += 1
+            if shown >= MAX_VISIBLE_PACKS then
+                continue
+            end
+            shown += 1
+            local button = Instance.new("TextButton")
+            button.Name = "CatalogPack_" .. tostring(shown)
+            button.Size = UDim2.new(1, -5, 0, 36)
+            button.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
+            button.BorderSizePixel = 0
+            button.Text = name
+            button.TextColor3 = Color3.fromRGB(240, 240, 248)
+            button.Font = Enum.Font.Gotham
+            button.TextSize = 12
+            button.TextXAlignment = Enum.TextXAlignment.Left
+            button.TextTruncate = Enum.TextTruncate.AtEnd
+            button.LayoutOrder = shown
+            button.Parent = AnimationCatalogList
+            Instance.new("UICorner", button).CornerRadius = UDim.new(0, 5)
+
+            local pad = Instance.new("UIPadding")
+            pad.PaddingLeft = UDim.new(0, 9)
+            pad.Parent = button
+
+            table.insert(catalogButtons, button)
+            button.Activated:Connect(function()
+                local pack = getPackAnimationIds(entry)
+                if not pack then
+                    AnimationCatalogStatus.Text = "This pack has no usable animation IDs."
+                    return
+                end
+                enableAdidas(pack, name)
+                AdidasStatus.Text = name .. " • Active"
+                AdidasStatus.TextColor3 = Color3.fromRGB(70, 200, 245)
+                AnimationCatalogStatus.Text = "Selected: " .. name
+            end)
+        end
+    end
+
+    AnimationCatalogList.CanvasSize = UDim2.new(0, 0, 0, AnimationCatalogLayout.AbsoluteContentSize.Y + 10)
+    if matches > MAX_VISIBLE_PACKS then
+        AnimationCatalogStatus.Text = string.format("Showing first %d of %d matches (%d packs total)", shown, matches, #animationCatalog)
+    else
+        AnimationCatalogStatus.Text = string.format("Showing %d of %d matches (%d packs total)", shown, matches, #animationCatalog)
+    end
+end
+
+AnimationSearch:GetPropertyChangedSignal("Text"):Connect(function()
+    renderAnimationCatalog(AnimationSearch.Text)
+end)
+
+task.spawn(function()
+    local ok, result = pcall(function()
+        local raw = game:HttpGet(AnimationCatalogURL)
+        return game:GetService("HttpService"):JSONDecode(raw)
+    end)
+
+    if not ok or type(result) ~= "table" or type(result.data) ~= "table" then
+        AnimationCatalogStatus.Text = "Could not load catalogue. Check HTTP access / URL."
+        return
+    end
+
+    animationCatalog = result.data
+    renderAnimationCatalog("")
 end)
 
 
