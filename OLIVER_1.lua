@@ -994,6 +994,13 @@ local ZombieAnimations = {
     SwimIdle = "rbxassetid://616166655",
 }
 
+-- Cool Boy only has Idle / Walk / Jump; missing states fall back (see FALLBACKS).
+local CoolBoyAnimations = {
+    Idle = "rbxassetid://116981733060178",
+    Walk = "rbxassetid://80854274519345",
+    Jump = "rbxassetid://102594644894511",
+}
+
 local activePack = AdidasCommunity
 local activePackName = "Adidas Community"
 
@@ -1070,6 +1077,7 @@ local function applyAdidasAnimations(character)
     local tracks = {}
 
     local function loadTrack(name, id, priority, looped)
+        if not id then return end
         local anim = Instance.new("Animation")
         anim.Name = name
         anim.AnimationId = id
@@ -1108,7 +1116,15 @@ local function applyAdidasAnimations(character)
         end
     end
 
+    local FALLBACKS = {
+        Run = "Walk", Fall = "Jump", Swim = "Walk",
+        SwimIdle = "Idle", Climb = "Idle",
+    }
+
     local function play(name, speed)
+        if not tracks[name] and FALLBACKS[name] then
+            name = FALLBACKS[name]
+        end
         local track = tracks[name]
         if not track then return end
 
@@ -1313,7 +1329,7 @@ AdidasButtonSubtitle.Parent = AdidasCommunityButton
 local RestoreAnimation = Instance.new("TextButton")
 RestoreAnimation.Name = "RestoreAnimation"
 RestoreAnimation.Size = UDim2.new(0.95, 0, 0, 42)
-RestoreAnimation.Position = UDim2.new(0.025, 0, 0, 154)
+RestoreAnimation.Position = UDim2.new(0.025, 0, 0, 226)
 RestoreAnimation.BackgroundColor3 = Color3.fromRGB(55, 55, 70)
 RestoreAnimation.BorderSizePixel = 0
 RestoreAnimation.Font = Enum.Font.GothamBold
@@ -1328,7 +1344,7 @@ Instance.new("UICorner", RestoreAnimation).CornerRadius = UDim.new(0, 7)
 
 local AdidasStatus = Instance.new("TextLabel")
 AdidasStatus.Size = UDim2.new(0.95, 0, 0, 25)
-AdidasStatus.Position = UDim2.new(0.025, 0, 0, 204)
+AdidasStatus.Position = UDim2.new(0.025, 0, 0, 276)
 AdidasStatus.BackgroundTransparency = 1
 AdidasStatus.Text = "Choose an animation pack"
 AdidasStatus.Font = Enum.Font.SourceSans
@@ -1385,6 +1401,58 @@ ZombieSubtitle.TextSize = 13
 ZombieSubtitle.TextXAlignment = Enum.TextXAlignment.Left
 ZombieSubtitle.ZIndex = 31
 ZombieSubtitle.Parent = ZombieButton
+
+-- Cool Boy card
+local CoolBoyButton = Instance.new("TextButton")
+CoolBoyButton.Name = "CoolBoyButton"
+CoolBoyButton.Size = UDim2.new(0.95, 0, 0, 64)
+CoolBoyButton.Position = UDim2.new(0.025, 0, 0, 152)
+CoolBoyButton.BackgroundColor3 = Color3.fromRGB(28, 28, 40)
+CoolBoyButton.BorderSizePixel = 0
+CoolBoyButton.Text = ""
+CoolBoyButton.AutoButtonColor = true
+CoolBoyButton.Active = true
+CoolBoyButton.ZIndex = 30
+CoolBoyButton.Parent = PageAnimations
+Instance.new("UICorner", CoolBoyButton).CornerRadius = UDim.new(0, 8)
+
+local CoolBoyIcon = Instance.new("ImageLabel")
+CoolBoyIcon.Size = UDim2.new(0, 46, 0, 46)
+CoolBoyIcon.Position = UDim2.new(0, 9, 0.5, -23)
+CoolBoyIcon.BackgroundTransparency = 1
+CoolBoyIcon.Image = AdidasAnimationLogoId
+CoolBoyIcon.ZIndex = 31
+CoolBoyIcon.Parent = CoolBoyButton
+
+local CoolBoyTitle = Instance.new("TextLabel")
+CoolBoyTitle.Size = UDim2.new(1, -70, 0, 25)
+CoolBoyTitle.Position = UDim2.new(0, 65, 0, 8)
+CoolBoyTitle.BackgroundTransparency = 1
+CoolBoyTitle.Text = "Cool Boy"
+CoolBoyTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+CoolBoyTitle.Font = Enum.Font.GothamBold
+CoolBoyTitle.TextSize = 17
+CoolBoyTitle.TextXAlignment = Enum.TextXAlignment.Left
+CoolBoyTitle.ZIndex = 31
+CoolBoyTitle.Parent = CoolBoyButton
+
+local CoolBoySubtitle = Instance.new("TextLabel")
+CoolBoySubtitle.Size = UDim2.new(1, -70, 0, 20)
+CoolBoySubtitle.Position = UDim2.new(0, 65, 0, 34)
+CoolBoySubtitle.BackgroundTransparency = 1
+CoolBoySubtitle.Text = "Animations • Tap to use"
+CoolBoySubtitle.TextColor3 = Color3.fromRGB(150, 155, 170)
+CoolBoySubtitle.Font = Enum.Font.SourceSans
+CoolBoySubtitle.TextSize = 13
+CoolBoySubtitle.TextXAlignment = Enum.TextXAlignment.Left
+CoolBoySubtitle.ZIndex = 31
+CoolBoySubtitle.Parent = CoolBoyButton
+
+CoolBoyButton.Activated:Connect(function()
+    enableAdidas(CoolBoyAnimations, "Cool Boy")
+    AdidasStatus.Text = "Cool Boy • Active"
+    AdidasStatus.TextColor3 = Color3.fromRGB(70, 200, 245)
+end)
 
 AdidasCommunityButton.Activated:Connect(function()
     enableAdidas(AdidasCommunity, "Adidas Community")
