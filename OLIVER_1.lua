@@ -1364,7 +1364,7 @@ local ZombieTitle = Instance.new("TextLabel")
 ZombieTitle.Size = UDim2.new(1, -70, 0, 25)
 ZombieTitle.Position = UDim2.new(0, 65, 0, 8)
 ZombieTitle.BackgroundTransparency = 1
-ZombieTitle.Text = "Zombie"
+ZombieTitle.Text = "Zombie Animation Pack"
 ZombieTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
 ZombieTitle.Font = Enum.Font.GothamBold
 ZombieTitle.TextSize = 17
@@ -1392,7 +1392,7 @@ end)
 
 ZombieButton.Activated:Connect(function()
     enableAdidas(ZombieAnimations, "Zombie")
-    AdidasStatus.Text = "Zombie • Active"
+    AdidasStatus.Text = "Zombie Animation Pack • Active"
     AdidasStatus.TextColor3 = Color3.fromRGB(110, 220, 110)
 end)
 
