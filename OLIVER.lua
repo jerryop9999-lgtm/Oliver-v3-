@@ -994,8 +994,8 @@ local ZombieAnimations = {
     SwimIdle = "rbxassetid://616166655",
 }
 
--- Sonic Marza Hedgehog has no Idle / Swim / SwimIdle; missing states fall back
--- (Idle uses the game's default idle, others see FALLBACKS).
+-- Ninja animation pack (official Roblox Ninja pack IDs).
+-- Full set: Idle, Idle2, Walk, Run, Jump, Fall, Climb, Swim, SwimIdle.
 local NinjaAnimations = {
     Idle     = "rbxassetid://656117400",
     Idle2    = "rbxassetid://656118341",
@@ -1417,55 +1417,55 @@ ZombieSubtitle.TextXAlignment = Enum.TextXAlignment.Left
 ZombieSubtitle.ZIndex = 31
 ZombieSubtitle.Parent = ZombieButton
 
--- Sonic Marza Hedgehog card
-local SonicButton = Instance.new("TextButton")
-SonicButton.Name = "SonicButton"
-SonicButton.Size = UDim2.new(0.95, 0, 0, 64)
-SonicButton.Position = UDim2.new(0.025, 0, 0, 152)
-SonicButton.BackgroundColor3 = Color3.fromRGB(28, 28, 40)
-SonicButton.BorderSizePixel = 0
-SonicButton.Text = ""
-SonicButton.AutoButtonColor = true
-SonicButton.Active = true
-SonicButton.ZIndex = 30
-SonicButton.Parent = PageAnimations
-Instance.new("UICorner", SonicButton).CornerRadius = UDim.new(0, 8)
+-- Ninja card
+local NinjaButton = Instance.new("TextButton")
+NinjaButton.Name = "NinjaButton"
+NinjaButton.Size = UDim2.new(0.95, 0, 0, 64)
+NinjaButton.Position = UDim2.new(0.025, 0, 0, 152)
+NinjaButton.BackgroundColor3 = Color3.fromRGB(28, 28, 40)
+NinjaButton.BorderSizePixel = 0
+NinjaButton.Text = ""
+NinjaButton.AutoButtonColor = true
+NinjaButton.Active = true
+NinjaButton.ZIndex = 30
+NinjaButton.Parent = PageAnimations
+Instance.new("UICorner", NinjaButton).CornerRadius = UDim.new(0, 8)
 
-local SonicIcon = Instance.new("ImageLabel")
-SonicIcon.Size = UDim2.new(0, 46, 0, 46)
-SonicIcon.Position = UDim2.new(0, 9, 0.5, -23)
-SonicIcon.BackgroundTransparency = 1
-SonicIcon.Image = AdidasAnimationLogoId
-SonicIcon.ZIndex = 31
-SonicIcon.Parent = SonicButton
+local NinjaIcon = Instance.new("ImageLabel")
+NinjaIcon.Size = UDim2.new(0, 46, 0, 46)
+NinjaIcon.Position = UDim2.new(0, 9, 0.5, -23)
+NinjaIcon.BackgroundTransparency = 1
+NinjaIcon.Image = AdidasAnimationLogoId
+NinjaIcon.ZIndex = 31
+NinjaIcon.Parent = NinjaButton
 
-local SonicTitle = Instance.new("TextLabel")
-SonicTitle.Size = UDim2.new(1, -70, 0, 25)
-SonicTitle.Position = UDim2.new(0, 65, 0, 8)
-SonicTitle.BackgroundTransparency = 1
-SonicTitle.Text = "Sonic Marza Hedgehog"
-SonicTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-SonicTitle.Font = Enum.Font.GothamBold
-SonicTitle.TextSize = 17
-SonicTitle.TextXAlignment = Enum.TextXAlignment.Left
-SonicTitle.ZIndex = 31
-SonicTitle.Parent = SonicButton
+local NinjaTitle = Instance.new("TextLabel")
+NinjaTitle.Size = UDim2.new(1, -70, 0, 25)
+NinjaTitle.Position = UDim2.new(0, 65, 0, 8)
+NinjaTitle.BackgroundTransparency = 1
+NinjaTitle.Text = "Ninja"
+NinjaTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+NinjaTitle.Font = Enum.Font.GothamBold
+NinjaTitle.TextSize = 17
+NinjaTitle.TextXAlignment = Enum.TextXAlignment.Left
+NinjaTitle.ZIndex = 31
+NinjaTitle.Parent = NinjaButton
 
-local SonicSubtitle = Instance.new("TextLabel")
-SonicSubtitle.Size = UDim2.new(1, -70, 0, 20)
-SonicSubtitle.Position = UDim2.new(0, 65, 0, 34)
-SonicSubtitle.BackgroundTransparency = 1
-SonicSubtitle.Text = "Animations • Tap to use"
-SonicSubtitle.TextColor3 = Color3.fromRGB(150, 155, 170)
-SonicSubtitle.Font = Enum.Font.SourceSans
-SonicSubtitle.TextSize = 13
-SonicSubtitle.TextXAlignment = Enum.TextXAlignment.Left
-SonicSubtitle.ZIndex = 31
-SonicSubtitle.Parent = SonicButton
+local NinjaSubtitle = Instance.new("TextLabel")
+NinjaSubtitle.Size = UDim2.new(1, -70, 0, 20)
+NinjaSubtitle.Position = UDim2.new(0, 65, 0, 34)
+NinjaSubtitle.BackgroundTransparency = 1
+NinjaSubtitle.Text = "Animations • Tap to use"
+NinjaSubtitle.TextColor3 = Color3.fromRGB(150, 155, 170)
+NinjaSubtitle.Font = Enum.Font.SourceSans
+NinjaSubtitle.TextSize = 13
+NinjaSubtitle.TextXAlignment = Enum.TextXAlignment.Left
+NinjaSubtitle.ZIndex = 31
+NinjaSubtitle.Parent = NinjaButton
 
-SonicButton.Activated:Connect(function()
-    enableAdidas(SonicAnimations, "Sonic Marza Hedgehog")
-    AdidasStatus.Text = "Sonic Marza Hedgehog • Active"
+NinjaButton.Activated:Connect(function()
+    enableAdidas(NinjaAnimations, "Ninja")
+    AdidasStatus.Text = "Ninja • Active"
     AdidasStatus.TextColor3 = Color3.fromRGB(70, 200, 245)
 end)
 
