@@ -982,15 +982,19 @@ local AdidasCommunity = {
 }
 
 -- Zombie Animation Pack IDs supplied by the user.
--- Mapping follows bundledItems keys 1-7: Idle, Walk, Run, Jump, Fall, Climb, Swim.
+-- IMPORTANT: these are individual animation asset IDs, not ordered by movement type.
+-- Verified item types: Fall=138858..., Jump=123878..., Run=131605...,
+-- Climb=130045..., Idle=720205..., Walk=112308....
 local ZombieAnimationPack = {
-    Idle     = "rbxassetid://138858643345164",
-    Idle2    = "rbxassetid://138858643345164",
-    Walk     = "rbxassetid://123878221388719",
+    Idle     = "rbxassetid://72020579345676",
+    Idle2    = "rbxassetid://72020579345676",
+    Walk     = "rbxassetid://112308035206770",
     Run      = "rbxassetid://131605772282759",
-    Jump     = "rbxassetid://130045357922950",
-    Fall     = "rbxassetid://72020579345676",
-    Climb    = "rbxassetid://112308035206770",
+    Jump     = "rbxassetid://123878221388719",
+    Fall     = "rbxassetid://138858643345164",
+    Climb    = "rbxassetid://130045357922950",
+    -- The final supplied ID is used for both swim states; its exact catalog label
+    -- could not be independently confirmed, so swimming may need a separate asset.
     Swim     = "rbxassetid://93287488161066",
     SwimIdle = "rbxassetid://93287488161066",
 }
@@ -1177,8 +1181,9 @@ local function enableAdidas()
 
     local character = LocalPlayer.Character
     if character then
-        applyAdidasAnimations(character)
+        return applyAdidasAnimations(character)
     end
+    return false
 end
 
 local function disableAdidas()
@@ -1352,9 +1357,9 @@ ZombieAnimationButton.Activated:Connect(function()
     ActiveAnimationPack = ZombieAnimationPack
     ActiveAnimationPackName = "Zombie Animation Pack"
     animationEnabled = true
-    enableAdidas()
-    AdidasStatus.Text = ActiveAnimationPackName .. " • Active"
-    AdidasStatus.TextColor3 = Color3.fromRGB(70, 200, 245)
+    local applied = enableAdidas()
+    AdidasStatus.Text = applied and (ActiveAnimationPackName .. " • Active") or (ActiveAnimationPackName .. " • Failed to load")
+    AdidasStatus.TextColor3 = applied and Color3.fromRGB(70, 200, 245) or Color3.fromRGB(255, 100, 100)
 end)
 
 RestoreAnimation.Activated:Connect(function()
