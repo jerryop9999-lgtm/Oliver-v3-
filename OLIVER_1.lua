@@ -981,9 +981,7 @@ local AdidasCommunity = {
     SwimIdle = "rbxassetid://133308483266208",
 }
 
--- Roblox Creator Hub's documented Zombie locomotion animation IDs for R15.
--- The bundle's bundledItems IDs supplied earlier failed to load in the user's game.
-local ZombieAnimationPack = {
+local ZombieAnimations = {
     Idle     = "rbxassetid://616158929",
     Idle2    = "rbxassetid://616160636",
     Walk     = "rbxassetid://616168032",
@@ -995,8 +993,9 @@ local ZombieAnimationPack = {
     SwimIdle = "rbxassetid://616166655",
 }
 
-local ActiveAnimationPack = AdidasCommunity
-local ActiveAnimationPackName = "Adidas Community"
+local activePack = AdidasCommunity
+local activePackName = "Adidas Community"
+
 local animationEnabled = false
 local animationCleanup = nil
 local animationRespawnConnection = nil
@@ -1048,6 +1047,12 @@ local function applyAdidasAnimations(character)
         return false
     end
 
+    -- Clean up the previous pack (connections + tracks) so packs can be switched.
+    if animationCleanup then
+        pcall(animationCleanup)
+        animationCleanup = nil
+    end
+
     local oldFolder = character:FindFirstChild("__OLIVER_AdidasAnimation")
     if oldFolder then
         oldFolder:Destroy()
@@ -1080,24 +1085,14 @@ local function applyAdidasAnimations(character)
         end
     end
 
-    loadTrack("Idle", ActiveAnimationPack.Idle, Enum.AnimationPriority.Idle, true)
-    loadTrack("Walk", ActiveAnimationPack.Walk, Enum.AnimationPriority.Movement, true)
-    loadTrack("Run", ActiveAnimationPack.Run, Enum.AnimationPriority.Movement, true)
-    loadTrack("Jump", ActiveAnimationPack.Jump, Enum.AnimationPriority.Movement, false)
-    loadTrack("Fall", ActiveAnimationPack.Fall, Enum.AnimationPriority.Movement, true)
-    loadTrack("Climb", ActiveAnimationPack.Climb, Enum.AnimationPriority.Movement, true)
-    loadTrack("Swim", ActiveAnimationPack.Swim, Enum.AnimationPriority.Movement, true)
-    loadTrack("SwimIdle", ActiveAnimationPack.SwimIdle, Enum.AnimationPriority.Movement, true)
-
-    -- Never leave the character without its default Animate controller if all custom
-    -- assets fail to load. This prevents the frozen/no-movement animation failure.
-    if not next(tracks) then
-        folder:Destroy()
-        if animate then
-            animate.Enabled = true
-        end
-        return false
-    end
+    loadTrack("Idle", activePack.Idle, Enum.AnimationPriority.Idle, true)
+    loadTrack("Walk", activePack.Walk, Enum.AnimationPriority.Movement, true)
+    loadTrack("Run", activePack.Run, Enum.AnimationPriority.Movement, true)
+    loadTrack("Jump", activePack.Jump, Enum.AnimationPriority.Movement, false)
+    loadTrack("Fall", activePack.Fall, Enum.AnimationPriority.Movement, true)
+    loadTrack("Climb", activePack.Climb, Enum.AnimationPriority.Movement, true)
+    loadTrack("Swim", activePack.Swim, Enum.AnimationPriority.Movement, true)
+    loadTrack("SwimIdle", activePack.SwimIdle, Enum.AnimationPriority.Movement, true)
 
     local currentTrack = nil
     local stateConnection
@@ -1191,15 +1186,16 @@ local function applyAdidasAnimations(character)
     return next(tracks) ~= nil
 end
 
-local function enableAdidas()
+local function enableAdidas(pack, packName)
+    if pack then
+        activePack = pack
+        activePackName = packName or activePackName
+    end
     animationEnabled = true
 
     local character = LocalPlayer.Character
     if character then
-        local ok = applyAdidasAnimations(character)
-        if not ok then
-            animationEnabled = false
-        end
+        applyAdidasAnimations(character)
     end
 end
 
@@ -1313,25 +1309,10 @@ AdidasButtonSubtitle.TextXAlignment = Enum.TextXAlignment.Left
 AdidasButtonSubtitle.ZIndex = 31
 AdidasButtonSubtitle.Parent = AdidasCommunityButton
 
--- Zombie card: clone the existing card so the layout and styling stay consistent.
-local ZombieAnimationButton = AdidasCommunityButton:Clone()
-ZombieAnimationButton.Name = "ZombieAnimationButton"
-ZombieAnimationButton.Position = UDim2.new(0.025, 0, 0, 82)
-ZombieAnimationButton.Parent = PageAnimations
-local ZombieButtonLogo = ZombieAnimationButton:FindFirstChild("AdidasButtonLogo")
-local ZombieButtonTitle = ZombieAnimationButton:FindFirstChild("AdidasButtonTitle")
-local ZombieButtonSubtitle = ZombieAnimationButton:FindFirstChild("AdidasButtonSubtitle")
-if ZombieButtonTitle then
-    ZombieButtonTitle.Text = "Zombie Animation Pack"
-end
-if ZombieButtonSubtitle then
-    ZombieButtonSubtitle.Text = "Animations • Tap to use"
-end
-
 local RestoreAnimation = Instance.new("TextButton")
 RestoreAnimation.Name = "RestoreAnimation"
 RestoreAnimation.Size = UDim2.new(0.95, 0, 0, 42)
-RestoreAnimation.Position = UDim2.new(0.025, 0, 0, 156)
+RestoreAnimation.Position = UDim2.new(0.025, 0, 0, 154)
 RestoreAnimation.BackgroundColor3 = Color3.fromRGB(55, 55, 70)
 RestoreAnimation.BorderSizePixel = 0
 RestoreAnimation.Font = Enum.Font.GothamBold
@@ -1346,9 +1327,9 @@ Instance.new("UICorner", RestoreAnimation).CornerRadius = UDim.new(0, 7)
 
 local AdidasStatus = Instance.new("TextLabel")
 AdidasStatus.Size = UDim2.new(0.95, 0, 0, 25)
-AdidasStatus.Position = UDim2.new(0.025, 0, 0, 206)
+AdidasStatus.Position = UDim2.new(0.025, 0, 0, 204)
 AdidasStatus.BackgroundTransparency = 1
-AdidasStatus.Text = "Adidas Community Animations"
+AdidasStatus.Text = "Choose an animation pack"
 AdidasStatus.Font = Enum.Font.SourceSans
 AdidasStatus.TextSize = 13
 AdidasStatus.TextColor3 = Color3.fromRGB(150, 155, 170)
@@ -1356,37 +1337,63 @@ AdidasStatus.TextXAlignment = Enum.TextXAlignment.Center
 AdidasStatus.ZIndex = 30
 AdidasStatus.Parent = PageAnimations
 
+-- Zombie card
+local ZombieButton = Instance.new("TextButton")
+ZombieButton.Name = "ZombieButton"
+ZombieButton.Size = UDim2.new(0.95, 0, 0, 64)
+ZombieButton.Position = UDim2.new(0.025, 0, 0, 80)
+ZombieButton.BackgroundColor3 = Color3.fromRGB(28, 28, 40)
+ZombieButton.BorderSizePixel = 0
+ZombieButton.Text = ""
+ZombieButton.AutoButtonColor = true
+ZombieButton.Active = true
+ZombieButton.ZIndex = 30
+ZombieButton.Parent = PageAnimations
+Instance.new("UICorner", ZombieButton).CornerRadius = UDim.new(0, 8)
+
+local ZombieIcon = Instance.new("TextLabel")
+ZombieIcon.Size = UDim2.new(0, 46, 0, 46)
+ZombieIcon.Position = UDim2.new(0, 9, 0.5, -23)
+ZombieIcon.BackgroundTransparency = 1
+ZombieIcon.Text = "🧟"
+ZombieIcon.TextSize = 32
+ZombieIcon.ZIndex = 31
+ZombieIcon.Parent = ZombieButton
+
+local ZombieTitle = Instance.new("TextLabel")
+ZombieTitle.Size = UDim2.new(1, -70, 0, 25)
+ZombieTitle.Position = UDim2.new(0, 65, 0, 8)
+ZombieTitle.BackgroundTransparency = 1
+ZombieTitle.Text = "Zombie"
+ZombieTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+ZombieTitle.Font = Enum.Font.GothamBold
+ZombieTitle.TextSize = 17
+ZombieTitle.TextXAlignment = Enum.TextXAlignment.Left
+ZombieTitle.ZIndex = 31
+ZombieTitle.Parent = ZombieButton
+
+local ZombieSubtitle = Instance.new("TextLabel")
+ZombieSubtitle.Size = UDim2.new(1, -70, 0, 20)
+ZombieSubtitle.Position = UDim2.new(0, 65, 0, 34)
+ZombieSubtitle.BackgroundTransparency = 1
+ZombieSubtitle.Text = "Animations • Tap to use"
+ZombieSubtitle.TextColor3 = Color3.fromRGB(150, 155, 170)
+ZombieSubtitle.Font = Enum.Font.SourceSans
+ZombieSubtitle.TextSize = 13
+ZombieSubtitle.TextXAlignment = Enum.TextXAlignment.Left
+ZombieSubtitle.ZIndex = 31
+ZombieSubtitle.Parent = ZombieButton
+
 AdidasCommunityButton.Activated:Connect(function()
-    if animationEnabled then
-        disableAdidas()
-    end
-    ActiveAnimationPack = AdidasCommunity
-    ActiveAnimationPackName = "Adidas Community"
-    animationEnabled = true
-    enableAdidas()
-    if animationEnabled then
-        AdidasStatus.Text = ActiveAnimationPackName .. " • Active"
-        AdidasStatus.TextColor3 = Color3.fromRGB(70, 200, 245)
-    else
-        AdidasStatus.Text = "Animation failed • Default restored"
-        AdidasStatus.TextColor3 = Color3.fromRGB(240, 170, 80)
-    end
+    enableAdidas(AdidasCommunity, "Adidas Community")
+    AdidasStatus.Text = "Adidas Community • Active"
+    AdidasStatus.TextColor3 = Color3.fromRGB(70, 200, 245)
 end)
 
-ZombieAnimationButton.Activated:Connect(function()
-    -- Stop the current pack before switching to avoid overlapping tracks.
-    disableAdidas()
-    ActiveAnimationPack = ZombieAnimationPack
-    ActiveAnimationPackName = "Zombie Animation Pack"
-    animationEnabled = true
-    enableAdidas()
-    if animationEnabled then
-        AdidasStatus.Text = ActiveAnimationPackName .. " • Active"
-        AdidasStatus.TextColor3 = Color3.fromRGB(70, 200, 245)
-    else
-        AdidasStatus.Text = "Zombie animations failed • Default restored"
-        AdidasStatus.TextColor3 = Color3.fromRGB(240, 170, 80)
-    end
+ZombieButton.Activated:Connect(function()
+    enableAdidas(ZombieAnimations, "Zombie")
+    AdidasStatus.Text = "Zombie • Active"
+    AdidasStatus.TextColor3 = Color3.fromRGB(110, 220, 110)
 end)
 
 RestoreAnimation.Activated:Connect(function()
