@@ -967,6 +967,7 @@ PageAnimations.Visible = false
 PageAnimations.Parent = PagesFolder
 
 -- Adidas Community animation assets used by the controller.
+-- One shared logo for every animation pack card.
 local AdidasAnimationLogoId = "rbxassetid://105863394969753"
 
 local AdidasCommunity = {
@@ -980,6 +981,31 @@ local AdidasCommunity = {
     Swim     = "rbxassetid://133308483266208",
     SwimIdle = "rbxassetid://133308483266208",
 }
+
+local ZombieAnimations = {
+    Idle     = "rbxassetid://616158929",
+    Idle2    = "rbxassetid://616160636",
+    Walk     = "rbxassetid://616168032",
+    Run      = "rbxassetid://616163682",
+    Jump     = "rbxassetid://616161997",
+    Fall     = "rbxassetid://616157476",
+    Climb    = "rbxassetid://616156119",
+    Swim     = "rbxassetid://616165109",
+    SwimIdle = "rbxassetid://616166655",
+}
+
+-- Sonic Marza Hedgehog has no Idle / Swim / SwimIdle; missing states fall back
+-- (Idle uses the game's default idle, others see FALLBACKS).
+local SonicAnimations = {
+    Walk  = "rbxassetid://109833924772191",
+    Run   = "rbxassetid://74953609408743",
+    Jump  = "rbxassetid://125256665045177",
+    Fall  = "rbxassetid://104179213823423",
+    Climb = "rbxassetid://84538837227208",
+}
+
+local activePack = AdidasCommunity
+local activePackName = "Adidas Community"
 
 local animationEnabled = false
 local animationCleanup = nil
@@ -1032,6 +1058,12 @@ local function applyAdidasAnimations(character)
         return false
     end
 
+    -- Clean up the previous pack (connections + tracks) so packs can be switched.
+    if animationCleanup then
+        pcall(animationCleanup)
+        animationCleanup = nil
+    end
+
     local oldFolder = character:FindFirstChild("__OLIVER_AdidasAnimation")
     if oldFolder then
         oldFolder:Destroy()
@@ -1048,6 +1080,7 @@ local function applyAdidasAnimations(character)
     local tracks = {}
 
     local function loadTrack(name, id, priority, looped)
+        if not id then return end
         local anim = Instance.new("Animation")
         anim.Name = name
         anim.AnimationId = id
@@ -1064,14 +1097,22 @@ local function applyAdidasAnimations(character)
         end
     end
 
-    loadTrack("Idle", AdidasCommunity.Idle, Enum.AnimationPriority.Idle, true)
-    loadTrack("Walk", AdidasCommunity.Walk, Enum.AnimationPriority.Movement, true)
-    loadTrack("Run", AdidasCommunity.Run, Enum.AnimationPriority.Movement, true)
-    loadTrack("Jump", AdidasCommunity.Jump, Enum.AnimationPriority.Movement, false)
-    loadTrack("Fall", AdidasCommunity.Fall, Enum.AnimationPriority.Movement, true)
-    loadTrack("Climb", AdidasCommunity.Climb, Enum.AnimationPriority.Movement, true)
-    loadTrack("Swim", AdidasCommunity.Swim, Enum.AnimationPriority.Movement, true)
-    loadTrack("SwimIdle", AdidasCommunity.SwimIdle, Enum.AnimationPriority.Movement, true)
+    -- If the pack has no Idle, borrow the game's default idle animation.
+    local idleId = activePack.Idle
+    if not idleId and animate then
+        local idleFolder = animate:FindFirstChild("idle")
+        local idleAnim = idleFolder and idleFolder:FindFirstChild("Animation1")
+        if idleAnim then idleId = idleAnim.AnimationId end
+    end
+
+    loadTrack("Idle", idleId, Enum.AnimationPriority.Idle, true)
+    loadTrack("Walk", activePack.Walk, Enum.AnimationPriority.Movement, true)
+    loadTrack("Run", activePack.Run, Enum.AnimationPriority.Movement, true)
+    loadTrack("Jump", activePack.Jump, Enum.AnimationPriority.Movement, false)
+    loadTrack("Fall", activePack.Fall, Enum.AnimationPriority.Movement, true)
+    loadTrack("Climb", activePack.Climb, Enum.AnimationPriority.Movement, true)
+    loadTrack("Swim", activePack.Swim, Enum.AnimationPriority.Movement, true)
+    loadTrack("SwimIdle", activePack.SwimIdle, Enum.AnimationPriority.Movement, true)
 
     local currentTrack = nil
     local stateConnection
@@ -1086,7 +1127,15 @@ local function applyAdidasAnimations(character)
         end
     end
 
+    local FALLBACKS = {
+        Run = "Walk", Fall = "Jump", Swim = "Walk",
+        SwimIdle = "Idle", Climb = "Idle",
+    }
+
     local function play(name, speed)
+        if not tracks[name] and FALLBACKS[name] then
+            name = FALLBACKS[name]
+        end
         local track = tracks[name]
         if not track then return end
 
@@ -1165,7 +1214,11 @@ local function applyAdidasAnimations(character)
     return next(tracks) ~= nil
 end
 
-local function enableAdidas()
+local function enableAdidas(pack, packName)
+    if pack then
+        activePack = pack
+        activePackName = packName or activePackName
+    end
     animationEnabled = true
 
     local character = LocalPlayer.Character
@@ -1287,7 +1340,7 @@ AdidasButtonSubtitle.Parent = AdidasCommunityButton
 local RestoreAnimation = Instance.new("TextButton")
 RestoreAnimation.Name = "RestoreAnimation"
 RestoreAnimation.Size = UDim2.new(0.95, 0, 0, 42)
-RestoreAnimation.Position = UDim2.new(0.025, 0, 0, 82)
+RestoreAnimation.Position = UDim2.new(0.025, 0, 0, 226)
 RestoreAnimation.BackgroundColor3 = Color3.fromRGB(55, 55, 70)
 RestoreAnimation.BorderSizePixel = 0
 RestoreAnimation.Font = Enum.Font.GothamBold
@@ -1302,9 +1355,9 @@ Instance.new("UICorner", RestoreAnimation).CornerRadius = UDim.new(0, 7)
 
 local AdidasStatus = Instance.new("TextLabel")
 AdidasStatus.Size = UDim2.new(0.95, 0, 0, 25)
-AdidasStatus.Position = UDim2.new(0.025, 0, 0, 132)
+AdidasStatus.Position = UDim2.new(0.025, 0, 0, 276)
 AdidasStatus.BackgroundTransparency = 1
-AdidasStatus.Text = "Adidas Community Animations"
+AdidasStatus.Text = "Choose an animation pack"
 AdidasStatus.Font = Enum.Font.SourceSans
 AdidasStatus.TextSize = 13
 AdidasStatus.TextColor3 = Color3.fromRGB(150, 155, 170)
@@ -1312,11 +1365,116 @@ AdidasStatus.TextXAlignment = Enum.TextXAlignment.Center
 AdidasStatus.ZIndex = 30
 AdidasStatus.Parent = PageAnimations
 
+-- Zombie card
+local ZombieButton = Instance.new("TextButton")
+ZombieButton.Name = "ZombieButton"
+ZombieButton.Size = UDim2.new(0.95, 0, 0, 64)
+ZombieButton.Position = UDim2.new(0.025, 0, 0, 80)
+ZombieButton.BackgroundColor3 = Color3.fromRGB(28, 28, 40)
+ZombieButton.BorderSizePixel = 0
+ZombieButton.Text = ""
+ZombieButton.AutoButtonColor = true
+ZombieButton.Active = true
+ZombieButton.ZIndex = 30
+ZombieButton.Parent = PageAnimations
+Instance.new("UICorner", ZombieButton).CornerRadius = UDim.new(0, 8)
+
+local ZombieAnimationLogoId = AdidasAnimationLogoId
+
+local ZombieIcon = Instance.new("ImageLabel")
+ZombieIcon.Size = UDim2.new(0, 46, 0, 46)
+ZombieIcon.Position = UDim2.new(0, 9, 0.5, -23)
+ZombieIcon.BackgroundTransparency = 1
+ZombieIcon.Image = ZombieAnimationLogoId
+ZombieIcon.ZIndex = 31
+ZombieIcon.Parent = ZombieButton
+
+local ZombieTitle = Instance.new("TextLabel")
+ZombieTitle.Size = UDim2.new(1, -70, 0, 25)
+ZombieTitle.Position = UDim2.new(0, 65, 0, 8)
+ZombieTitle.BackgroundTransparency = 1
+ZombieTitle.Text = "Zombie Animation Pack"
+ZombieTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+ZombieTitle.Font = Enum.Font.GothamBold
+ZombieTitle.TextSize = 17
+ZombieTitle.TextXAlignment = Enum.TextXAlignment.Left
+ZombieTitle.ZIndex = 31
+ZombieTitle.Parent = ZombieButton
+
+local ZombieSubtitle = Instance.new("TextLabel")
+ZombieSubtitle.Size = UDim2.new(1, -70, 0, 20)
+ZombieSubtitle.Position = UDim2.new(0, 65, 0, 34)
+ZombieSubtitle.BackgroundTransparency = 1
+ZombieSubtitle.Text = "Animations • Tap to use"
+ZombieSubtitle.TextColor3 = Color3.fromRGB(150, 155, 170)
+ZombieSubtitle.Font = Enum.Font.SourceSans
+ZombieSubtitle.TextSize = 13
+ZombieSubtitle.TextXAlignment = Enum.TextXAlignment.Left
+ZombieSubtitle.ZIndex = 31
+ZombieSubtitle.Parent = ZombieButton
+
+-- Sonic Marza Hedgehog card
+local SonicButton = Instance.new("TextButton")
+SonicButton.Name = "SonicButton"
+SonicButton.Size = UDim2.new(0.95, 0, 0, 64)
+SonicButton.Position = UDim2.new(0.025, 0, 0, 152)
+SonicButton.BackgroundColor3 = Color3.fromRGB(28, 28, 40)
+SonicButton.BorderSizePixel = 0
+SonicButton.Text = ""
+SonicButton.AutoButtonColor = true
+SonicButton.Active = true
+SonicButton.ZIndex = 30
+SonicButton.Parent = PageAnimations
+Instance.new("UICorner", SonicButton).CornerRadius = UDim.new(0, 8)
+
+local SonicIcon = Instance.new("ImageLabel")
+SonicIcon.Size = UDim2.new(0, 46, 0, 46)
+SonicIcon.Position = UDim2.new(0, 9, 0.5, -23)
+SonicIcon.BackgroundTransparency = 1
+SonicIcon.Image = AdidasAnimationLogoId
+SonicIcon.ZIndex = 31
+SonicIcon.Parent = SonicButton
+
+local SonicTitle = Instance.new("TextLabel")
+SonicTitle.Size = UDim2.new(1, -70, 0, 25)
+SonicTitle.Position = UDim2.new(0, 65, 0, 8)
+SonicTitle.BackgroundTransparency = 1
+SonicTitle.Text = "Sonic Marza Hedgehog"
+SonicTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+SonicTitle.Font = Enum.Font.GothamBold
+SonicTitle.TextSize = 17
+SonicTitle.TextXAlignment = Enum.TextXAlignment.Left
+SonicTitle.ZIndex = 31
+SonicTitle.Parent = SonicButton
+
+local SonicSubtitle = Instance.new("TextLabel")
+SonicSubtitle.Size = UDim2.new(1, -70, 0, 20)
+SonicSubtitle.Position = UDim2.new(0, 65, 0, 34)
+SonicSubtitle.BackgroundTransparency = 1
+SonicSubtitle.Text = "Animations • Tap to use"
+SonicSubtitle.TextColor3 = Color3.fromRGB(150, 155, 170)
+SonicSubtitle.Font = Enum.Font.SourceSans
+SonicSubtitle.TextSize = 13
+SonicSubtitle.TextXAlignment = Enum.TextXAlignment.Left
+SonicSubtitle.ZIndex = 31
+SonicSubtitle.Parent = SonicButton
+
+SonicButton.Activated:Connect(function()
+    enableAdidas(SonicAnimations, "Sonic Marza Hedgehog")
+    AdidasStatus.Text = "Sonic Marza Hedgehog • Active"
+    AdidasStatus.TextColor3 = Color3.fromRGB(70, 200, 245)
+end)
+
 AdidasCommunityButton.Activated:Connect(function()
-    animationEnabled = true
-    enableAdidas()
+    enableAdidas(AdidasCommunity, "Adidas Community")
     AdidasStatus.Text = "Adidas Community • Active"
     AdidasStatus.TextColor3 = Color3.fromRGB(70, 200, 245)
+end)
+
+ZombieButton.Activated:Connect(function()
+    enableAdidas(ZombieAnimations, "Zombie")
+    AdidasStatus.Text = "Zombie Animation Pack • Active"
+    AdidasStatus.TextColor3 = Color3.fromRGB(110, 220, 110)
 end)
 
 RestoreAnimation.Activated:Connect(function()
