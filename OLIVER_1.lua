@@ -967,6 +967,7 @@ PageAnimations.Visible = false
 PageAnimations.Parent = PagesFolder
 
 -- Adidas Community animation assets used by the controller.
+-- One shared logo for every animation pack card.
 local AdidasAnimationLogoId = "rbxassetid://105863394969753"
 
 local AdidasCommunity = {
@@ -1351,7 +1352,7 @@ ZombieButton.ZIndex = 30
 ZombieButton.Parent = PageAnimations
 Instance.new("UICorner", ZombieButton).CornerRadius = UDim.new(0, 8)
 
-local ZombieAnimationLogoId = "rbxassetid://177076760860197"
+local ZombieAnimationLogoId = AdidasAnimationLogoId
 
 local ZombieIcon = Instance.new("ImageLabel")
 ZombieIcon.Size = UDim2.new(0, 46, 0, 46)
