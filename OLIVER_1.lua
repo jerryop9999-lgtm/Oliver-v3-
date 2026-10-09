@@ -994,11 +994,15 @@ local ZombieAnimations = {
     SwimIdle = "rbxassetid://616166655",
 }
 
--- Cool Boy only has Idle / Walk / Jump; missing states fall back (see FALLBACKS).
+-- Flying Aura Animations (Swim states are missing; they fall back, see FALLBACKS).
 local CoolBoyAnimations = {
-    Idle = "rbxassetid://116981733060178",
-    Walk = "rbxassetid://80854274519345",
-    Jump = "rbxassetid://102594644894511",
+    Idle  = "rbxassetid://74691485490268",
+    Idle2 = "rbxassetid://74691485490268",
+    Walk  = "rbxassetid://80925477324207",
+    Run   = "rbxassetid://73303618259519",
+    Jump  = "rbxassetid://110958866240086",
+    Fall  = "rbxassetid://132303258335826",
+    Climb = "rbxassetid://86956653116976",
 }
 
 local activePack = AdidasCommunity
@@ -1428,7 +1432,7 @@ local CoolBoyTitle = Instance.new("TextLabel")
 CoolBoyTitle.Size = UDim2.new(1, -70, 0, 25)
 CoolBoyTitle.Position = UDim2.new(0, 65, 0, 8)
 CoolBoyTitle.BackgroundTransparency = 1
-CoolBoyTitle.Text = "Cool Boy"
+CoolBoyTitle.Text = "Flying Aura"
 CoolBoyTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
 CoolBoyTitle.Font = Enum.Font.GothamBold
 CoolBoyTitle.TextSize = 17
@@ -1449,8 +1453,8 @@ CoolBoySubtitle.ZIndex = 31
 CoolBoySubtitle.Parent = CoolBoyButton
 
 CoolBoyButton.Activated:Connect(function()
-    enableAdidas(CoolBoyAnimations, "Cool Boy")
-    AdidasStatus.Text = "Cool Boy • Active"
+    enableAdidas(CoolBoyAnimations, "Flying Aura")
+    AdidasStatus.Text = "Flying Aura • Active"
     AdidasStatus.TextColor3 = Color3.fromRGB(70, 200, 245)
 end)
 
