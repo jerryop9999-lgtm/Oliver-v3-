@@ -958,7 +958,7 @@ LocalPlayer.CharacterAdded:Connect(function(char)
 end)
 
 -- ==========================================
--- PAGE 2: ANIMATIONS PAGE - ADIDAS + ZOMBIE PACKS
+-- PAGE 2: ANIMATIONS PAGE - ADIDAS COMMUNITY (REAL CONTROLLER)
 local PageAnimations = Instance.new("Frame")
 PageAnimations.Name = "PageAnimations"
 PageAnimations.Size = UDim2.new(1, 0, 1, 0)
@@ -981,22 +981,18 @@ local AdidasCommunity = {
     SwimIdle = "rbxassetid://133308483266208",
 }
 
--- Zombie Animation Pack IDs supplied by the user.
--- IMPORTANT: these are individual animation asset IDs, not ordered by movement type.
--- Verified item types: Fall=138858..., Jump=123878..., Run=131605...,
--- Climb=130045..., Idle=720205..., Walk=112308....
+-- Roblox Creator Hub's documented Zombie locomotion animation IDs for R15.
+-- The bundle's bundledItems IDs supplied earlier failed to load in the user's game.
 local ZombieAnimationPack = {
-    Idle     = "rbxassetid://72020579345676",
-    Idle2    = "rbxassetid://72020579345676",
-    Walk     = "rbxassetid://112308035206770",
-    Run      = "rbxassetid://131605772282759",
-    Jump     = "rbxassetid://123878221388719",
-    Fall     = "rbxassetid://138858643345164",
-    Climb    = "rbxassetid://130045357922950",
-    -- The final supplied ID is used for both swim states; its exact catalog label
-    -- could not be independently confirmed, so swimming may need a separate asset.
-    Swim     = "rbxassetid://93287488161066",
-    SwimIdle = "rbxassetid://93287488161066",
+    Idle     = "rbxassetid://616158929",
+    Idle2    = "rbxassetid://616160636",
+    Walk     = "rbxassetid://616168032",
+    Run      = "rbxassetid://616163682",
+    Jump     = "rbxassetid://616161997",
+    Fall     = "rbxassetid://616157476",
+    Climb    = "rbxassetid://616156119",
+    Swim     = "rbxassetid://616165109",
+    SwimIdle = "rbxassetid://616166655",
 }
 
 local ActiveAnimationPack = AdidasCommunity
@@ -1006,23 +1002,35 @@ local animationCleanup = nil
 local animationRespawnConnection = nil
 
 local function stopAdidasAnimations(character)
-    -- Stop only tracks created by this script. Do not stop every track on the
-    -- Animator, because that can interrupt game animations and leave the player still.
     if animationCleanup then
         pcall(animationCleanup)
         animationCleanup = nil
     end
 
     if not character then return end
+
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    local animate = character:FindFirstChild("Animate")
     local folder = character:FindFirstChild("__OLIVER_AdidasAnimation")
+
+    if humanoid then
+        local animator = humanoid:FindFirstChildOfClass("Animator")
+        if animator then
+            for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
+                pcall(function()
+                    track:Stop(0.08)
+                end)
+            end
+        end
+    end
+
     if folder then
         folder:Destroy()
     end
 
-    -- Keep Roblox's default Animate script enabled as a safety fallback. If a
-    -- custom asset is unavailable or incompatible, the character can still move.
-    local animate = character:FindFirstChild("Animate")
     if animate then
+        animate.Enabled = false
+        task.wait(0.08)
         animate.Enabled = true
     end
 end
@@ -1045,11 +1053,8 @@ local function applyAdidasAnimations(character)
         oldFolder:Destroy()
     end
 
-    -- Do not disable the default Animate script. Custom tracks below use Action
-    -- priority so valid custom animations override default movement, while default
-    -- animations remain available if an asset fails to load.
     if animate then
-        animate.Enabled = true
+        animate.Enabled = false
     end
 
     local folder = Instance.new("Folder")
@@ -1075,14 +1080,24 @@ local function applyAdidasAnimations(character)
         end
     end
 
-    loadTrack("Idle", ActiveAnimationPack.Idle, Enum.AnimationPriority.Action, true)
-    loadTrack("Walk", ActiveAnimationPack.Walk, Enum.AnimationPriority.Action, true)
-    loadTrack("Run", ActiveAnimationPack.Run, Enum.AnimationPriority.Action, true)
-    loadTrack("Jump", ActiveAnimationPack.Jump, Enum.AnimationPriority.Action, false)
-    loadTrack("Fall", ActiveAnimationPack.Fall, Enum.AnimationPriority.Action, true)
-    loadTrack("Climb", ActiveAnimationPack.Climb, Enum.AnimationPriority.Action, true)
-    loadTrack("Swim", ActiveAnimationPack.Swim, Enum.AnimationPriority.Action, true)
-    loadTrack("SwimIdle", ActiveAnimationPack.SwimIdle, Enum.AnimationPriority.Action, true)
+    loadTrack("Idle", ActiveAnimationPack.Idle, Enum.AnimationPriority.Idle, true)
+    loadTrack("Walk", ActiveAnimationPack.Walk, Enum.AnimationPriority.Movement, true)
+    loadTrack("Run", ActiveAnimationPack.Run, Enum.AnimationPriority.Movement, true)
+    loadTrack("Jump", ActiveAnimationPack.Jump, Enum.AnimationPriority.Movement, false)
+    loadTrack("Fall", ActiveAnimationPack.Fall, Enum.AnimationPriority.Movement, true)
+    loadTrack("Climb", ActiveAnimationPack.Climb, Enum.AnimationPriority.Movement, true)
+    loadTrack("Swim", ActiveAnimationPack.Swim, Enum.AnimationPriority.Movement, true)
+    loadTrack("SwimIdle", ActiveAnimationPack.SwimIdle, Enum.AnimationPriority.Movement, true)
+
+    -- Never leave the character without its default Animate controller if all custom
+    -- assets fail to load. This prevents the frozen/no-movement animation failure.
+    if not next(tracks) then
+        folder:Destroy()
+        if animate then
+            animate.Enabled = true
+        end
+        return false
+    end
 
     local currentTrack = nil
     local stateConnection
@@ -1181,9 +1196,11 @@ local function enableAdidas()
 
     local character = LocalPlayer.Character
     if character then
-        return applyAdidasAnimations(character)
+        local ok = applyAdidasAnimations(character)
+        if not ok then
+            animationEnabled = false
+        end
     end
-    return false
 end
 
 local function disableAdidas()
@@ -1347,8 +1364,13 @@ AdidasCommunityButton.Activated:Connect(function()
     ActiveAnimationPackName = "Adidas Community"
     animationEnabled = true
     enableAdidas()
-    AdidasStatus.Text = ActiveAnimationPackName .. " • Active"
-    AdidasStatus.TextColor3 = Color3.fromRGB(70, 200, 245)
+    if animationEnabled then
+        AdidasStatus.Text = ActiveAnimationPackName .. " • Active"
+        AdidasStatus.TextColor3 = Color3.fromRGB(70, 200, 245)
+    else
+        AdidasStatus.Text = "Animation failed • Default restored"
+        AdidasStatus.TextColor3 = Color3.fromRGB(240, 170, 80)
+    end
 end)
 
 ZombieAnimationButton.Activated:Connect(function()
@@ -1357,9 +1379,14 @@ ZombieAnimationButton.Activated:Connect(function()
     ActiveAnimationPack = ZombieAnimationPack
     ActiveAnimationPackName = "Zombie Animation Pack"
     animationEnabled = true
-    local applied = enableAdidas()
-    AdidasStatus.Text = applied and (ActiveAnimationPackName .. " • Active") or (ActiveAnimationPackName .. " • Failed to load")
-    AdidasStatus.TextColor3 = applied and Color3.fromRGB(70, 200, 245) or Color3.fromRGB(255, 100, 100)
+    enableAdidas()
+    if animationEnabled then
+        AdidasStatus.Text = ActiveAnimationPackName .. " • Active"
+        AdidasStatus.TextColor3 = Color3.fromRGB(70, 200, 245)
+    else
+        AdidasStatus.Text = "Zombie animations failed • Default restored"
+        AdidasStatus.TextColor3 = Color3.fromRGB(240, 170, 80)
+    end
 end)
 
 RestoreAnimation.Activated:Connect(function()
