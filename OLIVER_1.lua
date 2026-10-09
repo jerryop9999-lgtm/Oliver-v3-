@@ -1351,12 +1351,13 @@ ZombieButton.ZIndex = 30
 ZombieButton.Parent = PageAnimations
 Instance.new("UICorner", ZombieButton).CornerRadius = UDim.new(0, 8)
 
-local ZombieIcon = Instance.new("TextLabel")
+local ZombieAnimationLogoId = "rbxassetid://177076760860197"
+
+local ZombieIcon = Instance.new("ImageLabel")
 ZombieIcon.Size = UDim2.new(0, 46, 0, 46)
 ZombieIcon.Position = UDim2.new(0, 9, 0.5, -23)
 ZombieIcon.BackgroundTransparency = 1
-ZombieIcon.Text = "🧟"
-ZombieIcon.TextSize = 32
+ZombieIcon.Image = ZombieAnimationLogoId
 ZombieIcon.ZIndex = 31
 ZombieIcon.Parent = ZombieButton
 
