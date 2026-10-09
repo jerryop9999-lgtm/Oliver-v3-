@@ -958,7 +958,7 @@ LocalPlayer.CharacterAdded:Connect(function(char)
 end)
 
 -- ==========================================
--- PAGE 2: ANIMATIONS PAGE - ADIDAS COMMUNITY (REAL CONTROLLER)
+-- PAGE 2: ANIMATIONS PAGE - ADIDAS + ZOMBIE PACKS
 local PageAnimations = Instance.new("Frame")
 PageAnimations.Name = "PageAnimations"
 PageAnimations.Size = UDim2.new(1, 0, 1, 0)
@@ -1002,35 +1002,23 @@ local animationCleanup = nil
 local animationRespawnConnection = nil
 
 local function stopAdidasAnimations(character)
+    -- Stop only tracks created by this script. Do not stop every track on the
+    -- Animator, because that can interrupt game animations and leave the player still.
     if animationCleanup then
         pcall(animationCleanup)
         animationCleanup = nil
     end
 
     if not character then return end
-
-    local humanoid = character:FindFirstChildOfClass("Humanoid")
-    local animate = character:FindFirstChild("Animate")
     local folder = character:FindFirstChild("__OLIVER_AdidasAnimation")
-
-    if humanoid then
-        local animator = humanoid:FindFirstChildOfClass("Animator")
-        if animator then
-            for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
-                pcall(function()
-                    track:Stop(0.08)
-                end)
-            end
-        end
-    end
-
     if folder then
         folder:Destroy()
     end
 
+    -- Keep Roblox's default Animate script enabled as a safety fallback. If a
+    -- custom asset is unavailable or incompatible, the character can still move.
+    local animate = character:FindFirstChild("Animate")
     if animate then
-        animate.Enabled = false
-        task.wait(0.08)
         animate.Enabled = true
     end
 end
@@ -1053,8 +1041,11 @@ local function applyAdidasAnimations(character)
         oldFolder:Destroy()
     end
 
+    -- Do not disable the default Animate script. Custom tracks below use Action
+    -- priority so valid custom animations override default movement, while default
+    -- animations remain available if an asset fails to load.
     if animate then
-        animate.Enabled = false
+        animate.Enabled = true
     end
 
     local folder = Instance.new("Folder")
@@ -1080,14 +1071,14 @@ local function applyAdidasAnimations(character)
         end
     end
 
-    loadTrack("Idle", ActiveAnimationPack.Idle, Enum.AnimationPriority.Idle, true)
-    loadTrack("Walk", ActiveAnimationPack.Walk, Enum.AnimationPriority.Movement, true)
-    loadTrack("Run", ActiveAnimationPack.Run, Enum.AnimationPriority.Movement, true)
-    loadTrack("Jump", ActiveAnimationPack.Jump, Enum.AnimationPriority.Movement, false)
-    loadTrack("Fall", ActiveAnimationPack.Fall, Enum.AnimationPriority.Movement, true)
-    loadTrack("Climb", ActiveAnimationPack.Climb, Enum.AnimationPriority.Movement, true)
-    loadTrack("Swim", ActiveAnimationPack.Swim, Enum.AnimationPriority.Movement, true)
-    loadTrack("SwimIdle", ActiveAnimationPack.SwimIdle, Enum.AnimationPriority.Movement, true)
+    loadTrack("Idle", ActiveAnimationPack.Idle, Enum.AnimationPriority.Action, true)
+    loadTrack("Walk", ActiveAnimationPack.Walk, Enum.AnimationPriority.Action, true)
+    loadTrack("Run", ActiveAnimationPack.Run, Enum.AnimationPriority.Action, true)
+    loadTrack("Jump", ActiveAnimationPack.Jump, Enum.AnimationPriority.Action, false)
+    loadTrack("Fall", ActiveAnimationPack.Fall, Enum.AnimationPriority.Action, true)
+    loadTrack("Climb", ActiveAnimationPack.Climb, Enum.AnimationPriority.Action, true)
+    loadTrack("Swim", ActiveAnimationPack.Swim, Enum.AnimationPriority.Action, true)
+    loadTrack("SwimIdle", ActiveAnimationPack.SwimIdle, Enum.AnimationPriority.Action, true)
 
     local currentTrack = nil
     local stateConnection
