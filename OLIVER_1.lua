@@ -981,6 +981,22 @@ local AdidasCommunity = {
     SwimIdle = "rbxassetid://133308483266208",
 }
 
+-- Zombie Animation Pack IDs supplied by the user.
+-- Mapping follows bundledItems keys 1-7: Idle, Walk, Run, Jump, Fall, Climb, Swim.
+local ZombieAnimationPack = {
+    Idle     = "rbxassetid://138858643345164",
+    Idle2    = "rbxassetid://138858643345164",
+    Walk     = "rbxassetid://123878221388719",
+    Run      = "rbxassetid://131605772282759",
+    Jump     = "rbxassetid://130045357922950",
+    Fall     = "rbxassetid://72020579345676",
+    Climb    = "rbxassetid://112308035206770",
+    Swim     = "rbxassetid://93287488161066",
+    SwimIdle = "rbxassetid://93287488161066",
+}
+
+local ActiveAnimationPack = AdidasCommunity
+local ActiveAnimationPackName = "Adidas Community"
 local animationEnabled = false
 local animationCleanup = nil
 local animationRespawnConnection = nil
@@ -1064,14 +1080,14 @@ local function applyAdidasAnimations(character)
         end
     end
 
-    loadTrack("Idle", AdidasCommunity.Idle, Enum.AnimationPriority.Idle, true)
-    loadTrack("Walk", AdidasCommunity.Walk, Enum.AnimationPriority.Movement, true)
-    loadTrack("Run", AdidasCommunity.Run, Enum.AnimationPriority.Movement, true)
-    loadTrack("Jump", AdidasCommunity.Jump, Enum.AnimationPriority.Movement, false)
-    loadTrack("Fall", AdidasCommunity.Fall, Enum.AnimationPriority.Movement, true)
-    loadTrack("Climb", AdidasCommunity.Climb, Enum.AnimationPriority.Movement, true)
-    loadTrack("Swim", AdidasCommunity.Swim, Enum.AnimationPriority.Movement, true)
-    loadTrack("SwimIdle", AdidasCommunity.SwimIdle, Enum.AnimationPriority.Movement, true)
+    loadTrack("Idle", ActiveAnimationPack.Idle, Enum.AnimationPriority.Idle, true)
+    loadTrack("Walk", ActiveAnimationPack.Walk, Enum.AnimationPriority.Movement, true)
+    loadTrack("Run", ActiveAnimationPack.Run, Enum.AnimationPriority.Movement, true)
+    loadTrack("Jump", ActiveAnimationPack.Jump, Enum.AnimationPriority.Movement, false)
+    loadTrack("Fall", ActiveAnimationPack.Fall, Enum.AnimationPriority.Movement, true)
+    loadTrack("Climb", ActiveAnimationPack.Climb, Enum.AnimationPriority.Movement, true)
+    loadTrack("Swim", ActiveAnimationPack.Swim, Enum.AnimationPriority.Movement, true)
+    loadTrack("SwimIdle", ActiveAnimationPack.SwimIdle, Enum.AnimationPriority.Movement, true)
 
     local currentTrack = nil
     local stateConnection
@@ -1195,312 +1211,6 @@ animationRespawnConnection = LocalPlayer.CharacterAdded:Connect(function(charact
     end
 end)
 
-
--- ==========================================
--- OLIVER ANIMATION PACK LIBRARY
--- IDs sourced from the provided AnimationSniper data file.
-local OLIVERAnimationPacks = {
-    ["Bunny Animation Pack"] = {
-        118370745616654, 79446499904743, 90885773748548, 110012204344593,
-        76484518940107, 124741997394776, 82515287431637
-    },
-    ["Flopping Fish Animations"] = {
-        111713488483569, 120411702651029, 85062949894309, 104628156085332,
-        85188916068414, 109243917849841, 116045559575970
-    },
-    ["Clown Animation Pack"] = {
-        133461435323867, 113913885561230, 95043672350077, 84657375060588,
-        118155940144177, 74634356897077, 114318339862673
-    },
-    ["Ninja Animation Pack"] = {
-        115571170199319, 120558028914128, 126339971486785, 73196684200336,
-        119624186634562, 99725176292676, 87247370577217
-    },
-    ["Dark Prince Animation Pack"] = {
-        107908159220880, 78366353875213, 99783528806772, 138679295565948,
-        72103442645511, 94020341579675, 102751879309383
-    },
-    ["Infinite Animations"] = {
-        107583505405452, 103078358175681, 134441600924163, 125860450315363,
-        115530834766906, 129856283722199, 100559530016658
-    },
-    ["Aura Floating Animation Pack"] = {
-        85234379858091, 84408611721003, 91142110763140, 95294057618254,
-        101989871636290, 89416348330318, 125067448013661
-    },
-    ["Dog Animation Pack"] = {
-        118094022160552, 138112806064622, 93407833777810, 124598204643980,
-        85779085489983, 104480695514431, 86883112454512
-    },
-    ["Classic R6 Animation Pack"] = {
-        124625734306672, 91297812301450, 100189514247092, 137198571028721
-    },
-    ["Spider"] = {
-        98378309597938, 123681144018518, 89398695506309, 111863628508204,
-        86209367434117, 77315758170619, 108949661994459
-    },
-    ["Marionette Puppet Animation Pack"] = {
-        96754498536304, 125396225462246, 70523107933382, 102460147336214,
-        127574055630671, 90371147088166, 109474105147693
-    },
-    ["R6 Advanced Animations"] = {
-        133404144984503, 71933205824915, 110009969643918, 88818781628510,
-        76281683458819, 102247270957417, 94345553079425
-    },
-    ["Biker Animation Pack"] = {
-        78675945575258, 89511073119928, 101966982571949, 117172772979104,
-        79603899842412, 108860518897762, 106469888319008
-    },
-    ["Angel Animation Pack"] = {
-        119395643858584, 86895125963736, 121818096420255, 118978644954562,
-        122674195856309, 89264725336081, 75965048001352
-    },
-    ["Realistic Zombie Animation Pack"] = {
-        133661812397169, 85285566343776, 118532148430496, 98411928276937,
-        73191360290838, 91935566876394, 129696352463753
-    },
-}
-
--- Generic pack controller: each pack item can be applied to the character's
--- current movement animation slots. Item 1..7 are exposed in the UI.
-local oliverPackEnabled = false
-local oliverPackCleanup = nil
-local oliverSelectedPack = nil
-local oliverSelectedAnimation = nil
-
-local function stopOLIVERPack(character)
-    if oliverPackCleanup then
-        pcall(oliverPackCleanup)
-        oliverPackCleanup = nil
-    end
-    if not character then return end
-    local humanoid = character:FindFirstChildOfClass("Humanoid")
-    local animate = character:FindFirstChild("Animate")
-    if humanoid then
-        local animator = humanoid:FindFirstChildOfClass("Animator")
-        if animator then
-            for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
-                pcall(function() track:Stop(0.08) end)
-            end
-        end
-    end
-    if animate then
-        animate.Enabled = false
-        task.wait(0.05)
-        animate.Enabled = true
-    end
-end
-
-local function applyOLIVERSingleAnimation(animationId)
-    local character = LocalPlayer.Character
-    local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-    local animator = humanoid and humanoid:FindFirstChildOfClass("Animator")
-    if not animator or not animationId then return false end
-
-    if oliverPackCleanup then
-        pcall(oliverPackCleanup)
-        oliverPackCleanup = nil
-    end
-
-    local anim = Instance.new("Animation")
-    anim.Name = "__OLIVER_SelectedAnimation"
-    anim.AnimationId = "rbxassetid://" .. tostring(animationId)
-    anim.Parent = character
-
-    local ok, track = pcall(function()
-        return animator:LoadAnimation(anim)
-    end)
-    if not ok or not track then
-        anim:Destroy()
-        return false
-    end
-
-    track.Priority = Enum.AnimationPriority.Action
-    track.Looped = true
-    track:Play(0.12, 1, 1)
-
-    oliverPackCleanup = function()
-        pcall(function() track:Stop(0.08) end)
-        pcall(function() track:Destroy() end)
-        pcall(function() anim:Destroy() end)
-    end
-    return true
-end
-
-local function applyOLIVERPack(packName, itemNumber)
-    local list = OLIVERAnimationPacks[packName]
-    local id = list and list[itemNumber]
-    if not id then return false end
-    oliverSelectedPack = packName
-    oliverSelectedAnimation = itemNumber
-    oliverPackEnabled = true
-    return applyOLIVERSingleAnimation(id)
-end
-
-local function disableOLIVERPack()
-    oliverPackEnabled = false
-    oliverSelectedAnimation = nil
-    local character = LocalPlayer.Character
-    if character then stopOLIVERPack(character) end
-end
-
-local function getOLIVERAnimationList()
-    local list = {}
-    for name in pairs(OLIVERAnimationPacks) do
-        table.insert(list, name)
-    end
-    table.sort(list)
-    return list
-end
-
--- ==========================================
--- ANIMATION PACK UI
-local OLIVERPackFrame = Instance.new("Frame")
-OLIVERPackFrame.Name = "OLIVERAnimationPacks"
-OLIVERPackFrame.Size = UDim2.new(0.95, 0, 0, 175)
-OLIVERPackFrame.Position = UDim2.new(0.025, 0, 0, 80)
-OLIVERPackFrame.BackgroundColor3 = Color3.fromRGB(24, 24, 35)
-OLIVERPackFrame.BorderSizePixel = 0
-OLIVERPackFrame.Visible = true
-OLIVERPackFrame.Parent = PageAnimations
-Instance.new("UICorner", OLIVERPackFrame).CornerRadius = UDim.new(0, 8)
-
-local OLIVERPackTitle = Instance.new("TextLabel")
-OLIVERPackTitle.Size = UDim2.new(1, -20, 0, 25)
-OLIVERPackTitle.Position = UDim2.new(0, 10, 0, 8)
-OLIVERPackTitle.BackgroundTransparency = 1
-OLIVERPackTitle.Text = "Animation Packs"
-OLIVERPackTitle.TextColor3 = Color3.fromRGB(255,255,255)
-OLIVERPackTitle.Font = Enum.Font.GothamBold
-OLIVERPackTitle.TextSize = 15
-OLIVERPackTitle.TextXAlignment = Enum.TextXAlignment.Left
-OLIVERPackTitle.Parent = OLIVERPackFrame
-
-local OLIVERPackList = Instance.new("ScrollingFrame")
-OLIVERPackList.Name = "PackList"
-OLIVERPackList.Size = UDim2.new(0.56, -6, 1, -43)
-OLIVERPackList.Position = UDim2.new(0, 8, 0, 36)
-OLIVERPackList.BackgroundTransparency = 1
-OLIVERPackList.BorderSizePixel = 0
-OLIVERPackList.ScrollBarThickness = 3
-OLIVERPackList.CanvasSize = UDim2.new(0,0,0,0)
-OLIVERPackList.Parent = OLIVERPackFrame
-
-local packLayout = Instance.new("UIListLayout")
-packLayout.Padding = UDim.new(0, 5)
-packLayout.Parent = OLIVERPackList
-
-local OLIVERItemList = Instance.new("ScrollingFrame")
-OLIVERItemList.Name = "AnimationList"
-OLIVERItemList.Size = UDim2.new(0.44, -10, 1, -43)
-OLIVERItemList.Position = UDim2.new(0.56, 2, 0, 36)
-OLIVERItemList.BackgroundTransparency = 1
-OLIVERItemList.BorderSizePixel = 0
-OLIVERItemList.ScrollBarThickness = 3
-OLIVERItemList.CanvasSize = UDim2.new(0,0,0,0)
-OLIVERItemList.Parent = OLIVERPackFrame
-
-local itemLayout = Instance.new("UIListLayout")
-itemLayout.Padding = UDim.new(0, 5)
-itemLayout.Parent = OLIVERItemList
-
-local function updateCanvas(scroller, layout)
-    scroller.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 6)
-end
-packLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-    updateCanvas(OLIVERPackList, packLayout)
-end)
-itemLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-    updateCanvas(OLIVERItemList, itemLayout)
-end)
-
-local selectedPackLabel = Instance.new("TextLabel")
-selectedPackLabel.Size = UDim2.new(1, -20, 0, 18)
-selectedPackLabel.Position = UDim2.new(0, 10, 1, -20)
-selectedPackLabel.BackgroundTransparency = 1
-selectedPackLabel.Text = "Select a pack"
-selectedPackLabel.TextColor3 = Color3.fromRGB(150,155,170)
-selectedPackLabel.Font = Enum.Font.SourceSans
-selectedPackLabel.TextSize = 12
-selectedPackLabel.TextXAlignment = Enum.TextXAlignment.Left
-selectedPackLabel.Parent = OLIVERPackFrame
-
-local function clearChildrenExceptLayout(parent, layout)
-    for _, child in ipairs(parent:GetChildren()) do
-        if child ~= layout and not child:IsA("UIListLayout") then
-            child:Destroy()
-        end
-    end
-end
-
-local function buildAnimationItems(packName)
-    clearChildrenExceptLayout(OLIVERItemList, itemLayout)
-    local list = OLIVERAnimationPacks[packName] or {}
-    for i, id in ipairs(list) do
-        local b = Instance.new("TextButton")
-        b.Size = UDim2.new(1, -4, 0, 27)
-        b.BackgroundColor3 = Color3.fromRGB(45,45,60)
-        b.BorderSizePixel = 0
-        b.Text = "Animation " .. i
-        b.TextColor3 = Color3.fromRGB(235,235,245)
-        b.Font = Enum.Font.Gotham
-        b.TextSize = 11
-        b.AutoButtonColor = true
-        b.Parent = OLIVERItemList
-        Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6)
-
-        b.MouseButton1Click:Connect(function()
-            if applyOLIVERPack(packName, i) then
-                selectedPackLabel.Text = packName .. " • Animation " .. i
-            end
-        end)
-    end
-end
-
-for _, packName in ipairs(getOLIVERAnimationList()) do
-    local b = Instance.new("TextButton")
-    b.Size = UDim2.new(1, -4, 0, 28)
-    b.BackgroundColor3 = Color3.fromRGB(38,38,52)
-    b.BorderSizePixel = 0
-    b.Text = packName
-    b.TextColor3 = Color3.fromRGB(235,235,245)
-    b.Font = Enum.Font.Gotham
-    b.TextSize = 10
-    b.TextXAlignment = Enum.TextXAlignment.Left
-    b.AutoButtonColor = true
-    b.Parent = OLIVERPackList
-    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6)
-    b.MouseButton1Click:Connect(function()
-        oliverSelectedPack = packName
-        selectedPackLabel.Text = packName .. " • choose animation"
-        buildAnimationItems(packName)
-    end)
-end
-
-local OLIVERRestore = Instance.new("TextButton")
-OLIVERRestore.Size = UDim2.new(0, 82, 0, 25)
-OLIVERRestore.Position = UDim2.new(1, -92, 0, 8)
-OLIVERRestore.BackgroundColor3 = Color3.fromRGB(55,55,70)
-OLIVERRestore.BorderSizePixel = 0
-OLIVERRestore.Text = "Restore"
-OLIVERRestore.TextColor3 = Color3.fromRGB(255,255,255)
-OLIVERRestore.Font = Enum.Font.GothamBold
-OLIVERRestore.TextSize = 11
-OLIVERRestore.AutoButtonColor = true
-OLIVERRestore.Parent = OLIVERPackFrame
-Instance.new("UICorner", OLIVERRestore).CornerRadius = UDim.new(0, 6)
-OLIVERRestore.MouseButton1Click:Connect(function()
-    disableOLIVERPack()
-    selectedPackLabel.Text = "Restored default animations"
-end)
-
-LocalPlayer.CharacterAdded:Connect(function()
-    if oliverPackEnabled and oliverSelectedPack and oliverSelectedAnimation then
-        task.wait(0.6)
-        applyOLIVERPack(oliverSelectedPack, oliverSelectedAnimation)
-    end
-end)
-
 -- UI
 local AdidasHeader = Instance.new("Frame")
 AdidasHeader.Size = UDim2.new(0.95, 0, 0, 64)
@@ -1590,10 +1300,25 @@ AdidasButtonSubtitle.TextXAlignment = Enum.TextXAlignment.Left
 AdidasButtonSubtitle.ZIndex = 31
 AdidasButtonSubtitle.Parent = AdidasCommunityButton
 
+-- Zombie card: clone the existing card so the layout and styling stay consistent.
+local ZombieAnimationButton = AdidasCommunityButton:Clone()
+ZombieAnimationButton.Name = "ZombieAnimationButton"
+ZombieAnimationButton.Position = UDim2.new(0.025, 0, 0, 82)
+ZombieAnimationButton.Parent = PageAnimations
+local ZombieButtonLogo = ZombieAnimationButton:FindFirstChild("AdidasButtonLogo")
+local ZombieButtonTitle = ZombieAnimationButton:FindFirstChild("AdidasButtonTitle")
+local ZombieButtonSubtitle = ZombieAnimationButton:FindFirstChild("AdidasButtonSubtitle")
+if ZombieButtonTitle then
+    ZombieButtonTitle.Text = "Zombie Animation Pack"
+end
+if ZombieButtonSubtitle then
+    ZombieButtonSubtitle.Text = "Animations • Tap to use"
+end
+
 local RestoreAnimation = Instance.new("TextButton")
 RestoreAnimation.Name = "RestoreAnimation"
 RestoreAnimation.Size = UDim2.new(0.95, 0, 0, 42)
-RestoreAnimation.Position = UDim2.new(0.025, 0, 0, 82)
+RestoreAnimation.Position = UDim2.new(0.025, 0, 0, 156)
 RestoreAnimation.BackgroundColor3 = Color3.fromRGB(55, 55, 70)
 RestoreAnimation.BorderSizePixel = 0
 RestoreAnimation.Font = Enum.Font.GothamBold
@@ -1608,7 +1333,7 @@ Instance.new("UICorner", RestoreAnimation).CornerRadius = UDim.new(0, 7)
 
 local AdidasStatus = Instance.new("TextLabel")
 AdidasStatus.Size = UDim2.new(0.95, 0, 0, 25)
-AdidasStatus.Position = UDim2.new(0.025, 0, 0, 132)
+AdidasStatus.Position = UDim2.new(0.025, 0, 0, 206)
 AdidasStatus.BackgroundTransparency = 1
 AdidasStatus.Text = "Adidas Community Animations"
 AdidasStatus.Font = Enum.Font.SourceSans
@@ -1619,9 +1344,25 @@ AdidasStatus.ZIndex = 30
 AdidasStatus.Parent = PageAnimations
 
 AdidasCommunityButton.Activated:Connect(function()
+    if animationEnabled then
+        disableAdidas()
+    end
+    ActiveAnimationPack = AdidasCommunity
+    ActiveAnimationPackName = "Adidas Community"
     animationEnabled = true
     enableAdidas()
-    AdidasStatus.Text = "Adidas Community • Active"
+    AdidasStatus.Text = ActiveAnimationPackName .. " • Active"
+    AdidasStatus.TextColor3 = Color3.fromRGB(70, 200, 245)
+end)
+
+ZombieAnimationButton.Activated:Connect(function()
+    -- Stop the current pack before switching to avoid overlapping tracks.
+    disableAdidas()
+    ActiveAnimationPack = ZombieAnimationPack
+    ActiveAnimationPackName = "Zombie Animation Pack"
+    animationEnabled = true
+    enableAdidas()
+    AdidasStatus.Text = ActiveAnimationPackName .. " • Active"
     AdidasStatus.TextColor3 = Color3.fromRGB(70, 200, 245)
 end)
 
