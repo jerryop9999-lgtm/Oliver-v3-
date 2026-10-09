@@ -80,8 +80,8 @@ makeSmoothDraggable(ToggleBtn)
 -- 3. Main Frame
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 440, 0, 560)
-MainFrame.Position = UDim2.new(0.5, -220, 0.5, -280)
+MainFrame.Size = UDim2.new(0, 440, 0, 360)
+MainFrame.Position = UDim2.new(0.5, -220, 0.5, -180)
 MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
 MainFrame.BorderSizePixel = 0
 MainFrame.ClipsDescendants = true
@@ -994,15 +994,18 @@ local ZombieAnimations = {
     SwimIdle = "rbxassetid://616166655",
 }
 
--- Flying Aura Animations (Swim states are missing; they fall back, see FALLBACKS).
-local CoolBoyAnimations = {
-    Idle  = "rbxassetid://74691485490268",
-    Idle2 = "rbxassetid://74691485490268",
-    Walk  = "rbxassetid://80925477324207",
-    Run   = "rbxassetid://73303618259519",
-    Jump  = "rbxassetid://110958866240086",
-    Fall  = "rbxassetid://132303258335826",
-    Climb = "rbxassetid://86956653116976",
+-- Ninja animation pack (official Roblox Ninja pack IDs).
+-- Full set: Idle, Idle2, Walk, Run, Jump, Fall, Climb, Swim, SwimIdle.
+local NinjaAnimations = {
+    Idle     = "rbxassetid://656117400",
+    Idle2    = "rbxassetid://656118341",
+    Walk     = "rbxassetid://656121766",
+    Run      = "rbxassetid://656118852",
+    Jump     = "rbxassetid://656117878",
+    Fall     = "rbxassetid://656115606",
+    Climb    = "rbxassetid://656114359",
+    Swim     = "rbxassetid://656119721",
+    SwimIdle = "rbxassetid://656121397",
 }
 
 local activePack = AdidasCommunity
@@ -1098,7 +1101,15 @@ local function applyAdidasAnimations(character)
         end
     end
 
-    loadTrack("Idle", activePack.Idle, Enum.AnimationPriority.Idle, true)
+    -- If the pack has no Idle, borrow the game's default idle animation.
+    local idleId = activePack.Idle
+    if not idleId and animate then
+        local idleFolder = animate:FindFirstChild("idle")
+        local idleAnim = idleFolder and idleFolder:FindFirstChild("Animation1")
+        if idleAnim then idleId = idleAnim.AnimationId end
+    end
+
+    loadTrack("Idle", idleId, Enum.AnimationPriority.Idle, true)
     loadTrack("Walk", activePack.Walk, Enum.AnimationPriority.Movement, true)
     loadTrack("Run", activePack.Run, Enum.AnimationPriority.Movement, true)
     loadTrack("Jump", activePack.Jump, Enum.AnimationPriority.Movement, false)
@@ -1406,55 +1417,55 @@ ZombieSubtitle.TextXAlignment = Enum.TextXAlignment.Left
 ZombieSubtitle.ZIndex = 31
 ZombieSubtitle.Parent = ZombieButton
 
--- Cool Boy card
-local CoolBoyButton = Instance.new("TextButton")
-CoolBoyButton.Name = "CoolBoyButton"
-CoolBoyButton.Size = UDim2.new(0.95, 0, 0, 64)
-CoolBoyButton.Position = UDim2.new(0.025, 0, 0, 152)
-CoolBoyButton.BackgroundColor3 = Color3.fromRGB(28, 28, 40)
-CoolBoyButton.BorderSizePixel = 0
-CoolBoyButton.Text = ""
-CoolBoyButton.AutoButtonColor = true
-CoolBoyButton.Active = true
-CoolBoyButton.ZIndex = 30
-CoolBoyButton.Parent = PageAnimations
-Instance.new("UICorner", CoolBoyButton).CornerRadius = UDim.new(0, 8)
+-- Ninja card
+local NinjaButton = Instance.new("TextButton")
+NinjaButton.Name = "NinjaButton"
+NinjaButton.Size = UDim2.new(0.95, 0, 0, 64)
+NinjaButton.Position = UDim2.new(0.025, 0, 0, 152)
+NinjaButton.BackgroundColor3 = Color3.fromRGB(28, 28, 40)
+NinjaButton.BorderSizePixel = 0
+NinjaButton.Text = ""
+NinjaButton.AutoButtonColor = true
+NinjaButton.Active = true
+NinjaButton.ZIndex = 30
+NinjaButton.Parent = PageAnimations
+Instance.new("UICorner", NinjaButton).CornerRadius = UDim.new(0, 8)
 
-local CoolBoyIcon = Instance.new("ImageLabel")
-CoolBoyIcon.Size = UDim2.new(0, 46, 0, 46)
-CoolBoyIcon.Position = UDim2.new(0, 9, 0.5, -23)
-CoolBoyIcon.BackgroundTransparency = 1
-CoolBoyIcon.Image = AdidasAnimationLogoId
-CoolBoyIcon.ZIndex = 31
-CoolBoyIcon.Parent = CoolBoyButton
+local NinjaIcon = Instance.new("ImageLabel")
+NinjaIcon.Size = UDim2.new(0, 46, 0, 46)
+NinjaIcon.Position = UDim2.new(0, 9, 0.5, -23)
+NinjaIcon.BackgroundTransparency = 1
+NinjaIcon.Image = AdidasAnimationLogoId
+NinjaIcon.ZIndex = 31
+NinjaIcon.Parent = NinjaButton
 
-local CoolBoyTitle = Instance.new("TextLabel")
-CoolBoyTitle.Size = UDim2.new(1, -70, 0, 25)
-CoolBoyTitle.Position = UDim2.new(0, 65, 0, 8)
-CoolBoyTitle.BackgroundTransparency = 1
-CoolBoyTitle.Text = "Flying Aura"
-CoolBoyTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-CoolBoyTitle.Font = Enum.Font.GothamBold
-CoolBoyTitle.TextSize = 17
-CoolBoyTitle.TextXAlignment = Enum.TextXAlignment.Left
-CoolBoyTitle.ZIndex = 31
-CoolBoyTitle.Parent = CoolBoyButton
+local NinjaTitle = Instance.new("TextLabel")
+NinjaTitle.Size = UDim2.new(1, -70, 0, 25)
+NinjaTitle.Position = UDim2.new(0, 65, 0, 8)
+NinjaTitle.BackgroundTransparency = 1
+NinjaTitle.Text = "Ninja"
+NinjaTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+NinjaTitle.Font = Enum.Font.GothamBold
+NinjaTitle.TextSize = 17
+NinjaTitle.TextXAlignment = Enum.TextXAlignment.Left
+NinjaTitle.ZIndex = 31
+NinjaTitle.Parent = NinjaButton
 
-local CoolBoySubtitle = Instance.new("TextLabel")
-CoolBoySubtitle.Size = UDim2.new(1, -70, 0, 20)
-CoolBoySubtitle.Position = UDim2.new(0, 65, 0, 34)
-CoolBoySubtitle.BackgroundTransparency = 1
-CoolBoySubtitle.Text = "Animations • Tap to use"
-CoolBoySubtitle.TextColor3 = Color3.fromRGB(150, 155, 170)
-CoolBoySubtitle.Font = Enum.Font.SourceSans
-CoolBoySubtitle.TextSize = 13
-CoolBoySubtitle.TextXAlignment = Enum.TextXAlignment.Left
-CoolBoySubtitle.ZIndex = 31
-CoolBoySubtitle.Parent = CoolBoyButton
+local NinjaSubtitle = Instance.new("TextLabel")
+NinjaSubtitle.Size = UDim2.new(1, -70, 0, 20)
+NinjaSubtitle.Position = UDim2.new(0, 65, 0, 34)
+NinjaSubtitle.BackgroundTransparency = 1
+NinjaSubtitle.Text = "Animations • Tap to use"
+NinjaSubtitle.TextColor3 = Color3.fromRGB(150, 155, 170)
+NinjaSubtitle.Font = Enum.Font.SourceSans
+NinjaSubtitle.TextSize = 13
+NinjaSubtitle.TextXAlignment = Enum.TextXAlignment.Left
+NinjaSubtitle.ZIndex = 31
+NinjaSubtitle.Parent = NinjaButton
 
-CoolBoyButton.Activated:Connect(function()
-    enableAdidas(CoolBoyAnimations, "Flying Aura")
-    AdidasStatus.Text = "Flying Aura • Active"
+NinjaButton.Activated:Connect(function()
+    enableAdidas(NinjaAnimations, "Ninja")
+    AdidasStatus.Text = "Ninja • Active"
     AdidasStatus.TextColor3 = Color3.fromRGB(70, 200, 245)
 end)
 
@@ -1474,178 +1485,6 @@ RestoreAnimation.Activated:Connect(function()
     disableAdidas()
     AdidasStatus.Text = "Restored • Default Animation"
     AdidasStatus.TextColor3 = Color3.fromRGB(170, 175, 190)
-end)
-
-
-
--- ==========================================
--- REMOTE ANIMATION PACK BROWSER
--- Loads the public JSON catalogue and lets the user search/select packs.
--- Dataset order is assumed to be: Idle, Idle2, Walk, Run, Jump, Fall, Climb.
--- ==========================================
-local AnimationCatalogURL = "https://raw.githubusercontent.com/jerryop9999-lgtm/Oliver-v3-/refs/heads/main/Animations.json"
-
-local AnimationSearch = Instance.new("TextBox")
-AnimationSearch.Name = "AnimationSearch"
-AnimationSearch.Size = UDim2.new(0.95, 0, 0, 30)
-AnimationSearch.Position = UDim2.new(0.025, 0, 0, 310)
-AnimationSearch.BackgroundColor3 = Color3.fromRGB(35, 35, 48)
-AnimationSearch.BorderSizePixel = 0
-AnimationSearch.PlaceholderText = "Search 6,000+ animation packs..."
-AnimationSearch.Text = ""
-AnimationSearch.ClearTextOnFocus = false
-AnimationSearch.TextColor3 = Color3.fromRGB(245, 245, 250)
-AnimationSearch.PlaceholderColor3 = Color3.fromRGB(145, 145, 160)
-AnimationSearch.Font = Enum.Font.Gotham
-AnimationSearch.TextSize = 13
-AnimationSearch.Parent = PageAnimations
-Instance.new("UICorner", AnimationSearch).CornerRadius = UDim.new(0, 6)
-
-local AnimationCatalogStatus = Instance.new("TextLabel")
-AnimationCatalogStatus.Name = "AnimationCatalogStatus"
-AnimationCatalogStatus.Size = UDim2.new(0.95, 0, 0, 18)
-AnimationCatalogStatus.Position = UDim2.new(0.025, 0, 0, 342)
-AnimationCatalogStatus.BackgroundTransparency = 1
-AnimationCatalogStatus.Text = "Loading animation catalogue..."
-AnimationCatalogStatus.TextColor3 = Color3.fromRGB(160, 165, 180)
-AnimationCatalogStatus.Font = Enum.Font.SourceSans
-AnimationCatalogStatus.TextSize = 12
-AnimationCatalogStatus.TextXAlignment = Enum.TextXAlignment.Left
-AnimationCatalogStatus.Parent = PageAnimations
-
-local AnimationCatalogList = Instance.new("ScrollingFrame")
-AnimationCatalogList.Name = "AnimationCatalogList"
-AnimationCatalogList.Size = UDim2.new(0.95, 0, 0, 185)
-AnimationCatalogList.Position = UDim2.new(0.025, 0, 0, 362)
-AnimationCatalogList.BackgroundColor3 = Color3.fromRGB(24, 24, 34)
-AnimationCatalogList.BorderSizePixel = 0
-AnimationCatalogList.ScrollBarThickness = 5
-AnimationCatalogList.CanvasSize = UDim2.new(0, 0, 0, 0)
-AnimationCatalogList.Parent = PageAnimations
-Instance.new("UICorner", AnimationCatalogList).CornerRadius = UDim.new(0, 6)
-
-local AnimationCatalogLayout = Instance.new("UIListLayout")
-AnimationCatalogLayout.Padding = UDim.new(0, 5)
-AnimationCatalogLayout.SortOrder = Enum.SortOrder.LayoutOrder
-AnimationCatalogLayout.Parent = AnimationCatalogList
-
-local AnimationCatalogPadding = Instance.new("UIPadding")
-AnimationCatalogPadding.PaddingTop = UDim.new(0, 5)
-AnimationCatalogPadding.PaddingLeft = UDim.new(0, 5)
-AnimationCatalogPadding.PaddingRight = UDim.new(0, 5)
-AnimationCatalogPadding.Parent = AnimationCatalogList
-
-local animationCatalog = {}
-local catalogButtons = {}
-
-local function clearCatalogButtons()
-    for _, button in ipairs(catalogButtons) do
-        if button and button.Parent then button:Destroy() end
-    end
-    table.clear(catalogButtons)
-end
-
-local function getPackAnimationIds(entry)
-    local bundled = entry and entry.bundledItems
-    if type(bundled) ~= "table" then return nil end
-
-    local ids = {}
-    for i = 1, 7 do
-        local value = bundled[tostring(i)]
-        if type(value) == "table" then
-            value = value[1]
-        end
-        if value ~= nil then
-            ids[i] = "rbxassetid://" .. tostring(value)
-        end
-    end
-
-    if not ids[1] then return nil end
-    return {
-        Idle = ids[1],
-        Idle2 = ids[2] or ids[1],
-        Walk = ids[3] or ids[1],
-        Run = ids[4] or ids[3] or ids[1],
-        Jump = ids[5] or ids[1],
-        Fall = ids[6] or ids[5] or ids[1],
-        Climb = ids[7] or ids[1],
-    }
-end
-
-local function renderAnimationCatalog(filterText)
-    clearCatalogButtons()
-    filterText = string.lower(filterText or "")
-    local shown = 0
-    local matches = 0
-    local MAX_VISIBLE_PACKS = 100
-
-    for _, entry in ipairs(animationCatalog) do
-        local name = tostring(entry.name or "Unnamed animation pack")
-        if filterText == "" or string.find(string.lower(name), filterText, 1, true) then
-            matches += 1
-            if shown >= MAX_VISIBLE_PACKS then
-                continue
-            end
-            shown += 1
-            local button = Instance.new("TextButton")
-            button.Name = "CatalogPack_" .. tostring(shown)
-            button.Size = UDim2.new(1, -5, 0, 36)
-            button.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
-            button.BorderSizePixel = 0
-            button.Text = name
-            button.TextColor3 = Color3.fromRGB(240, 240, 248)
-            button.Font = Enum.Font.Gotham
-            button.TextSize = 12
-            button.TextXAlignment = Enum.TextXAlignment.Left
-            button.TextTruncate = Enum.TextTruncate.AtEnd
-            button.LayoutOrder = shown
-            button.Parent = AnimationCatalogList
-            Instance.new("UICorner", button).CornerRadius = UDim.new(0, 5)
-
-            local pad = Instance.new("UIPadding")
-            pad.PaddingLeft = UDim.new(0, 9)
-            pad.Parent = button
-
-            table.insert(catalogButtons, button)
-            button.Activated:Connect(function()
-                local pack = getPackAnimationIds(entry)
-                if not pack then
-                    AnimationCatalogStatus.Text = "This pack has no usable animation IDs."
-                    return
-                end
-                enableAdidas(pack, name)
-                AdidasStatus.Text = name .. " • Active"
-                AdidasStatus.TextColor3 = Color3.fromRGB(70, 200, 245)
-                AnimationCatalogStatus.Text = "Selected: " .. name
-            end)
-        end
-    end
-
-    AnimationCatalogList.CanvasSize = UDim2.new(0, 0, 0, AnimationCatalogLayout.AbsoluteContentSize.Y + 10)
-    if matches > MAX_VISIBLE_PACKS then
-        AnimationCatalogStatus.Text = string.format("Showing first %d of %d matches (%d packs total)", shown, matches, #animationCatalog)
-    else
-        AnimationCatalogStatus.Text = string.format("Showing %d of %d matches (%d packs total)", shown, matches, #animationCatalog)
-    end
-end
-
-AnimationSearch:GetPropertyChangedSignal("Text"):Connect(function()
-    renderAnimationCatalog(AnimationSearch.Text)
-end)
-
-task.spawn(function()
-    local ok, result = pcall(function()
-        local raw = game:HttpGet(AnimationCatalogURL)
-        return game:GetService("HttpService"):JSONDecode(raw)
-    end)
-
-    if not ok or type(result) ~= "table" or type(result.data) ~= "table" then
-        AnimationCatalogStatus.Text = "Could not load catalogue. Check HTTP access / URL."
-        return
-    end
-
-    animationCatalog = result.data
-    renderAnimationCatalog("")
 end)
 
 
