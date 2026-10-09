@@ -1014,18 +1014,17 @@ local NinjaAnimations = {
     SwimIdle = "rbxassetid://656121397",
 }
 
--- Grand Regent Thragg Viltrumite (Invincible) by AvatarVerse.
--- Bundle items listed in Roblox's standard order: Idle, Walk, Run, Jump, Fall, Climb, Swim.
--- (Walk / Run / Fall match the known catalog items, so the rest follow the same order.)
-local ThraggAnimations = {
-    Idle     = "rbxassetid://131908317867190",
-    Walk     = "rbxassetid://124476922135297",
-    Run      = "rbxassetid://98858225786808",
-    Jump     = "rbxassetid://91931922635304",
-    Fall     = "rbxassetid://101807272026914",
-    Climb    = "rbxassetid://73149374780460",
-    Swim     = "rbxassetid://100547237526744",
-    -- No SwimIdle in this bundle: falls back to Idle (see FALLBACKS).
+-- Roblox Superhero animation pack (official pack, full set).
+local SuperheroAnimations = {
+    Idle     = "rbxassetid://616111295",
+    Idle2    = "rbxassetid://616113536",
+    Walk     = "rbxassetid://616122287",
+    Run      = "rbxassetid://616117076",
+    Jump     = "rbxassetid://616115533",
+    Fall     = "rbxassetid://616108001",
+    Climb    = "rbxassetid://616104706",
+    Swim     = "rbxassetid://616119360",
+    SwimIdle = "rbxassetid://616120861",
 }
 
 local activePack = AdidasCommunity
@@ -1483,52 +1482,52 @@ NinjaSubtitle.TextXAlignment = Enum.TextXAlignment.Left
 NinjaSubtitle.ZIndex = 31
 NinjaSubtitle.Parent = NinjaButton
 
--- Grand Regent Thragg Viltrumite card
-local ThraggButton = Instance.new("TextButton")
-ThraggButton.Name = "ThraggButton"
-ThraggButton.Size = UDim2.new(0.95, 0, 0, 64)
-ThraggButton.Position = UDim2.new(0.025, 0, 0, 224)
-ThraggButton.BackgroundColor3 = Color3.fromRGB(28, 28, 40)
-ThraggButton.BorderSizePixel = 0
-ThraggButton.Text = ""
-ThraggButton.AutoButtonColor = true
-ThraggButton.Active = true
-ThraggButton.ZIndex = 30
-ThraggButton.Parent = PageAnimations
-Instance.new("UICorner", ThraggButton).CornerRadius = UDim.new(0, 8)
+-- Superhero card
+local SuperheroButton = Instance.new("TextButton")
+SuperheroButton.Name = "SuperheroButton"
+SuperheroButton.Size = UDim2.new(0.95, 0, 0, 64)
+SuperheroButton.Position = UDim2.new(0.025, 0, 0, 224)
+SuperheroButton.BackgroundColor3 = Color3.fromRGB(28, 28, 40)
+SuperheroButton.BorderSizePixel = 0
+SuperheroButton.Text = ""
+SuperheroButton.AutoButtonColor = true
+SuperheroButton.Active = true
+SuperheroButton.ZIndex = 30
+SuperheroButton.Parent = PageAnimations
+Instance.new("UICorner", SuperheroButton).CornerRadius = UDim.new(0, 8)
 
-local ThraggIcon = Instance.new("ImageLabel")
-ThraggIcon.Size = UDim2.new(0, 46, 0, 46)
-ThraggIcon.Position = UDim2.new(0, 9, 0.5, -23)
-ThraggIcon.BackgroundTransparency = 1
-ThraggIcon.Image = AdidasAnimationLogoId
-ThraggIcon.ZIndex = 31
-ThraggIcon.Parent = ThraggButton
+local SuperheroIcon = Instance.new("ImageLabel")
+SuperheroIcon.Size = UDim2.new(0, 46, 0, 46)
+SuperheroIcon.Position = UDim2.new(0, 9, 0.5, -23)
+SuperheroIcon.BackgroundTransparency = 1
+SuperheroIcon.Image = AdidasAnimationLogoId
+SuperheroIcon.ZIndex = 31
+SuperheroIcon.Parent = SuperheroButton
 
-local ThraggTitle = Instance.new("TextLabel")
-ThraggTitle.Size = UDim2.new(1, -70, 0, 25)
-ThraggTitle.Position = UDim2.new(0, 65, 0, 8)
-ThraggTitle.BackgroundTransparency = 1
-ThraggTitle.Text = "Grand Regent Thragg"
-ThraggTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-ThraggTitle.Font = Enum.Font.GothamBold
-ThraggTitle.TextSize = 17
-ThraggTitle.TextXAlignment = Enum.TextXAlignment.Left
-ThraggTitle.TextTruncate = Enum.TextTruncate.AtEnd
-ThraggTitle.ZIndex = 31
-ThraggTitle.Parent = ThraggButton
+local SuperheroTitle = Instance.new("TextLabel")
+SuperheroTitle.Size = UDim2.new(1, -70, 0, 25)
+SuperheroTitle.Position = UDim2.new(0, 65, 0, 8)
+SuperheroTitle.BackgroundTransparency = 1
+SuperheroTitle.Text = "Superhero Animation Pack"
+SuperheroTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+SuperheroTitle.Font = Enum.Font.GothamBold
+SuperheroTitle.TextSize = 17
+SuperheroTitle.TextXAlignment = Enum.TextXAlignment.Left
+SuperheroTitle.TextTruncate = Enum.TextTruncate.AtEnd
+SuperheroTitle.ZIndex = 31
+SuperheroTitle.Parent = SuperheroButton
 
-local ThraggSubtitle = Instance.new("TextLabel")
-ThraggSubtitle.Size = UDim2.new(1, -70, 0, 20)
-ThraggSubtitle.Position = UDim2.new(0, 65, 0, 34)
-ThraggSubtitle.BackgroundTransparency = 1
-ThraggSubtitle.Text = "Viltrumite • Tap to use"
-ThraggSubtitle.TextColor3 = Color3.fromRGB(150, 155, 170)
-ThraggSubtitle.Font = Enum.Font.SourceSans
-ThraggSubtitle.TextSize = 13
-ThraggSubtitle.TextXAlignment = Enum.TextXAlignment.Left
-ThraggSubtitle.ZIndex = 31
-ThraggSubtitle.Parent = ThraggButton
+local SuperheroSubtitle = Instance.new("TextLabel")
+SuperheroSubtitle.Size = UDim2.new(1, -70, 0, 20)
+SuperheroSubtitle.Position = UDim2.new(0, 65, 0, 34)
+SuperheroSubtitle.BackgroundTransparency = 1
+SuperheroSubtitle.Text = "Animations • Tap to use"
+SuperheroSubtitle.TextColor3 = Color3.fromRGB(150, 155, 170)
+SuperheroSubtitle.Font = Enum.Font.SourceSans
+SuperheroSubtitle.TextSize = 13
+SuperheroSubtitle.TextXAlignment = Enum.TextXAlignment.Left
+SuperheroSubtitle.ZIndex = 31
+SuperheroSubtitle.Parent = SuperheroButton
 
 NinjaButton.Activated:Connect(function()
     enableAdidas(NinjaAnimations, "Ninja")
@@ -1536,9 +1535,9 @@ NinjaButton.Activated:Connect(function()
     AdidasStatus.TextColor3 = Color3.fromRGB(70, 200, 245)
 end)
 
-ThraggButton.Activated:Connect(function()
-    enableAdidas(ThraggAnimations, "Grand Regent Thragg")
-    AdidasStatus.Text = "Grand Regent Thragg • Active"
+SuperheroButton.Activated:Connect(function()
+    enableAdidas(SuperheroAnimations, "Superhero")
+    AdidasStatus.Text = "Superhero • Active"
     AdidasStatus.TextColor3 = Color3.fromRGB(70, 200, 245)
 end)
 
