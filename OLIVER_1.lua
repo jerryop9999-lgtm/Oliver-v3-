@@ -1014,17 +1014,16 @@ local NinjaAnimations = {
     SwimIdle = "rbxassetid://656121397",
 }
 
--- Roblox Superhero animation pack (official pack, full set).
-local SuperheroAnimations = {
-    Idle     = "rbxassetid://616111295",
-    Idle2    = "rbxassetid://616113536",
-    Walk     = "rbxassetid://616122287",
-    Run      = "rbxassetid://616117076",
-    Jump     = "rbxassetid://616115533",
-    Fall     = "rbxassetid://616108001",
-    Climb    = "rbxassetid://616104706",
-    Swim     = "rbxassetid://616119360",
-    SwimIdle = "rbxassetid://616120861",
+-- Roblox Vampire animation pack (official pack IDs, from a published ID list).
+-- No Idle2 / SwimIdle in this list: Swim-idle falls back to Idle (see FALLBACKS).
+local VampireAnimations = {
+    Idle  = "rbxassetid://1113742618",
+    Walk  = "rbxassetid://1113741192",
+    Run   = "rbxassetid://1113740510",
+    Jump  = "rbxassetid://1113742359",
+    Fall  = "rbxassetid://1113742092",
+    Climb = "rbxassetid://1113743239",
+    Swim  = "rbxassetid://1113742944",
 }
 
 local activePack = AdidasCommunity
@@ -1482,52 +1481,52 @@ NinjaSubtitle.TextXAlignment = Enum.TextXAlignment.Left
 NinjaSubtitle.ZIndex = 31
 NinjaSubtitle.Parent = NinjaButton
 
--- Superhero card
-local SuperheroButton = Instance.new("TextButton")
-SuperheroButton.Name = "SuperheroButton"
-SuperheroButton.Size = UDim2.new(0.95, 0, 0, 64)
-SuperheroButton.Position = UDim2.new(0.025, 0, 0, 224)
-SuperheroButton.BackgroundColor3 = Color3.fromRGB(28, 28, 40)
-SuperheroButton.BorderSizePixel = 0
-SuperheroButton.Text = ""
-SuperheroButton.AutoButtonColor = true
-SuperheroButton.Active = true
-SuperheroButton.ZIndex = 30
-SuperheroButton.Parent = PageAnimations
-Instance.new("UICorner", SuperheroButton).CornerRadius = UDim.new(0, 8)
+-- Vampire card
+local VampireButton = Instance.new("TextButton")
+VampireButton.Name = "VampireButton"
+VampireButton.Size = UDim2.new(0.95, 0, 0, 64)
+VampireButton.Position = UDim2.new(0.025, 0, 0, 224)
+VampireButton.BackgroundColor3 = Color3.fromRGB(28, 28, 40)
+VampireButton.BorderSizePixel = 0
+VampireButton.Text = ""
+VampireButton.AutoButtonColor = true
+VampireButton.Active = true
+VampireButton.ZIndex = 30
+VampireButton.Parent = PageAnimations
+Instance.new("UICorner", VampireButton).CornerRadius = UDim.new(0, 8)
 
-local SuperheroIcon = Instance.new("ImageLabel")
-SuperheroIcon.Size = UDim2.new(0, 46, 0, 46)
-SuperheroIcon.Position = UDim2.new(0, 9, 0.5, -23)
-SuperheroIcon.BackgroundTransparency = 1
-SuperheroIcon.Image = AdidasAnimationLogoId
-SuperheroIcon.ZIndex = 31
-SuperheroIcon.Parent = SuperheroButton
+local VampireIcon = Instance.new("ImageLabel")
+VampireIcon.Size = UDim2.new(0, 46, 0, 46)
+VampireIcon.Position = UDim2.new(0, 9, 0.5, -23)
+VampireIcon.BackgroundTransparency = 1
+VampireIcon.Image = AdidasAnimationLogoId
+VampireIcon.ZIndex = 31
+VampireIcon.Parent = VampireButton
 
-local SuperheroTitle = Instance.new("TextLabel")
-SuperheroTitle.Size = UDim2.new(1, -70, 0, 25)
-SuperheroTitle.Position = UDim2.new(0, 65, 0, 8)
-SuperheroTitle.BackgroundTransparency = 1
-SuperheroTitle.Text = "Superhero Animation Pack"
-SuperheroTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-SuperheroTitle.Font = Enum.Font.GothamBold
-SuperheroTitle.TextSize = 17
-SuperheroTitle.TextXAlignment = Enum.TextXAlignment.Left
-SuperheroTitle.TextTruncate = Enum.TextTruncate.AtEnd
-SuperheroTitle.ZIndex = 31
-SuperheroTitle.Parent = SuperheroButton
+local VampireTitle = Instance.new("TextLabel")
+VampireTitle.Size = UDim2.new(1, -70, 0, 25)
+VampireTitle.Position = UDim2.new(0, 65, 0, 8)
+VampireTitle.BackgroundTransparency = 1
+VampireTitle.Text = "Vampire Animation Pack"
+VampireTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+VampireTitle.Font = Enum.Font.GothamBold
+VampireTitle.TextSize = 17
+VampireTitle.TextXAlignment = Enum.TextXAlignment.Left
+VampireTitle.TextTruncate = Enum.TextTruncate.AtEnd
+VampireTitle.ZIndex = 31
+VampireTitle.Parent = VampireButton
 
-local SuperheroSubtitle = Instance.new("TextLabel")
-SuperheroSubtitle.Size = UDim2.new(1, -70, 0, 20)
-SuperheroSubtitle.Position = UDim2.new(0, 65, 0, 34)
-SuperheroSubtitle.BackgroundTransparency = 1
-SuperheroSubtitle.Text = "Animations • Tap to use"
-SuperheroSubtitle.TextColor3 = Color3.fromRGB(150, 155, 170)
-SuperheroSubtitle.Font = Enum.Font.SourceSans
-SuperheroSubtitle.TextSize = 13
-SuperheroSubtitle.TextXAlignment = Enum.TextXAlignment.Left
-SuperheroSubtitle.ZIndex = 31
-SuperheroSubtitle.Parent = SuperheroButton
+local VampireSubtitle = Instance.new("TextLabel")
+VampireSubtitle.Size = UDim2.new(1, -70, 0, 20)
+VampireSubtitle.Position = UDim2.new(0, 65, 0, 34)
+VampireSubtitle.BackgroundTransparency = 1
+VampireSubtitle.Text = "Animations • Tap to use"
+VampireSubtitle.TextColor3 = Color3.fromRGB(150, 155, 170)
+VampireSubtitle.Font = Enum.Font.SourceSans
+VampireSubtitle.TextSize = 13
+VampireSubtitle.TextXAlignment = Enum.TextXAlignment.Left
+VampireSubtitle.ZIndex = 31
+VampireSubtitle.Parent = VampireButton
 
 NinjaButton.Activated:Connect(function()
     enableAdidas(NinjaAnimations, "Ninja")
@@ -1535,9 +1534,9 @@ NinjaButton.Activated:Connect(function()
     AdidasStatus.TextColor3 = Color3.fromRGB(70, 200, 245)
 end)
 
-SuperheroButton.Activated:Connect(function()
-    enableAdidas(SuperheroAnimations, "Superhero")
-    AdidasStatus.Text = "Superhero • Active"
+VampireButton.Activated:Connect(function()
+    enableAdidas(VampireAnimations, "Vampire")
+    AdidasStatus.Text = "Vampire • Active"
     AdidasStatus.TextColor3 = Color3.fromRGB(70, 200, 245)
 end)
 
