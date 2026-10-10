@@ -1299,11 +1299,27 @@ keep(LocalPlayer.CharacterAdded:Connect(function(char)
     end
 end))
 
--- Noclip
+-- Noclip (remembers each part's original CanCollide and restores it when turned off)
+local noclipOriginal = setmetatable({}, { __mode = "k" })
+
+local function restoreNoclip()
+    for part, original in pairs(noclipOriginal) do
+        if part and part.Parent then
+            pcall(function() part.CanCollide = original end)
+        end
+        noclipOriginal[part] = nil
+    end
+end
+
 keep(RunService.Stepped:Connect(function()
     if isNoclip and LocalPlayer.Character then
         for _, part in ipairs(LocalPlayer.Character:GetDescendants()) do
-            if part:IsA("BasePart") then part.CanCollide = false end
+            if part:IsA("BasePart") then
+                if noclipOriginal[part] == nil then
+                    noclipOriginal[part] = part.CanCollide
+                end
+                part.CanCollide = false
+            end
         end
     end
 end))
@@ -1439,6 +1455,7 @@ do
         title = "Noclip", desc = "Walk through walls and parts",
         callback = function(on)
             isNoclip = on
+            if not on then restoreNoclip() end
             say(on and "Noclip enabled" or "Noclip disabled", on and "good" or nil)
         end,
     }))
