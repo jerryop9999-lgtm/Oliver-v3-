@@ -1324,6 +1324,17 @@ keep(RunService.Stepped:Connect(function()
     end
 end))
 
+-- Infinite Jump
+local isInfJump = false
+keep(UserInputService.JumpRequest:Connect(function()
+    if not isInfJump then return end
+    local char = LocalPlayer.Character
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    if hum and hum.Health > 0 then
+        hum:ChangeState(Enum.HumanoidStateType.Jumping)
+    end
+end))
+
 -- ESP (needs Drawing API from the executor)
 local HAS_DRAWING = Drawing ~= nil and type(Drawing.new) == "function"
 local espCleanups = {}
@@ -1469,6 +1480,14 @@ do
             end
             isESP = on
             say(on and "ESP enabled" or "ESP disabled", on and "good" or nil)
+        end,
+    }))
+
+    table.insert(allToggles, Toggle(ctx, {
+        title = "Infinite Jump", desc = "Keep jumping in mid-air",
+        callback = function(on)
+            isInfJump = on
+            say(on and "Infinite Jump enabled" or "Infinite Jump disabled", on and "good" or nil)
         end,
     }))
 
