@@ -16,7 +16,7 @@ local Camera = workspace.CurrentCamera
 local GUI_NAME = "OLIVER V3"
 local LOGO = "rbxassetid://128290087536397"
 local ICON_MAIN = "rbxassetid://111648653308842"
-local ICON_PLAYER = "rbxassetid://99191727508887"
+local ICON_PLAYER = "rbxassetid://101054305047771"
 local ICON_ANIM = "rbxassetid://105863394969753"
 
 local Theme = {
@@ -265,7 +265,7 @@ local TabList = create("Frame", {
     BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, -56), Parent = Sidebar,
 })
 pad(TabList, 8, 10, 9, 0)
-create("UIListLayout", { Padding = UDim.new(0, 4), SortOrder = Enum.SortOrder.LayoutOrder, Parent = TabList })
+create("UIListLayout", { Padding = UDim.new(0, 2), SortOrder = Enum.SortOrder.LayoutOrder, Parent = TabList })
 
 local Profile = create("Frame", {
     AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 0, 1, 0), Size = UDim2.new(1, -1, 0, 54),
@@ -301,7 +301,7 @@ local tabOrder = 0
 local function addTab(name, iconId, page)
     tabOrder += 1
     local btn = create("TextButton", {
-        Size = UDim2.new(1, 0, 0, 40), BackgroundColor3 = Theme.Accent, BackgroundTransparency = 1,
+        Size = UDim2.new(1, 0, 0, 36), BackgroundColor3 = Theme.Accent, BackgroundTransparency = 1,
         BorderSizePixel = 0, AutoButtonColor = false, Text = "", LayoutOrder = tabOrder, Parent = TabList,
     })
     round(btn, 9)
@@ -311,7 +311,7 @@ local function addTab(name, iconId, page)
     })
     round(bar, 2)
     local icon = create("ImageLabel", {
-        Position = UDim2.fromOffset(12, 10), Size = UDim2.fromOffset(20, 20), BackgroundTransparency = 1,
+        Position = UDim2.fromOffset(12, 8), Size = UDim2.fromOffset(20, 20), BackgroundTransparency = 1,
         Image = iconId, ImageTransparency = 0.45, Parent = btn,
     })
     local label = Label(btn, {
@@ -1658,6 +1658,200 @@ do
     search:GetPropertyChangedSignal("Text"):Connect(refresh)
     keep(Players.PlayerAdded:Connect(function() task.defer(refresh) end))
     keep(Players.PlayerRemoving:Connect(function() task.defer(refresh) end))
+end
+
+-- ---------------------------------------------------------
+-- SERVER PAGE (list public servers of this game + Join)
+-- ---------------------------------------------------------
+do
+    local SERVER_ICON = "rbxassetid://103492343421575"
+    local HttpService = game:GetService("HttpService")
+    local TeleportService = game:GetService("TeleportService")
+    local httpRequest = (syn and syn.request) or (http and http.request) or http_request or request or (fluxus and fluxus.request)
+
+    local gameName = tostring(game.Name)
+    pcall(function()
+        gameName = game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name
+    end)
+
+    local page = create("Frame", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Visible = false, Parent = Content })
+    pad(page, 12, 10, 12, 0)
+    addTab("Server", SERVER_ICON, page)
+
+    local header = create("Frame", { Size = UDim2.new(1, 0, 0, 58), BackgroundColor3 = Theme.Card, BorderSizePixel = 0, Parent = page })
+    round(header, 10)
+    outline(header, Theme.Stroke, 1, 0.3)
+    round(create("ImageLabel", {
+        Position = UDim2.fromOffset(9, 9), Size = UDim2.fromOffset(40, 40), BackgroundColor3 = Theme.Panel,
+        Image = SERVER_ICON, Parent = header,
+    }), 10)
+    Label(header, { Position = UDim2.fromOffset(60, 10), Size = UDim2.new(1, -140, 0, 20), Text = gameName, Font = Enum.Font.GothamBold, TextSize = 14 })
+    local infoLabel = Label(header, {
+        Position = UDim2.fromOffset(60, 31), Size = UDim2.new(1, -140, 0, 16), Text = "Tap Refresh to load servers",
+        Font = Enum.Font.Gotham, TextSize = 11, TextColor3 = Theme.Sub,
+    })
+    local refreshBtn = create("TextButton", {
+        AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -10, 0.5, 0), Size = UDim2.fromOffset(70, 30),
+        BackgroundColor3 = Theme.Accent, BorderSizePixel = 0, AutoButtonColor = false, Text = "Refresh",
+        Font = Enum.Font.GothamBold, TextSize = 12, TextColor3 = Color3.fromRGB(8, 18, 28), Parent = header,
+    })
+    round(refreshBtn, 8)
+
+    local list = create("ScrollingFrame", {
+        Position = UDim2.fromOffset(0, 66), Size = UDim2.new(1, 0, 1, -66), BackgroundTransparency = 1, BorderSizePixel = 0,
+        CanvasSize = UDim2.new(), AutomaticCanvasSize = Enum.AutomaticSize.Y, ScrollBarThickness = 3, ScrollBarImageColor3 = Theme.Stroke,
+        ScrollingDirection = Enum.ScrollingDirection.Y, Parent = page,
+    })
+    create("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder, Parent = list })
+    pad(list, 0, 0, 4, 12)
+
+    local emptyLabel = Label(page, {
+        Position = UDim2.fromOffset(0, 90), Size = UDim2.new(1, 0, 0, 24), Text = "",
+        Font = Enum.Font.Gotham, TextSize = 12, TextColor3 = Theme.Sub, TextXAlignment = Enum.TextXAlignment.Center,
+    })
+
+    local function clearList()
+        for _, item in ipairs(list:GetChildren()) do
+            if item:IsA("Frame") then item:Destroy() end
+        end
+    end
+
+    local function addServerCard(index, server)
+        local isCurrent = (server.id == game.JobId)
+        local isFull = (server.playing or 0) >= (server.maxPlayers or 0)
+
+        local card = create("Frame", {
+            Size = UDim2.new(1, 0, 0, 64), BackgroundColor3 = Theme.Card, BorderSizePixel = 0, LayoutOrder = index, Parent = list,
+        })
+        round(card, 10)
+        outline(card, isCurrent and Theme.Accent or Theme.Stroke, 1, isCurrent and 0.2 or 0.3)
+        round(create("ImageLabel", {
+            Position = UDim2.fromOffset(9, 12), Size = UDim2.fromOffset(40, 40), BackgroundColor3 = Theme.Panel,
+            Image = SERVER_ICON, Parent = card,
+        }), 10)
+        Label(card, { Position = UDim2.fromOffset(58, 12), Size = UDim2.new(1, -140, 0, 20), Text = "Server [" .. gameName .. "]", Font = Enum.Font.GothamBold, TextSize = 13 })
+        local sub = "#" .. index
+        if server.ping then sub = sub .. " · " .. tostring(math.floor(server.ping)) .. " ms" end
+        if server.fps then sub = sub .. " · " .. tostring(math.floor(server.fps)) .. " fps" end
+        Label(card, { Position = UDim2.fromOffset(58, 34), Size = UDim2.new(1, -140, 0, 16), Text = sub, Font = Enum.Font.Gotham, TextSize = 11, TextColor3 = Theme.Sub })
+
+        local joinText = isCurrent and "Current" or (isFull and "Full" or "JOIN")
+        local usable = not (isCurrent or isFull)
+        local join = create("TextButton", {
+            AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -10, 0, 10), Size = UDim2.fromOffset(66, 28),
+            BackgroundColor3 = usable and Theme.Accent or Theme.Off, BorderSizePixel = 0, AutoButtonColor = false,
+            Text = joinText, Font = Enum.Font.GothamBold, TextSize = 12,
+            TextColor3 = usable and Color3.fromRGB(8, 18, 28) or Theme.Sub, Parent = card,
+        })
+        round(join, 8)
+        Label(card, {
+            AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -10, 0, 40), Size = UDim2.fromOffset(66, 16),
+            Text = tostring(server.playing or 0) .. "/" .. tostring(server.maxPlayers or 0),
+            Font = Enum.Font.GothamMedium, TextSize = 12, TextColor3 = Theme.Sub, TextXAlignment = Enum.TextXAlignment.Center,
+        })
+
+        if usable then
+            join.Activated:Connect(function()
+                notify("Joining server...", "warn")
+                local ok, err = pcall(function()
+                    TeleportService:TeleportToPlaceInstance(game.PlaceId, server.id, LocalPlayer)
+                end)
+                if not ok then
+                    warn("[OLIVER] " .. tostring(err))
+                    notify("Can't join this server", "bad")
+                end
+            end)
+        end
+    end
+
+    local MAX_SERVERS = 1000
+    local PAGE_SIZE = 100
+    local loading = false
+
+    local function fetchPage(cursor)
+        local url = "https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=" .. PAGE_SIZE
+        if cursor then url = url .. "&cursor=" .. cursor end
+        local res = httpRequest({ Url = url, Method = "GET" })
+        if not res or res.StatusCode ~= 200 then
+            return nil, res and res.StatusCode or 0
+        end
+        local ok, body = pcall(function() return HttpService:JSONDecode(res.Body) end)
+        if not ok or type(body) ~= "table" or type(body.data) ~= "table" then
+            return nil, 0
+        end
+        return body
+    end
+
+    local function loadServers()
+        if loading then return end
+        if not httpRequest then
+            emptyLabel.Text = "Your executor doesn't support HTTP requests"
+            notify("HTTP request is not supported", "bad")
+            return
+        end
+        loading = true
+        refreshBtn.Text = "..."
+        emptyLabel.Text = "Loading servers..."
+        clearList()
+
+        task.spawn(function()
+            local seen, count = {}, 0
+            local cursor
+            local failedCode
+
+            while count < MAX_SERVERS do
+                local body, code = fetchPage(cursor)
+                if not body then
+                    failedCode = code
+                    break
+                end
+
+                if #body.data > 0 then emptyLabel.Text = "" end
+                for _, server in ipairs(body.data) do
+                    if count >= MAX_SERVERS then break end
+                    if server.id and not seen[server.id] then
+                        seen[server.id] = true
+                        count += 1
+                        addServerCard(count, server)
+                        if count % 20 == 0 then task.wait() end -- keep the game smooth
+                    end
+                end
+                infoLabel.Text = count .. " servers loaded..."
+
+                cursor = body.nextPageCursor
+                if not cursor then break end
+                task.wait(0.5) -- be gentle with Roblox rate limits
+            end
+
+            loading = false
+            refreshBtn.Text = "Refresh"
+
+            if count == 0 then
+                emptyLabel.Text = failedCode and "Couldn't load servers - try again in a moment" or "No public servers found"
+                infoLabel.Text = "0 servers"
+                if failedCode then notify("Failed to load servers", "bad") end
+                return
+            end
+
+            infoLabel.Text = count .. " servers · fewest players first"
+            if failedCode then
+                notify(failedCode == 429 and "Rate limited - showing " .. count .. " servers" or "Stopped early at " .. count .. " servers", "warn")
+            else
+                notify(count .. " servers loaded", "good")
+            end
+        end)
+    end
+
+    refreshBtn.Activated:Connect(loadServers)
+
+    -- load automatically the first time the tab is opened
+    local firstOpen = true
+    page:GetPropertyChangedSignal("Visible"):Connect(function()
+        if page.Visible and firstOpen then
+            firstOpen = false
+            loadServers()
+        end
+    end)
 end
 
 -- ==========================================================
