@@ -1031,14 +1031,28 @@ local AstronautAnimations = {
     SwimIdle = "rbxassetid://891663592",
 }
 
-local EndlessAuraFloating = {
-    Idle = "rbxassetid://75638427965557",
-    Walk = "rbxassetid://131290152729043",
-    Run  = "rbxassetid://77610456891399",
-    Jump = "rbxassetid://74451563346167",
-    Fall = "rbxassetid://74203422263286",
-    Climb = "rbxassetid://116293937663140",
-    Swim = "rbxassetid://110044773049875",
+local SuperheroAnimations = {
+    Idle     = "rbxassetid://616111295",
+    Idle2    = "rbxassetid://616113536",
+    Walk     = "rbxassetid://616122287",
+    Run      = "rbxassetid://616117076",
+    Jump     = "rbxassetid://616115533",
+    Fall     = "rbxassetid://616108001",
+    Climb    = "rbxassetid://616104706",
+    Swim     = "rbxassetid://616119360",
+    SwimIdle = "rbxassetid://616120861",
+}
+
+local LevitationAnimations = {
+    Idle     = "rbxassetid://616006778",
+    Idle2    = "rbxassetid://616008087",
+    Walk     = "rbxassetid://616013216",
+    Run      = "rbxassetid://616010382",
+    Jump     = "rbxassetid://616008936",
+    Fall     = "rbxassetid://616005863",
+    Climb    = "rbxassetid://616003713",
+    Swim     = "rbxassetid://616011509",
+    SwimIdle = "rbxassetid://616012453",
 }
 
 local activePack = AdidasCommunity
@@ -1637,7 +1651,8 @@ do
         { name = "Zombie", data = ZombieAnimations, sub = "Zombie animation pack" },
         { name = "Ninja", data = NinjaAnimations, sub = "Official Roblox Ninja pack" },
         { name = "Astronaut", data = AstronautAnimations, sub = "Official Roblox Astronaut pack" },
-        { name = "Endless Aura Floating", data = EndlessAuraFloating, sub = "Floating aura animation set" },
+        { name = "Superhero", data = SuperheroAnimations, sub = "Official Roblox Superhero pack" },
+        { name = "Levitation", data = LevitationAnimations, sub = "Official Roblox Levitation pack" },
     }
     local cards = {}
 
