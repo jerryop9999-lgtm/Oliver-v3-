@@ -16,7 +16,7 @@ local Camera = workspace.CurrentCamera
 local GUI_NAME = "OLIVER V3"
 local LOGO = "rbxassetid://128290087536397"
 local ICON_MAIN = "rbxassetid://111648653308842"
-local ICON_PLAYER = "rbxassetid://99191727508887"
+local ICON_PLAYER = "rbxassetid://101054305047771"
 local ICON_ANIM = "rbxassetid://105863394969753"
 
 local Theme = {
@@ -1019,6 +1019,18 @@ local NinjaAnimations = {
     SwimIdle = "rbxassetid://656121397",
 }
 
+local AstronautAnimations = {
+    Idle     = "rbxassetid://891621366",
+    Idle2    = "rbxassetid://891633237",
+    Walk     = "rbxassetid://891636393",
+    Run      = "rbxassetid://891636393",
+    Jump     = "rbxassetid://891627522",
+    Fall     = "rbxassetid://891617961",
+    Climb    = "rbxassetid://891609353",
+    Swim     = "rbxassetid://891639666",
+    SwimIdle = "rbxassetid://891663592",
+}
+
 local activePack = AdidasCommunity
 local activePackName = "Adidas Community"
 
@@ -1195,6 +1207,42 @@ local function applyAdidasAnimations(character)
         end
     end
 
+    -- Some animation IDs can fail to load (private, wrong asset type, moderated).
+    -- After a short wait, swap any broken track for the game's own default animation
+    -- so the character never freezes (e.g. while climbing or swimming).
+    local DEFAULT_ANIMS = {
+        Idle = { "idle", "Animation1" }, Walk = { "walk", "WalkAnim" }, Run = { "run", "RunAnim" },
+        Jump = { "jump", "JumpAnim" }, Fall = { "fall", "FallAnim" }, Climb = { "climb", "ClimbAnim" },
+        Swim = { "swim", "Swim" }, SwimIdle = { "swimidle", "SwimIdle" },
+    }
+    task.delay(3, function()
+        if not folder.Parent then return end
+        local replaced = {}
+        for name, track in pairs(tracks) do
+            if track.Length == 0 then
+                local def = DEFAULT_ANIMS[name]
+                local group = animate and def and animate:FindFirstChild(def[1])
+                local animObj = group and group:FindFirstChild(def[2])
+                local replacement
+                if animObj and animObj:IsA("Animation") then
+                    local ok, newTrack = pcall(function() return animator:LoadAnimation(animObj) end)
+                    if ok and newTrack then
+                        newTrack.Priority = track.Priority
+                        newTrack.Looped = track.Looped
+                        replacement = newTrack
+                    end
+                end
+                if currentTrack == track then currentTrack = nil end
+                tracks[name] = replacement
+                table.insert(replaced, name)
+            end
+        end
+        if #replaced > 0 then
+            notify("Couldn't load: " .. table.concat(replaced, ", ") .. " - using default", "warn")
+            update()
+        end
+    end)
+
     stateConnection = humanoid.StateChanged:Connect(function()
         task.defer(update)
     end)
@@ -1266,6 +1314,26 @@ end)
 -- ==========================================================
 -- PAGES
 -- ==========================================================
+-- Makes sure a tab icon really shows. If the ID is a Decal ID (not an Image ID) it may not
+-- render directly, so we resolve the Decal to its real image. If that fails too, use the fallback.
+local function ensureIcon(icon, assetUrl, fallbackUrl)
+    task.delay(2, function()
+        if not icon or not icon.Parent or icon.IsLoaded then return end
+        local id = assetUrl:match("%d+")
+        local ok, objs = pcall(function() return game:GetObjects("rbxassetid://" .. id) end)
+        local obj = ok and objs and objs[1]
+        local tex = obj and (obj:IsA("Decal") or obj:IsA("Texture")) and obj.Texture
+        if tex and tex ~= "" then
+            icon.Image = tex
+            return
+        end
+        task.wait(1)
+        if icon.Parent and not icon.IsLoaded and fallbackUrl then
+            icon.Image = fallbackUrl
+        end
+    end)
+end
+
 local allToggles = {}
 local quiet = false
 local function say(msg, kind)
@@ -1332,6 +1400,48 @@ keep(UserInputService.JumpRequest:Connect(function()
     local hum = char and char:FindFirstChildOfClass("Humanoid")
     if hum and hum.Health > 0 then
         hum:ChangeState(Enum.HumanoidStateType.Jumping)
+    end
+end))
+
+-- Full Bright (saves the original lighting and restores it when turned off)
+local Lighting = game:GetService("Lighting")
+local isFullBright = false
+local fullBrightOriginal
+
+local function setFullBright(on)
+    if on then
+        if not fullBrightOriginal then
+            fullBrightOriginal = {
+                Brightness = Lighting.Brightness,
+                ClockTime = Lighting.ClockTime,
+                FogEnd = Lighting.FogEnd,
+                FogStart = Lighting.FogStart,
+                GlobalShadows = Lighting.GlobalShadows,
+                Ambient = Lighting.Ambient,
+                OutdoorAmbient = Lighting.OutdoorAmbient,
+            }
+        end
+        isFullBright = true
+    else
+        isFullBright = false
+        if fullBrightOriginal then
+            for prop, value in pairs(fullBrightOriginal) do
+                pcall(function() Lighting[prop] = value end)
+            end
+            fullBrightOriginal = nil
+        end
+    end
+end
+
+keep(RunService.RenderStepped:Connect(function()
+    if isFullBright then
+        Lighting.Brightness = 2
+        Lighting.ClockTime = 14
+        Lighting.FogStart = 0
+        Lighting.FogEnd = 100000
+        Lighting.GlobalShadows = false
+        Lighting.Ambient = Color3.fromRGB(178, 178, 178)
+        Lighting.OutdoorAmbient = Color3.fromRGB(178, 178, 178)
     end
 end))
 
@@ -1472,6 +1582,16 @@ do
     }))
 
     table.insert(allToggles, Toggle(ctx, {
+        title = "Infinite Jump", desc = "Keep jumping in mid-air",
+        callback = function(on)
+            isInfJump = on
+            say(on and "Infinite Jump enabled" or "Infinite Jump disabled", on and "good" or nil)
+        end,
+    }))
+
+    Section(ctx, "VISUAL")
+
+    table.insert(allToggles, Toggle(ctx, {
         title = "ESP", desc = HAS_DRAWING and "Box + line to every player" or "Not supported by your executor",
         callback = function(on)
             if on and not HAS_DRAWING then
@@ -1484,10 +1604,10 @@ do
     }))
 
     table.insert(allToggles, Toggle(ctx, {
-        title = "Infinite Jump", desc = "Keep jumping in mid-air",
+        title = "Full Bright", desc = "Remove darkness and fog",
         callback = function(on)
-            isInfJump = on
-            say(on and "Infinite Jump enabled" or "Infinite Jump disabled", on and "good" or nil)
+            setFullBright(on)
+            say(on and "Full Bright enabled" or "Full Bright disabled", on and "good" or nil)
         end,
     }))
 
@@ -1526,6 +1646,7 @@ do
         { name = "Adidas Community", data = AdidasCommunity, sub = "Community animation set" },
         { name = "Zombie", data = ZombieAnimations, sub = "Zombie animation pack" },
         { name = "Ninja", data = NinjaAnimations, sub = "Official Roblox Ninja pack" },
+        { name = "Astronaut", data = AstronautAnimations, sub = "Official Roblox Astronaut pack" },
     }
     local cards = {}
 
@@ -1583,6 +1704,7 @@ do
     local page = create("Frame", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Visible = false, Parent = Content })
     pad(page, 12, 10, 12, 0)
     addTab("Player", ICON_PLAYER, page)
+    ensureIcon(Tabs["Player"].icon, ICON_PLAYER, "rbxassetid://99191727508887")
 
     local header = create("Frame", { Size = UDim2.new(1, 0, 0, 58), BackgroundColor3 = Theme.Card, BorderSizePixel = 0, Parent = page })
     round(header, 10)
@@ -1696,6 +1818,7 @@ do
     local page = create("Frame", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Visible = false, Parent = Content })
     pad(page, 12, 10, 12, 0)
     addTab("Server", SERVER_ICON, page)
+    ensureIcon(Tabs["Server"].icon, SERVER_ICON, nil)
 
     local header = create("Frame", { Size = UDim2.new(1, 0, 0, 58), BackgroundColor3 = Theme.Card, BorderSizePixel = 0, Parent = page })
     round(header, 10)
