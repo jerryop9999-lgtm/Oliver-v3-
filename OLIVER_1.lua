@@ -1217,6 +1217,42 @@ local function applyAdidasAnimations(character)
         end
     end
 
+    -- Some animation IDs can fail to load (private, wrong asset type, moderated).
+    -- After a short wait, swap any broken track for the game's own default animation
+    -- so the character never freezes (e.g. while climbing or swimming).
+    local DEFAULT_ANIMS = {
+        Idle = { "idle", "Animation1" }, Walk = { "walk", "WalkAnim" }, Run = { "run", "RunAnim" },
+        Jump = { "jump", "JumpAnim" }, Fall = { "fall", "FallAnim" }, Climb = { "climb", "ClimbAnim" },
+        Swim = { "swim", "Swim" }, SwimIdle = { "swimidle", "SwimIdle" },
+    }
+    task.delay(3, function()
+        if not folder.Parent then return end
+        local replaced = {}
+        for name, track in pairs(tracks) do
+            if track.Length == 0 then
+                local def = DEFAULT_ANIMS[name]
+                local group = animate and def and animate:FindFirstChild(def[1])
+                local animObj = group and group:FindFirstChild(def[2])
+                local replacement
+                if animObj and animObj:IsA("Animation") then
+                    local ok, newTrack = pcall(function() return animator:LoadAnimation(animObj) end)
+                    if ok and newTrack then
+                        newTrack.Priority = track.Priority
+                        newTrack.Looped = track.Looped
+                        replacement = newTrack
+                    end
+                end
+                if currentTrack == track then currentTrack = nil end
+                tracks[name] = replacement
+                table.insert(replaced, name)
+            end
+        end
+        if #replaced > 0 then
+            notify("Couldn't load: " .. table.concat(replaced, ", ") .. " - using default", "warn")
+            update()
+        end
+    end)
+
     stateConnection = humanoid.StateChanged:Connect(function()
         task.defer(update)
     end)
