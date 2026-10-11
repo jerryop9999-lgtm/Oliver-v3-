@@ -1335,6 +1335,48 @@ keep(UserInputService.JumpRequest:Connect(function()
     end
 end))
 
+-- Full Bright (saves the original lighting and restores it when turned off)
+local Lighting = game:GetService("Lighting")
+local isFullBright = false
+local fullBrightOriginal
+
+local function setFullBright(on)
+    if on then
+        if not fullBrightOriginal then
+            fullBrightOriginal = {
+                Brightness = Lighting.Brightness,
+                ClockTime = Lighting.ClockTime,
+                FogEnd = Lighting.FogEnd,
+                FogStart = Lighting.FogStart,
+                GlobalShadows = Lighting.GlobalShadows,
+                Ambient = Lighting.Ambient,
+                OutdoorAmbient = Lighting.OutdoorAmbient,
+            }
+        end
+        isFullBright = true
+    else
+        isFullBright = false
+        if fullBrightOriginal then
+            for prop, value in pairs(fullBrightOriginal) do
+                pcall(function() Lighting[prop] = value end)
+            end
+            fullBrightOriginal = nil
+        end
+    end
+end
+
+keep(RunService.RenderStepped:Connect(function()
+    if isFullBright then
+        Lighting.Brightness = 2
+        Lighting.ClockTime = 14
+        Lighting.FogStart = 0
+        Lighting.FogEnd = 100000
+        Lighting.GlobalShadows = false
+        Lighting.Ambient = Color3.fromRGB(178, 178, 178)
+        Lighting.OutdoorAmbient = Color3.fromRGB(178, 178, 178)
+    end
+end))
+
 -- ESP (needs Drawing API from the executor)
 local HAS_DRAWING = Drawing ~= nil and type(Drawing.new) == "function"
 local espCleanups = {}
@@ -1472,6 +1514,16 @@ do
     }))
 
     table.insert(allToggles, Toggle(ctx, {
+        title = "Infinite Jump", desc = "Keep jumping in mid-air",
+        callback = function(on)
+            isInfJump = on
+            say(on and "Infinite Jump enabled" or "Infinite Jump disabled", on and "good" or nil)
+        end,
+    }))
+
+    Section(ctx, "VISUAL")
+
+    table.insert(allToggles, Toggle(ctx, {
         title = "ESP", desc = HAS_DRAWING and "Box + line to every player" or "Not supported by your executor",
         callback = function(on)
             if on and not HAS_DRAWING then
@@ -1484,10 +1536,10 @@ do
     }))
 
     table.insert(allToggles, Toggle(ctx, {
-        title = "Infinite Jump", desc = "Keep jumping in mid-air",
+        title = "Full Bright", desc = "Remove darkness and fog",
         callback = function(on)
-            isInfJump = on
-            say(on and "Infinite Jump enabled" or "Infinite Jump disabled", on and "good" or nil)
+            setFullBright(on)
+            say(on and "Full Bright enabled" or "Full Bright disabled", on and "good" or nil)
         end,
     }))
 
