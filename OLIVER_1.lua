@@ -1314,6 +1314,26 @@ end)
 -- ==========================================================
 -- PAGES
 -- ==========================================================
+-- Makes sure a tab icon really shows. If the ID is a Decal ID (not an Image ID) it may not
+-- render directly, so we resolve the Decal to its real image. If that fails too, use the fallback.
+local function ensureIcon(icon, assetUrl, fallbackUrl)
+    task.delay(2, function()
+        if not icon or not icon.Parent or icon.IsLoaded then return end
+        local id = assetUrl:match("%d+")
+        local ok, objs = pcall(function() return game:GetObjects("rbxassetid://" .. id) end)
+        local obj = ok and objs and objs[1]
+        local tex = obj and (obj:IsA("Decal") or obj:IsA("Texture")) and obj.Texture
+        if tex and tex ~= "" then
+            icon.Image = tex
+            return
+        end
+        task.wait(1)
+        if icon.Parent and not icon.IsLoaded and fallbackUrl then
+            icon.Image = fallbackUrl
+        end
+    end)
+end
+
 local allToggles = {}
 local quiet = false
 local function say(msg, kind)
@@ -1684,6 +1704,7 @@ do
     local page = create("Frame", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Visible = false, Parent = Content })
     pad(page, 12, 10, 12, 0)
     addTab("Player", ICON_PLAYER, page)
+    ensureIcon(Tabs["Player"].icon, ICON_PLAYER, "rbxassetid://99191727508887")
 
     local header = create("Frame", { Size = UDim2.new(1, 0, 0, 58), BackgroundColor3 = Theme.Card, BorderSizePixel = 0, Parent = page })
     round(header, 10)
@@ -1797,6 +1818,7 @@ do
     local page = create("Frame", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Visible = false, Parent = Content })
     pad(page, 12, 10, 12, 0)
     addTab("Server", SERVER_ICON, page)
+    ensureIcon(Tabs["Server"].icon, SERVER_ICON, nil)
 
     local header = create("Frame", { Size = UDim2.new(1, 0, 0, 58), BackgroundColor3 = Theme.Card, BorderSizePixel = 0, Parent = page })
     round(header, 10)
