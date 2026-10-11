@@ -16,7 +16,7 @@ local Camera = workspace.CurrentCamera
 local GUI_NAME = "OLIVER V3"
 local LOGO = "rbxassetid://128290087536397"
 local ICON_MAIN = "rbxassetid://111648653308842"
-local ICON_PLAYER = "rbxassetid://99191727508887"
+local ICON_PLAYER = "rbxassetid://101054305047771"
 local ICON_ANIM = "rbxassetid://105863394969753"
 
 local Theme = {
