@@ -1019,6 +1019,18 @@ local NinjaAnimations = {
     SwimIdle = "rbxassetid://656121397",
 }
 
+local AstronautAnimations = {
+    Idle     = "rbxassetid://891621366",
+    Idle2    = "rbxassetid://891633237",
+    Walk     = "rbxassetid://891636393",
+    Run      = "rbxassetid://891636393",
+    Jump     = "rbxassetid://891627522",
+    Fall     = "rbxassetid://891617961",
+    Climb    = "rbxassetid://891609353",
+    Swim     = "rbxassetid://891639666",
+    SwimIdle = "rbxassetid://891663592",
+}
+
 local activePack = AdidasCommunity
 local activePackName = "Adidas Community"
 
@@ -1578,6 +1590,7 @@ do
         { name = "Adidas Community", data = AdidasCommunity, sub = "Community animation set" },
         { name = "Zombie", data = ZombieAnimations, sub = "Zombie animation pack" },
         { name = "Ninja", data = NinjaAnimations, sub = "Official Roblox Ninja pack" },
+        { name = "Astronaut", data = AstronautAnimations, sub = "Official Roblox Astronaut pack" },
     }
     local cards = {}
 
