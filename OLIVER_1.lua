@@ -1392,6 +1392,28 @@ keep(RunService.Stepped:Connect(function()
     end
 end))
 
+-- Tween Speed (smooth CFrame movement along the joystick / WASD direction)
+local tweenEnabled = false
+local tweenSpeed = 40
+
+keep(RunService.RenderStepped:Connect(function(dt)
+    if not tweenEnabled or FLYING then return end
+    local character = LocalPlayer.Character
+    if not character then return end
+
+    local rootPart = character:FindFirstChild("HumanoidRootPart")
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    if rootPart and humanoid then
+        local moveDir = humanoid.MoveDirection
+        if moveDir.Magnitude > 0 then
+            rootPart.CFrame = rootPart.CFrame + (moveDir * tweenSpeed * dt)
+            -- cancel sideways velocity so the character doesn't slide or fling
+            local v = rootPart.AssemblyLinearVelocity
+            rootPart.AssemblyLinearVelocity = Vector3.new(0, v.Y, 0)
+        end
+    end
+end))
+
 -- Infinite Jump
 local isInfJump = false
 keep(UserInputService.JumpRequest:Connect(function()
@@ -1568,6 +1590,16 @@ do
             end
         end,
         onChange = function(v) spinSpeed = math.max(v, 1) end,
+    }))
+
+    table.insert(allToggles, SpeedControl(ctx, {
+        title = "Tween Speed", desc = "Smooth glide movement (joystick / WASD)",
+        min = 1, max = 500, default = tweenSpeed,
+        onToggle = function(on)
+            tweenEnabled = on
+            say(on and "Tween Speed enabled" or "Tween Speed disabled", on and "good" or nil)
+        end,
+        onChange = function(v) tweenSpeed = v end,
     }))
 
     Section(ctx, "TOOLS")
