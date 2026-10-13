@@ -384,6 +384,32 @@ local function makeSwitch(parent)
     return sw, visual
 end
 
+local function makeCheckbox(parent)
+    -- off = empty box (☐), on = box with a check mark (☑)
+    local box = create("TextButton", {
+        Name = "Checkbox", Text = "", AutoButtonColor = false, AnchorPoint = Vector2.new(1, 0.5),
+        Size = UDim2.fromOffset(26, 26), BackgroundColor3 = Theme.Panel, BorderSizePixel = 0, Parent = parent,
+    })
+    round(box, 7)
+    local st = outline(box, Theme.Sub, 2, 0)
+    local short = create("Frame", {
+        AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromOffset(8, 15), Size = UDim2.fromOffset(3, 8),
+        Rotation = -45, BackgroundColor3 = Theme.Accent, BackgroundTransparency = 1, BorderSizePixel = 0, Parent = box,
+    })
+    local long = create("Frame", {
+        AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromOffset(14.5, 12.5), Size = UDim2.fromOffset(3, 14),
+        Rotation = 45, BackgroundColor3 = Theme.Accent, BackgroundTransparency = 1, BorderSizePixel = 0, Parent = box,
+    })
+    round(short, 2)
+    round(long, 2)
+    local function visual(on)
+        tween(st, { Color = on and Theme.Accent or Theme.Sub }, 0.15)
+        tween(short, { BackgroundTransparency = on and 0 or 1 }, 0.15)
+        tween(long, { BackgroundTransparency = on and 0 or 1 }, 0.15)
+    end
+    return box, visual
+end
+
 -- on/off state holder. callback(on) may return false to refuse the change.
 local function makeStateful(callback, visual)
     local state = false
@@ -414,7 +440,12 @@ local function Toggle(ctx, opts)
         Position = UDim2.fromOffset(14, 30), Size = UDim2.new(1, -86, 0, 14), Text = opts.desc or "",
         Font = Enum.Font.Gotham, TextSize = 11, TextColor3 = Theme.Sub,
     })
-    local sw, visual = makeSwitch(row)
+    local sw, visual
+    if opts.checkbox then
+        sw, visual = makeCheckbox(row)
+    else
+        sw, visual = makeSwitch(row)
+    end
     sw.Position = UDim2.new(1, -14, 0.5, 0)
     local obj = makeStateful(opts.callback, visual)
     row.Activated:Connect(function() obj:Set(not obj:Get()) end)
@@ -1392,9 +1423,8 @@ keep(RunService.Stepped:Connect(function()
     end
 end))
 
--- Tween Speed (smooth CFrame movement along the joystick / WASD direction)
+-- Tween (smooth CFrame glide along the joystick / WASD direction, using the humanoid's current WalkSpeed)
 local tweenEnabled = false
-local tweenSpeed = 40
 
 keep(RunService.RenderStepped:Connect(function(dt)
     if not tweenEnabled or FLYING then return end
@@ -1406,7 +1436,7 @@ keep(RunService.RenderStepped:Connect(function(dt)
     if rootPart and humanoid then
         local moveDir = humanoid.MoveDirection
         if moveDir.Magnitude > 0 then
-            rootPart.CFrame = rootPart.CFrame + (moveDir * tweenSpeed * dt)
+            rootPart.CFrame = rootPart.CFrame + (moveDir * humanoid.WalkSpeed * dt)
             -- cancel sideways velocity so the character doesn't slide or fling
             local v = rootPart.AssemblyLinearVelocity
             rootPart.AssemblyLinearVelocity = Vector3.new(0, v.Y, 0)
@@ -1592,14 +1622,12 @@ do
         onChange = function(v) spinSpeed = math.max(v, 1) end,
     }))
 
-    table.insert(allToggles, SpeedControl(ctx, {
-        title = "Tween Speed", desc = "Smooth glide movement (joystick / WASD)",
-        min = 1, max = 500, default = tweenSpeed,
-        onToggle = function(on)
+    table.insert(allToggles, Toggle(ctx, {
+        title = "Tween", desc = "Glide using your current game speed", checkbox = true,
+        callback = function(on)
             tweenEnabled = on
-            say(on and "Tween Speed enabled" or "Tween Speed disabled", on and "good" or nil)
+            say(on and "Tween enabled" or "Tween disabled", on and "good" or nil)
         end,
-        onChange = function(v) tweenSpeed = v end,
     }))
 
     Section(ctx, "TOOLS")
