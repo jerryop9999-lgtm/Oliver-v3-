@@ -384,20 +384,22 @@ local function makeSwitch(parent)
     return sw, visual
 end
 
-local function makeCheckbox(parent)
-    -- off = empty box (☐), on = box with a check mark (☑)
+local function makeCheckbox(parent, size)
+    -- off = empty box, on = box with a check mark
+    size = size or 26
+    local k = size / 26
     local box = create("TextButton", {
         Name = "Checkbox", Text = "", AutoButtonColor = false, AnchorPoint = Vector2.new(1, 0.5),
-        Size = UDim2.fromOffset(26, 26), BackgroundColor3 = Theme.Panel, BorderSizePixel = 0, Parent = parent,
+        Size = UDim2.fromOffset(size, size), BackgroundColor3 = Theme.Panel, BorderSizePixel = 0, Parent = parent,
     })
-    round(box, 7)
-    local st = outline(box, Theme.Sub, 2, 0)
+    round(box, math.floor(7 * k))
+    local st = outline(box, Theme.Sub, math.max(1.5, 2 * k), 0)
     local short = create("Frame", {
-        AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromOffset(8, 15), Size = UDim2.fromOffset(3, 8),
+        AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromOffset(8 * k, 15 * k), Size = UDim2.fromOffset(math.max(2, 3 * k), 8 * k),
         Rotation = -45, BackgroundColor3 = Theme.Accent, BackgroundTransparency = 1, BorderSizePixel = 0, Parent = box,
     })
     local long = create("Frame", {
-        AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromOffset(14.5, 12.5), Size = UDim2.fromOffset(3, 14),
+        AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromOffset(14.5 * k, 12.5 * k), Size = UDim2.fromOffset(math.max(2, 3 * k), 14 * k),
         Rotation = 45, BackgroundColor3 = Theme.Accent, BackgroundTransparency = 1, BorderSizePixel = 0, Parent = box,
     })
     round(short, 2)
@@ -455,7 +457,7 @@ end
 
 -- switch + slider + number box (used for Fly / Walk Speed / Spin)
 local function SpeedControl(ctx, opts)
-    local card = Card(ctx, 98, false)
+    local card = Card(ctx, opts.checkbox and 134 or 98, false)
     Label(card, { Position = UDim2.fromOffset(14, 10), Size = UDim2.new(1, -86, 0, 18), Text = opts.title, Font = Enum.Font.GothamBold })
     Label(card, {
         Position = UDim2.fromOffset(14, 29), Size = UDim2.new(1, -86, 0, 14), Text = opts.desc or "",
@@ -543,6 +545,32 @@ local function SpeedControl(ctx, opts)
             render(value)
         end
     end)
+
+    if opts.checkbox then
+        create("Frame", {
+            Position = UDim2.new(0, 14, 0, 94), Size = UDim2.new(1, -28, 0, 1),
+            BackgroundColor3 = Theme.Stroke, BackgroundTransparency = 0.4, BorderSizePixel = 0, Parent = card,
+        })
+        local row = create("TextButton", {
+            Text = "", AutoButtonColor = false, BackgroundTransparency = 1,
+            Position = UDim2.fromOffset(10, 98), Size = UDim2.new(1, -20, 0, 30), Parent = card,
+        })
+        local cb, cbVisual = makeCheckbox(row, 20)
+        cb.AnchorPoint = Vector2.new(0, 0.5)
+        cb.Position = UDim2.new(0, 4, 0.5, 0)
+        Label(row, {
+            Position = UDim2.fromOffset(34, 0), Size = UDim2.new(1, -38, 1, 0), Text = opts.checkbox.text,
+            Font = Enum.Font.Gotham, TextSize = 12, TextColor3 = Theme.Sub,
+        })
+        local checked = false
+        local function flip()
+            checked = not checked
+            cbVisual(checked)
+            if opts.checkbox.onChange then opts.checkbox.onChange(checked) end
+        end
+        row.Activated:Connect(flip)
+        cb.Activated:Connect(flip)
+    end
 
     return obj
 end
@@ -1423,8 +1451,10 @@ keep(RunService.Stepped:Connect(function()
     end
 end))
 
--- Tween (smooth CFrame glide along the joystick / WASD direction, using the humanoid's current WalkSpeed)
+-- Tween (smooth CFrame glide along the joystick / WASD direction)
 local tweenEnabled = false
+local tweenSpeed = 40
+local tweenUseGameSpeed = false
 
 keep(RunService.RenderStepped:Connect(function(dt)
     if not tweenEnabled or FLYING then return end
@@ -1436,7 +1466,8 @@ keep(RunService.RenderStepped:Connect(function(dt)
     if rootPart and humanoid then
         local moveDir = humanoid.MoveDirection
         if moveDir.Magnitude > 0 then
-            rootPart.CFrame = rootPart.CFrame + (moveDir * humanoid.WalkSpeed * dt)
+            local speed = tweenUseGameSpeed and humanoid.WalkSpeed or tweenSpeed
+            rootPart.CFrame = rootPart.CFrame + (moveDir * speed * dt)
             -- cancel sideways velocity so the character doesn't slide or fling
             local v = rootPart.AssemblyLinearVelocity
             rootPart.AssemblyLinearVelocity = Vector3.new(0, v.Y, 0)
@@ -1622,12 +1653,21 @@ do
         onChange = function(v) spinSpeed = math.max(v, 1) end,
     }))
 
-    table.insert(allToggles, Toggle(ctx, {
-        title = "Tween", desc = "Glide using your current game speed", checkbox = true,
-        callback = function(on)
+    table.insert(allToggles, SpeedControl(ctx, {
+        title = "Tween Speed", desc = "Smooth glide movement (joystick / WASD)",
+        min = 1, max = 500, default = tweenSpeed,
+        onToggle = function(on)
             tweenEnabled = on
             say(on and "Tween enabled" or "Tween disabled", on and "good" or nil)
         end,
+        onChange = function(v) tweenSpeed = v end,
+        checkbox = {
+            text = "Use game speed (WalkSpeed)",
+            onChange = function(v)
+                tweenUseGameSpeed = v
+                say(v and "Tween uses game speed" or "Tween uses slider speed")
+            end,
+        },
     }))
 
     Section(ctx, "TOOLS")
